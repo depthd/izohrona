@@ -1,0 +1,9 @@
+"de_izohrona_1355745362"
+{
+	"material" "overviews/de_izohrona_1355745362"
+	"pos_x" "0"
+	"pos_y" "4608"
+	"scale" "4.5000"
+	"rotate" "0"
+	"zoom" "1"
+}
