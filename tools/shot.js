@@ -51,6 +51,18 @@ const OUT   = process.argv[4] || 'out';
 
     await page.locator('#map').screenshot({ path: `${OUT}/map_${info.seed}.png` });
 
+    // v97: вид под углом. Тумблера может не быть в старых сборках — тогда просто пропускаем.
+    if (await page.$('#t3D')) {
+      await page.evaluate('VIEW3D=true; document.getElementById("t3D").checked=true; document.getElementById("p3d").style.display="block";');
+      for (const v of (process.env.VIEWS || '35/52,140/44').split(',')) {
+        const [yaw, tilt] = v.split('/').map(Number);
+        await page.evaluate(`V3.yaw=${yaw}; V3.tilt=${tilt}; syncV3(); draw();`);
+        await page.waitForTimeout(150);
+        await page.locator('#map').screenshot({ path: `${OUT}/map_${info.seed}_3d_${yaw}.png` });
+      }
+      await page.evaluate('VIEW3D=false; document.getElementById("t3D").checked=false; draw();');
+    }
+
     let vmf = null, vmfErr = null;
     try { vmf = await page.evaluate('buildVMF(cur)'); }
     catch (e) { vmfErr = e.message; }
