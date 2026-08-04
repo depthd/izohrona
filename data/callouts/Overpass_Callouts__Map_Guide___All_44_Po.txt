@@ -1,0 +1,198 @@
+Overpass Callouts & Map Guide — All 44 Positions | CSDB.gg 
+CSDB × 
+🌐 English ▾ 
+Home Maps 
+All Maps Mirage Inferno Dust 2 Anubis Ancient Nuke Cache 
+Mirage Lineups Inferno Lineups Dust 2 Lineups Anubis Lineups Ancient Lineups Nuke Lineups Overpass Lineups Vertigo Lineups Workshop Maps Skins 
+All Skins Rifle Skins Pistol Skins Knife Skins Glove Skins All Weapons Rifles Pistols SMGs Heavy Cases Stickers Market Trends Float Checker Compare Weapons Damage Calculator Recoil Patterns Trading Sites Ranks 
+Rank Distribution Faceit Ranks & ELO Ranking Guide S1 — Silver 1 S2 — Silver 2 S3 — Silver 3 S4 — Silver 4 SE — Silver Elite SEM — Silver Elite Master GN1 — Gold Nova 1 GN2 — Gold Nova 2 GN3 — Gold Nova 3 GNM — Gold Nova Master MG1 — Master Guardian 1 MG2 — Master Guardian 2 MGE — Master Guardian Elite DMG — Distinguished Master Guardian LE — Legendary Eagle LEM — Legendary Eagle Master SMFC — Supreme Master First Class GE — Global Elite Tools 
+All Tools Damage Calculator Economy Calculator Crosshair Generator Crosshair Codes Bind Generator Autoexec Generator eDPI Calculator Sensitivity Converter Console Commands Practice Config Launch Options Pro Players 
+All Pro Players Teams Gear Crosshair Codes Riflers AWPers IGLs Entry Fraggers Support Sensitivity Converter eDPI Calculator Esports ● 
+Esports Hub Watch Live ● Live Matches Tournaments Head-to-Head Predictions Player Rankings Player Form Pick'Ems Gambling 18+ 
+All Gambling Sites Crash Coinflip Upgrader Case battles Roulette Case opening Jackpot CSGOEmpire code CSGOLuck code CSGORoll code KeyDrop code Hellcase code Clash.gg code CS2 Esports Betting Case Simulator (free) Guides 
+All Guides Updates Beginner's Guide Best Settings Ranking System Sign In → 
+Overpass Callouts & Map Guide 
+By Josh Lingenfelter 
+A Berlin park and canal complex with two very different bombsites. Overpass rewards map control, creative utility, and the best-timed rotations in Counter-Strike. 
+Map Control Creative Utility Two-Faced Layout Reserve 
+Overpass Overview & History 
+Overpass is a Valve-made map added to CS:GO in December 2013, set around a Berlin park, a canal, and the concrete underbelly of a motorway overpass. It spent a decade as an Active Duty regular before a rockier CS2 spell: rotated out for Dust 2 in April 2024, restored in July 2025 in place of Anubis, and rotated out again on July 8, 2026, when Cache arrived with the Season 5 update. It currently sits in the reserve pool but remains fully playable in Competitive matchmaking. 
+The map is really two maps stitched together. The A half is an open park: long grass sightlines from Playground and Long toward a raised site with Bank, Truck, and Toilets cover. The B half is a vertical concrete pit: Monster and Short tunnels feeding a canal site watched by the towering Heaven platform. Few maps demand such different skills at each end. 
+Overpass is famous for asymmetric map control: Ts start close to A but far from B, while CT rotations between sites are fast through Connector. That geometry produces the map's signature move — the A-presence fake into a fast B hit through Monster — and makes information the most valuable currency on the map. 
+Overpass Callouts Map 
+Every official callout on Overpass , plotted from the game files at its exact in-game position. Hover a callout to see what it means — community names for spots inside these areas are listed below. 
+[IMG Overpass%20Callouts%20&%20Map%20Guide%20%E2%80%94%20All%2044%20Positions%20_%20CSDB.gg_files/de_overpass_Ec9a.png | alt=Overpass radar with 25 callout positions]
+Alley Back of A A Site B Site Bridge Canal Connector Construction Fountain Lobby Lower Park Pipe Playground Restroom Side Alley Snipers Nest Stairs Storage Room T Spawn T Stairs Tunnels Under A Upper Park Walkway Water 
+Hover or tap a callout to see what it means. Click one to jump to its description. 
+CT side Mid T side 
+Positions extracted from the Counter-Strike 2 game files — not hand-placed. 
+Pro Competitive Stats 
+On Overpass , CTs win 56 % of rounds — a CT-sided map at the pro level. Aggregated from 1752 tracked matches across 25 teams. 
+CT 56 % 
+T 47 % 
+56 % CT Round Win 
+47 % T Round Win 
+51.5 % Pistol Win 
+5.8 % Pick Rate 
+23.3 % Ban Rate 
+1752 25 Teams / Maps Played 
+The stronger side takes roughly 56 % of rounds when CTs hold the advantage . See all CS2 maps compared → 
+All Callouts ( 44 positions) 
+Official callouts (8) 
+Defined in the CS2 map files — each one is plotted on the radar above at its exact position. 
+CT Side ( 3 ) 
+A Site ● 
+The raised A bombsite above the park, ringed by Bank, Truck, and the Toilets exits. 
+B Site ● 
+The B bombsite on the wooden platform in the canal pit, watched from Heaven above. 
+Bridge ● 
+The concrete stretch beside B running from Sandbags toward the walkway. 
+T Side ( 2 ) 
+Playground ● 
+The fenced playground behind Fountain opposite the Upper Tunnels exit. 
+T Spawn ● 
+Terrorist spawn at the bottom of the map, splitting toward the park and the tunnels. 
+Mid Control ( 3 ) 
+Fountain ● 
+The fountain plaza before mid on the A side — the T default staging area. 
+Connector ● 
+The corridor from Lower Tunnels up toward Toilets — the artery between the map's two halves. 
+Water ● 
+The canal water beside B Short and Connector — a slow, loud, but surprising approach. 
+Community callouts (36) 
+Player names in everyday use for spots inside the areas above. The game defines no position for these, so we list them rather than guess them onto the map. 
+CT Side ( 16 ) 
+Bank 
+The bank building at the back of A with a window walkway over the site — the site's strongest holding structure. 
+Truck 
+The truck on A site used for cover, boosts, and crossfire setups with Bank. 
+Van 
+The van at the back of the A site beside Bank. 
+Default (A) 
+The standard A plant spot between the green boxes opposite the mid entrance. 
+Optimus 
+The truck on the right of A site when approaching from mid. 
+Bins 
+The bins at the back of A connecting toward Snipers/Storage and the B half. 
+Storage 
+The room between Bank and Stairs behind the A site. 
+Close Left (Long) 
+The tight corner where A Long opens onto the site. 
+Flowers 
+The flowerbed left of Toilets approaching the site — a common close CT hold. 
+CT (A) 
+The stairwell/tunnel area behind A between Snipers, Stairs, and Bank. 
+Pillar 
+The large circular pillar in the middle of the B platform — the site's central cover. 
+Toxic Barrels 
+The barrels beside B site with strong angles onto the Monster exit. 
+Pit 
+The dark waterlogged area behind the B platform — a post-plant and anchor spot. 
+Heaven 
+The raised metal platform overlooking the whole B site — the strongest CT position on the map. 
+Graffiti 
+The boxed-off corner at the back of B near Construction. 
+CT Spawn 
+Counter-Terrorist spawn above the sites, feeding A directly and B via Heaven. 
+T Side ( 12 ) 
+A Long 
+The long park lane from the fountain area to the A site — the wide route watched by CT AWPs. 
+Rock 
+The boulder on A Long — the first cover when pushing the park. 
+Tree 
+The tree beside A Long near Long Toilets — wallbangable cover on the approach. 
+Long Boost 
+The flowerbed boost on Long giving vision onto the A site. 
+Long Toilets 
+The park-facing side of the Toilets building protruding onto A Long. 
+Upper Tunnels 
+The tunnel section connecting T spawn to the mid area outside A. 
+Lower Tunnels 
+The tunnel section from Upper Tunnels down toward Connector. 
+Ladder 
+The ladder linking Upper and Lower Tunnels. 
+Monster 
+The big drainage tunnel from T spawn straight into B — the primary B attack route. 
+Tracks 
+The area outside Monster's entrance connecting T spawn to the tunnel network. 
+Short Tunnel 
+The smaller tunnel toward Construction and Water — the second B route. 
+Sewers 
+The exit area when approaching the B site from Monster. 
+Mid Control ( 8 ) 
+Toilets 
+The bathroom corridor from mid to the A site — the quiet "short" route for T squeezes. 
+A Short 
+The stairs entrance onto A where mid meets the site. 
+Mid 
+The area by Toilets, Party, and the Connector exit — the junction of the A half. 
+Party 
+The picnic-bench platform beside Toilets, decorated with balloons. 
+Squeaky 
+The loud door at the end of Connector opening toward Water/Construction — its sound gives away every rotation. 
+B Short 
+The sandbagged entrance onto B from the Construction/Water side. 
+Sandbags 
+The sandbag stack on B Short — standard cover for both sides. 
+Boost 
+The spot where players boost from Water directly onto the B platform. 
+How to Play Overpass T-Side 
+T-side Overpass starts with the fountain/mid area. A standard default posts two players toward Long and Party/Toilets, one watching Connector, and two controlling Monster's entrance. From there the side is a patience game: CT aggression on Overpass is common, and punishing an over-extended Toilets or Monster push is worth more than any set execute. 
+A hits split Long and Short/Toilets: smoke Bank and Truck, molotov the default boxes and Heaven-side stairs, and cross the open ground in one wave. Bathrooms (Toilets) is the tempo route — quiet walks through it put Ts on top of the site without crossing the park's long sightlines. 
+B is about Monster: once Ts own the tunnel, the site can be hit from Monster and Short/Water simultaneously, with a Heaven smoke mandatory on every serious execute. Post-plant, the classic setup holds from Monster, Pit, and Graffiti with the bomb planted for Barrels. Standard lineups for both sites are on our lineups page. 
+How to Play Overpass CT-Side 
+The standard CT split is 2-1-2 with heavy early information play: the B pair often starts with a Monster or Short check, the Connector player supports both halves, and the A pair holds Long and Toilets at range. Overpass CTs are the most aggressive in the game because the map rewards knowing where the five Ts are — every safe round the Ts get, the scarier their late hit becomes. 
+On A, play the site high-low: one player around Bank/Truck at range, one closer to Toilets or the site boxes. Long pushes die to a well-placed molotov and a crossfire; the real danger is the quiet Toilets squeeze, so keep utility for it and re-check the bathrooms often. 
+On B, Heaven is the kingmaker: the platform sees the whole site and both entrances. Anchor with one player on-site (Pillar/Toxic/Graffiti) and one Heaven, and remember water slows and telegraphs pushes through the canal. Retakes come from Heaven and Connector/Water together — flash down, clear Pit and Barrels in sequence, and watch Monster for the post-plant hold. 
+Key Duels & Angles 
+Long park cross vs Bank AWP 
+The A half's defining fight: a CT AWP behind Bank or Truck punishes any dry crossing of the park. Ts answer with the Rock/Tree smoke wall or by routing through Toilets instead. 
+Toilets squeeze vs close holds 
+The bathroom corridor produces point-blank fights with CTs holding the exits from Flowers or the site. Sound discipline decides who gets the first shot — running through Toilets is a death sentence. 
+Monster exit vs Heaven 
+Ts exiting Monster are exposed to Heaven's elevated angle across the site. The Heaven smoke is mandatory; CTs re-take the angle the moment it fades, so plant fast or re-smoke. 
+Connector control 
+The Connector corridor is both the CT rotation route and the T flank path. Squeaky door audio, boost spots, and molotov timings make this the map's quiet mid-round battleground. 
+Water fights (B canal) 
+Pushes through the canal are slowed and telegraphed by water noise, but the low angle under B's platform surprises static anchors. Both sides use it late in rounds when utility is spent. 
+Common Strategies & Executes 
+The executes below lean on standard utility — practice the exact throws on our Overpass smoke & flash lineups page. 
+T-Side Attack 
+A Split (Long + Toilets) 
+Smoke Bank and Truck, molotov Flowers, and hit the site from Long and Toilets simultaneously — the two-direction entry breaks the high-low defence. 
+Monster + Short B Execute 
+Smoke Heaven and Sandbags, then enter from Monster and B Short at once. Plant for Barrels and hold from Monster, Pit, and Graffiti. 
+A Fake → Fast B 
+Throw A utility at Bank/Truck with two players showing at Long, then sprint the pack through Monster before Heaven resets. Overpass's signature round-stealer. 
+Connector Take 
+Control Lower Tunnels and Connector mid-round to threaten both halves at once; the CTs must guess which side the squeeze hits. 
+CT-Side Defense 
+Early Info Push 
+The B pair checks Monster/Short with a flash at round start while Toilets is peeked from Flowers — then everyone resets to standard holds with the T positions mapped. 
+Heaven Anchor System 
+Heaven player calls the B half alone from the platform, with the site anchor playing off Pillar and the Connector flex arriving through Water for retakes. 
+Tactical Tips 
+1 
+Information wins Overpass — punish CT aggression before running set plays. 
+2 
+Smoke Heaven on every B execute, and re-smoke it for the post-plant. 
+3 
+Use Toilets for quiet A squeezes instead of crossing the park dry. 
+4 
+As CT, check Monster early and often; conceding it silently loses B. 
+5 
+Track the Squeaky door audio — it betrays every Connector rotation. 
+Overpass in Pro Play 
+Overpass built a reputation as a tactician's map across a decade of pro play: deep CT aggression, elaborate A fakes into Monster hits, and some of the most famous clutch moments in Major history happened on its canal site. Teams with strong utility discipline and mid-round calling historically over-performed here. 
+Its July 2026 rotation out of Active Duty ended a long competitive chapter, but reserve-pool maps have returned before — Overpass itself came back once already in 2025. The tracked pro stats above reflect its record while in the pool. 
+Related: Overpass Lineups All Maps Map Meta Stats Practice Config Workshop Maps Weapons 
+Frequently Asked Questions Is Overpass still playable in CS2? Yes. Overpass left the Active Duty pool on July 8, 2026, when Cache replaced it in the Season 5 update, but it remains in the game and playable in Competitive matchmaking as a reserve-pool map. Premier mode, however, only uses the seven Active Duty maps. Why do teams fake A and hit B on Overpass? The map's geometry makes it the natural play: Ts spawn close to the A park, so showing bodies and utility there is cheap, while Monster offers a direct tunnel to B once the CTs commit. Because Heaven takes time to re-establish after a rotation, a well-timed fake often reaches the B platform before the defence resets. What utility matters most on B site? The Heaven smoke is non-negotiable — the platform sees the entire site and both entrances. After that: a Sandbags/Short smoke to split the site, a molotov for Toxic/Pillar close positions, and a spare smoke to re-block Heaven for the post-plant. Without Heaven denied, B executes fail against even average defences. How should CTs use aggression on Overpass? Early and purposefully: a Monster check or Toilets peek at round start costs little and reveals the T-side's shape. Overpass punishes passive CTs because Ts can build map control quietly through tunnels and Connector — the defence's counter is taking information before the T default settles, then resetting to standard holds. What are the main routes into each bombsite? A site: the Long park lane, the Toilets corridor from mid, and the A Short stairs. B site: the Monster tunnel from T spawn, B Short via Construction/Water, and the Water canal itself for boosts and late-round surprises. CTs rotate between the halves through Connector or across Heaven. When was Overpass in the Active Duty pool? Overpass joined CS:GO in December 2013 and was an Active Duty fixture for roughly a decade. In CS2 it was rotated out for Dust 2 in April 2024, brought back in July 2025 in place of Anubis, and rotated out again for Cache on July 8, 2026 — its current reserve status. Is Overpass CT or T sided? Across 1752 tracked pro matches, CTs win 56% of rounds on Overpass versus 47% for Terrorists, making it a CT-sided map at the professional level. How often is Overpass picked in pro CS2? Overpass has an average pick rate of 5.8% and a ban rate of 23.3% across 25 tracked teams. The pistol round is won 51.5% of the time in the map's data sample. 
+Explore CSDB.gg 
+Related 
+Grenade & Utility Guide Smokes, flashes, and molotovs Practice Config Generator Grenade and aim training commands Map Veto Simulator Practice map veto strategies How to Practice Smokes The practice-server commands, trajectory preview, and instant rethrow How to Play Workshop Maps Find, subscribe to, and launch community aim/surf/KZ/practice maps 
+Tools 
+Sensitivity Converter Convert sensitivity between CS2 and other games eDPI Calculator Calculate your effective DPI cm/360 Calculator Mouse distance per full turn 
+Learn & Explore 
+CS2 Beginner's Guide First steps in Counter-Strike 2 Economy Guide Money management and buy strategies Ranking System Guide Competitive and Premier tiers explained 
+[IMG Overpass%20Callouts%20&%20Map%20Guide%20%E2%80%94%20All%2044%20Positions%20_%20CSDB.gg_files/weapon_knife_survival_bowie_am_doppler_phase3_light_pn_Ec9a.avif | alt=]
+Win Bowie Knife | Doppler - Phase 3 Free to enter · 12 in · 8d 20h left Enter free × 
