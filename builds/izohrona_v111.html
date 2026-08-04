@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v110 · ИЗОХРОНА — генератор карт three-lane</title>
+<title>v111 · ИЗОХРОНА — генератор карт three-lane</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -2375,28 +2375,40 @@ const DET={on:false, wall:false, door:true, zonewall:true, part:true, cover:true
    Совпадают СТАТИСТИКИ, а не форма: мидовые двери миража и два этажа нюка —
    решения планировщика, ручками их не достать. */
 const PROF={
-  /* dust2 по замеру вышел четвёртым по узости, а у реальной карты медиана ширины
-     самая мелкая из девяти (100u). Подтянуто: цель сужения к минимуму, вытянутость
-     ниже (сужаем и почти квадратные куски), вертикаль выше mirage — у реальных
-     377u против 368u. */
-  dust2:   {ttl:'dust2 — узко, длинно, перекос обороны',
-            size:3, width:-1, vert:1.25, ring:0.50, cov:8, tun:0.5,
-            narrowTgt:8,  elong:1.6, shotMax:52, emptyR:10, zwallMax:30},
-  mirage:  {ttl:'mirage — самая тесная, мелкие частые перепады',
-            size:2, width:-1, vert:1.2, ring:0.60, cov:8, tun:0.6,
-            narrowTgt:8,  elong:1.6, shotMax:48, emptyR:10, zwallMax:26},
+  /* v111. ПЕРЕКАЛИБРОВКА. Все прежние значения целились в числа из сводки, снятые
+     по наву на сетке 2u: ширина медиана 100..176u. Но это ДРУГОЙ прибор. Растеризовав
+     те же навы на нашей клетке 16u (tools/ref16.py), получаем совсем другое:
+        карта     мед   p90   <192u  >448u  лучМакс  пол/оболочка
+        dust2     416   832    10%    46%    3872      53%
+        mirage    320   816    22%    27%    2784      50%
+        inferno   320   864    17%    29%    2144      48%
+        ancient   336   768    13%    40%    2224      46%
+        cache     480   944     7%    56%    2256      58%
+        tuscan    320   800    17%    32%    2192      47%
+     То есть реальные карты ШИРЕ, чем я считал, и держат длинные прострелы: у dust2
+     максимум 3872u, p90 944u. Я резал всё длиннее 832u — то есть убивал то, что
+     на настоящих картах是 главный приём (лонг, мид). И сужал до 30% пола уже 192u
+     при 10% у dust2 — отсюда ощущение жёваного сыра.
+     Ниже цели взяты из таблицы выше, в юнитах: narrowTgt — медиана ширины профиля,
+     shotMax — предел прострела чуть ниже реального максимума. */
+  dust2:   {ttl:'dust2 — просторно, длинные прострелы, перекос обороны',
+            size:3, width:1,  vert:1.25, ring:0.50, cov:7, tun:0.5,
+            narrowTgt:26, elong:2.2, shotMax:216, emptyR:13, zwallMax:30},
+  mirage:  {ttl:'mirage — теснее прочих, мелкие частые перепады',
+            size:2, width:0,  vert:1.2, ring:0.60, cov:8, tun:0.6,
+            narrowTgt:20, elong:2.0, shotMax:160, emptyR:12, zwallMax:26},
   inferno: {ttl:'inferno — тесные связки между крупными узлами',
-            size:2, width:-1, vert:1.2, ring:0.35, cov:6, tun:0.7,
-            narrowTgt:9,  elong:2.0, shotMax:56, emptyR:12, zwallMax:34},
-  ancient: {ttl:'ancient — шире прочих, компактная упаковка',
-            size:2, width:1,  vert:0.9, ring:0.40, cov:5, tun:0.4,
-            narrowTgt:14, elong:2.4, shotMax:72, emptyR:14, zwallMax:30},
+            size:2, width:0,  vert:1.2, ring:0.35, cov:6, tun:0.7,
+            narrowTgt:20, elong:2.2, shotMax:128, emptyR:13, zwallMax:34},
+  ancient: {ttl:'ancient — средняя ширина, компактная упаковка',
+            size:2, width:0,  vert:0.9, ring:0.40, cov:5, tun:0.4,
+            narrowTgt:21, elong:2.4, shotMax:132, emptyR:14, zwallMax:30},
   cache:   {ttl:'cache — просторно, плоско, бой на дистанции',
             size:3, width:2,  vert:0.5, ring:0.30, cov:4, tun:0.3,
-            narrowTgt:18, elong:2.8, shotMax:88, emptyR:16, zwallMax:30},
-  tuscan:  {ttl:'tuscan — мало магистралей, много закоулков, вертикаль',
-            size:1, width:-1, vert:1.6, ring:0.75, cov:8, tun:0.6,
-            narrowTgt:8,  elong:1.6, shotMax:48, emptyR:10, zwallMax:22}
+            narrowTgt:30, elong:2.8, shotMax:136, emptyR:16, zwallMax:30},
+  tuscan:  {ttl:'tuscan — закоулки и вертикаль',
+            size:1, width:0,  vert:1.6, ring:0.75, cov:8, tun:0.6,
+            narrowTgt:20, elong:2.0, shotMax:132, emptyR:12, zwallMax:22}
 };
 let PROFILE='dust2';
 function applyProfile(k){ const P=PROF[k]; if(!P) return; PROFILE=k;
