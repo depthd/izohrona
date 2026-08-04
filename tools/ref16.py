@@ -19,7 +19,14 @@ FILES = [('dust2','data/nav/de_dust2_v16_CORRECT.nav'), ('mirage','data/nav/de_m
          ('overpass','data/nav/de_overpass_SUSPECT.nav'), ('tuscan','data/nav/de_tuscan.nav'),
          ('nuke','data/nav/de_nuke_rmc.nav')]
 
-def raster(path, cell):
+def raster(path, cell, mode='touch'):
+    """mode='touch' — клетка считается полом, если её задела ЛЮБАЯ область нава.
+       Такая растеризация ЗАКЛЕИВАЕТ дыры мельче клетки: ящик, колонну, машину.
+       mode='center' — пол, только если центр клетки внутри области. Дыры остаются.
+       Разница между этими двумя режимами и есть ответ на вопрос, почему числа
+       на 2u и на 16u расходятся вчетверо (SVODKA_2 §5.5: нав дырявый, каждое
+       стоящее тело — дыра, и метрика ширины почти целиком определяется тем,
+       дырявит ли мебель маску)."""
     nav = read_nav2(path)
     ar = nav['areas'] if isinstance(nav, dict) and 'areas' in nav else nav
     xs = [min(a['nw'][0], a['se'][0]) for a in ar] + [max(a['nw'][0], a['se'][0]) for a in ar]
@@ -34,8 +41,14 @@ def raster(path, cell):
         for cy in range(int((ay0 - y0) // cell), int((ay1 - y0) // cell) + 1):
             row = cy * W
             for cx in range(int((ax0 - x0) // cell), int((ax1 - x0) // cell) + 1):
-                if 0 <= cx < W and 0 <= cy < H:
-                    g[row + cx] = 1
+                if not (0 <= cx < W and 0 <= cy < H):
+                    continue
+                if mode == 'center':
+                    px = x0 + (cx + 0.5) * cell
+                    py = y0 + (cy + 0.5) * cell
+                    if not (ax0 <= px <= ax1 and ay0 <= py <= ay1):
+                        continue
+                g[row + cx] = 1
     return g, W, H
 
 def metrics(g, W, H, cell):
@@ -72,11 +85,39 @@ def metrics(g, W, H, cell):
             s = y
             while y < H and g[y * W + x]: y += 1
             for k in range(s, y): RY[k * W + x] = y - s
+    # ЛОКАЛЬНАЯ ШИРИНА = 2 x расстояние до ближайшей не-половой клетки.
+    # Это то, что меряет measure.py словами «ширина на срединной оси», и это
+    # СОВСЕМ не то же самое, что свободный прогон по осям: в зале 400x400
+    # прогон даёт 400 в каждой точке, а локальная ширина у стены почти ноль.
+    # Медиана по всем клеткам поэтому расходится в разы. Считаем обе.
+    INF = 1 << 29
+    dist = [0 if not g[i] else INF for i in range(W * H)]
+    for y in range(H):
+        row = y * W
+        for x in range(W):
+            i = row + x
+            if not g[i]: continue
+            best = dist[i]
+            if x: best = min(best, dist[i - 1] + 1)
+            if y: best = min(best, dist[i - W] + 1)
+            dist[i] = best
+    for y in range(H - 1, -1, -1):
+        row = y * W
+        for x in range(W - 1, -1, -1):
+            i = row + x
+            if not g[i]: continue
+            best = dist[i]
+            if x < W - 1: best = min(best, dist[i + 1] + 1)
+            if y < H - 1: best = min(best, dist[i + W] + 1)
+            dist[i] = best
+    lw = []
     floor = 0
     for i in range(W * H):
         if g[i]:
             floor += 1
             widths.append(min(RX[i], RY[i]) * cell)
+            lw.append(2 * dist[i] * cell)
+    lw.sort()
     widths.sort(); rays.sort()
     q = lambda t, a: a[int(len(a) * t)] if a else 0
     # оболочка: замыкание маски пола радиусом R — расширить и сжать
@@ -96,16 +137,19 @@ def metrics(g, W, H, cell):
         пол_k=round(floor * cell * cell / 1000), мед=q(.5, widths), p90=q(.9, widths),
         м192=round(100 * sum(1 for v in widths if v < 192) / max(1, len(widths))),
         б448=round(100 * sum(1 for v in widths if v > 448) / max(1, len(widths))),
+        локМед=q(.5, lw), локP90=q(.9, lw),
         лучМед=q(.5, rays), лучP90=q(.9, rays), лучМакс=rays[-1] if rays else 0,
         полОболочка=round(100 * floor / max(1, shell)))
 
-print(f'РЕАЛЬНЫЕ КАРТЫ, нав растеризован на клетке {CELL}u — тот же прибор, что у генератора\n')
-hdr = ['карта', 'пол_k', 'мед', 'p90', '<192u', '>448u', 'лучМед', 'лучP90', 'лучМакс', 'пол/обол']
-print('  '.join(h.ljust(8) for h in hdr))
-for name, path in FILES:
-    if not os.path.exists(path): continue
-    g, W, H = raster(path, CELL)
-    m = metrics(g, W, H, CELL)
-    print('  '.join(str(v).ljust(8) for v in
-          [name, m['пол_k'], m['мед'], m['p90'], f"{m['м192']}%", f"{m['б448']}%",
-           m['лучМед'], m['лучP90'], m['лучМакс'], f"{m['полОболочка']}%"]))
+for mode in ('touch', 'center'):
+    print(f'\nКЛЕТКА {CELL}u, режим {mode!r} — '
+          + ('дыры от мебели ЗАКЛЕЕНЫ' if mode == 'touch' else 'дыры от мебели СОХРАНЕНЫ') + '\n')
+    hdr = ['карта', 'пол_k', 'прогонМед', 'локШирМед', 'локP90', '<192u', 'лучМакс', 'пол/обол']
+    print('  '.join(h.ljust(9) for h in hdr))
+    for name, path in FILES:
+        if not os.path.exists(path): continue
+        g, W, H = raster(path, CELL, mode)
+        m = metrics(g, W, H, CELL)
+        print('  '.join(str(v).ljust(9) for v in
+              [name, m['пол_k'], m['мед'], m['локМед'], m['локP90'], f"{m['м192']}%",
+               m['лучМакс'], f"{m['полОболочка']}%"]))
