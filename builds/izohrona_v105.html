@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v104 · ИЗОХРОНА — генератор карт three-lane</title>
+<title>v105 · ИЗОХРОНА — генератор карт three-lane</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -2924,7 +2924,11 @@ function buildVMF(cur){
        Раньше ключом был только уровень, поэтому одна плита переходила из зоны в зону
        и текстурной границы не было в принципе. Теперь шов браша совпадает с границей области. */
     { const lv={};
-      for(let i=0;i<W*H;i++) if(g[i]&&!rampCell[i]){
+      /* v105: плато паласов кладутся своими плитами от базы (ниже по коду), поэтому
+         их клетки обязаны выпасть из общего пола. Во второй ветке исключение было,
+         здесь — забыли, и над каждым плато лежала вторая плита в том же объёме.
+         Это и давало пересечения пола, самые крупные из оставшихся. */
+      for(let i=0;i<W*H;i++) if(g[i]&&!rampCell[i]&&!pal[i]){
         const k=qz(zf[i])+'|'+zAt(i)+'|'+(lmCell[i]?2:siteCell[i]); (lv[k]=lv[k]||new Uint8Array(W*H))[i]=1; }
       for(const k in lv){ const pr=k.split('|'), zt=parseInt(pr[0]), zi=+pr[1], sf=+pr[2];
         ECOL=ZE[zi];
@@ -3196,7 +3200,13 @@ function buildVMF(cur){
   /* v89 УГЛОВАЯ ЛЕСЕНКА. Перепад выше 96u склона не получал и оставался обрывом.
      Вместо длинного пандуса кладём в нижнюю клетку 1-2 прямоугольные площадки уступами
      к стене: шаг выходит меньше 64u, значит поднимаешься сам, а брашей два, а не двадцать. */
-  if(V79.steps){ let nst=0;
+  /* v105. Глубина ступени считалась как доля от 96 — то есть «доля клетки», пока клетка
+     была 96u. На клетке 16u ступень уходит до 96u вперёд, это шесть клеток, и ложится
+     от базы прямо поверх соседнего пола: два тела в одном объёме. Самые крупные
+     из оставшихся пересечений — именно эти полосы.
+     Пока фигура не переписана в юнитах, на мелкой клетке её не строим: перепад
+     здесь и так берут пандусы, они снова включены. */
+  if(V79.steps && S>=96){ let nst=0;
     for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){ const i=y*W+x; if(!g[i]) continue;
       const z0=qz(zf[i]);
       for(const d of [[1,0],[-1,0],[0,1],[0,-1]]){ const nx=x+d[0],ny=y+d[1],j=ny*W+nx;
