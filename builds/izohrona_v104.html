@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v103 · ИЗОХРОНА — генератор карт three-lane</title>
+<title>v104 · ИЗОХРОНА — генератор карт three-lane</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -3296,23 +3296,45 @@ function buildVMF(cur){
       const pal=[M_.wBrick,M_.wRough,M_.wSand,M_.wWhite,M_.wPale];
       const h8=(p,q)=>{ let h=((p*2654435761)^(q*40503)^(cur.seed>>>0))>>>0;
         h=Math.imul(h^(h>>>13),1274126177)>>>0; return (h^(h>>>16))>>>0; };
+      /* v104. Дом на две клетки решётки был шириной 696 при шаге 384 — то есть влезал
+         в соседа на 312 юнитов. Соседей у каждого до трёх, отсюда сотни наложенных
+         объёмов на фоне: две стены в одном месте, обе видимы, текстуры дерутся.
+         Теперь решётка занятости: двухклеточный дом ставится только если все четыре
+         клетки свободны, и они помечаются занятыми. Наложений по построению нет. */
       const st=384; let nc=0;
-      for(let X=SX0; X<SX1-st; X+=st) for(let Y=SY0; Y<SY1-st; Y+=st){
+      const gnx=Math.max(1,Math.ceil((SX1-st-SX0)/st)+1), gny=Math.max(1,Math.ceil((SY1-st-SY0)/st)+1);
+      const taken=new Uint8Array(gnx*gny+gny+2);
+      for(let X=SX0,gx=0; X<SX1-st; X+=st,gx++) for(let Y=SY0,gy=0; Y<SY1-st; Y+=st,gy++){
+        const cid=gx*gny+gy;
+        if(taken[cid]) continue;
         if(X+st>wx(0)-64 && X<wx(W)+64 && Y+st>wy(H)-64 && Y<wy(0)+64) continue;   // не залезать на карту
         const hh=h8(X,Y); if(hh%100>=52) continue;
         /* пропорция: было 192x1568 — спички. Дом занимает 1-2 клетки решётки и ниже ростом. */
-        const span=1+((hh>>>21)%2), hg=384+((hh>>>7)%5)*128, wd=span*st-72;
+        let span=1+((hh>>>21)%2);
+        if(span===2 && (gx+1>=gnx || gy+1>=gny ||
+            taken[cid+1] || taken[cid+gny] || taken[cid+gny+1] ||
+            (X+2*st>wx(0)-64 && X<wx(W)+64 && Y+2*st>wy(H)-64 && Y<wy(0)+64))) span=1;
+        taken[cid]=1;
+        if(span===2){ taken[cid+1]=1; taken[cid+gny]=1; taken[cid+gny+1]=1; }
+        const hg=384+((hh>>>7)%5)*128, wd=span*st-72;
         const mm={p:pal[(hh>>>11)%pal.length],s:UVS};
         solids.push(box(X,Y,baseZ, X+wd,Y+wd, gz+hg, {t:mm,w:mm,b:mm}));
         if((hh>>>17)%4===0) solids.push(box(X-12,Y-12,gz+hg, X+wd+12,Y+wd+12, gz+hg+24, {t:mm,w:mm,b:mm}));
         nc++; }
       cur.__city=nc; }
-    solids.push(box(SX0-SW,SY0-SW,baseZ-96, SX1+SW,SY0,CEIL+SW, SKY));
-    solids.push(box(SX0-SW,SY1,baseZ-96, SX1+SW,SY1+SW,CEIL+SW, SKY));
-    solids.push(box(SX0-SW,SY0,baseZ-96, SX0,SY1,CEIL+SW, SKY));
-    solids.push(box(SX1,SY0,baseZ-96, SX1+SW,SY1,CEIL+SW, SKY));
-    solids.push(box(SX0-SW,SY0-SW,CEIL, SX1+SW,SY1+SW,CEIL+SW, SKY));
-    solids.push(box(SX0-SW,SY0-SW,baseZ-96, SX1+SW,SY1+SW,baseZ-64, SKY));
+    /* v104. Стены оболочки шли от baseZ-96 до CEIL+SW, а крышка и днище накрывали
+       весь прямоугольник целиком — то есть перекрывали стены на 256u по всему
+       периметру. Два тела в одном объёме, две текстуры дерутся за показ.
+       На замере это давало 97% всего объёма пересечений в карте.
+       Теперь стены стоят строго между днищем и крышкой: тела касаются гранями,
+       но не входят друг в друга. */
+    const SZ0=baseZ-64, SZ1=CEIL;
+    solids.push(box(SX0-SW,SY0-SW,SZ0, SX1+SW,SY0,SZ1, SKY));
+    solids.push(box(SX0-SW,SY1,SZ0, SX1+SW,SY1+SW,SZ1, SKY));
+    solids.push(box(SX0-SW,SY0,SZ0, SX0,SY1,SZ1, SKY));
+    solids.push(box(SX1,SY0,SZ0, SX1+SW,SY1,SZ1, SKY));
+    solids.push(box(SX0-SW,SY0-SW,SZ1, SX1+SW,SY1+SW,SZ1+SW, SKY));
+    solids.push(box(SX0-SW,SY0-SW,SZ0-32, SX1+SW,SY1+SW,SZ0, SKY));
   } else solids.push(box(0,wy(H),CEIL, wx(W),wy(0),CEIL+16, "TOOLS/TOOLSSKYBOX"));
   /* ====== КАРТА ВЫСОТ ПОЛА ======
      Крыши раньше считались от уровня узла или от g-клеток. И то и другое врало:
@@ -3351,12 +3373,12 @@ function buildVMF(cur){
     let top = c.hgt==='full' ? (V70.sky ? ft+384 : CEIL) : ft+(c.hgt||40);
     const cap = rzCell[i]===Infinity ? Infinity : rzCell[i]-8;
     top=Math.min(top,cap); if(top<=ft+8) continue;
-    /* v103. СОВПАДАЮЩИЕ ГРАНИ. Коробка вплотную к стене или к обрыву даёт две грани
-       в одной плоскости: движок не знает, какую показывать, и текстура идёт полосами.
-       Это и видно на скриншотах у стен, арок и уступов. Лечение: где за краем коробки
-       НЕ пол — коробка врезается в стену на EMB юнитов. Пересечение Source режет сам,
-       совпадающих плоскостей не остаётся. */
-    const EMB=8, cw0=(c.w||1), ch0=(c.h||1);
+    /* v104. В v103 я врезал укрытие в стену на 8u, решив, что мерцают совпадающие
+       плоскости. Неверно: две грани спина к спине смотрят в разные стороны и не
+       спорят. Мерцают ровно наложенные ОБЪЁМЫ — две поверхности в одном месте,
+       обе видимы. То есть врезка не лечила, а добавляла болезнь. Отменено:
+       укрытие встаёт ровно по своей клетке, край в край со стеной. */
+    const EMB=0, cw0=(c.w||1), ch0=(c.h||1);
     const blk=(xx,yy)=>!(xx>=0&&yy>=0&&xx<W&&yy<H&&g[yy*W+xx]);
     let eW=0,eE=0,eN=0,eS=0;
     for(let k=0;k<ch0;k++){ if(blk(c.x-1,c.y+k)) eW=EMB; if(blk(c.x+cw0,c.y+k)) eE=EMB; }
