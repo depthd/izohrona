@@ -18,7 +18,7 @@ for (const name in data) {
   let floor = 0; for (let i = 0; i < g.length; i++) if (g[i]) floor++;
   const t = Date.now();
   const to = setTimeout(() => { console.log(name, 'ВИСНЕТ >20с'); process.exit(2); }, 20000);
-  const P = computePlaces(g, d.W, d.H, d.cell);
+  const P = computePlaces(g, d.W, d.H, d.cell, {entMin:+(process.argv[4]||2)});
   clearTimeout(to);
   const ent = P.list.map(x => x.ent).sort((x, y) => x - y);
   const полk = Math.round(floor * d.cell * d.cell / 1000);

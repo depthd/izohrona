@@ -2042,7 +2042,7 @@ function matOf(zi,role){
                               это не граница, а продолжение той же комнаты.
 
    Пороги подобраны на настоящих навах (tools/places.py), не на генераторе. */
-const PLC={ minR:96, mergeK:0.72, minArea:96000 };   // юниты / доля / u²
+const PLC={ minR:96, mergeK:0.72, minArea:96000, entMin:2 };   // юниты / доля / u²
 /* ============ v120. СЛОВАРЬ СИЛУЭТОВ ============
    Семь предметов, у каждого свой профиль сверху и сбоку. Именно РАЗНЫЕ силуэты,
    а не разная высота одного куба: место узнаётся по тому, чем оно не похоже на
@@ -2176,18 +2176,22 @@ function computePlaces(g,W,H,U,opt){
   /* ВХОДЫ. Клетка своего пола, у которой есть сосед из чужого места. Связные куски
      такой каймы, разделённые по разным соседям, — это и есть отдельные входы.
      Место с одним входом — тупик, ровно то, что было обведено красным. */
-  for(const p of list){ p.ent=0; p.nb=new Set(); }
+  for(const p of list){ p.ent=0; p.nb=new Set(); p.strips=[]; }
+  const entMin=(opt.entMin!==undefined?opt.entMin:PLC.entMin);
   { const bord=new Int32Array(N).fill(-1);
     for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const i=y*W+x; const a=pid[i]; if(a<0) continue;
       for(const [dx,dy] of D8P){ const nx=x+dx, ny=y+dy; if(nx<0||ny<0||nx>=W||ny>=H) continue;
         const b=pid[ny*W+nx]; if(b>=0&&b!==a){ bord[i]=b; list[a].nb.add(b); break; } } }
     const seen=new Uint8Array(N);
     for(let i=0;i<N;i++){ if(bord[i]<0||seen[i]) continue;
-      const a=pid[i], b=bord[i], st=[i]; seen[i]=1; let n=0;
-      while(st.length){ const j=st.pop(); n++; const x=j%W, y=(j/W)|0;
+      const a=pid[i], b=bord[i], st=[i]; seen[i]=1; let n=0; const comp=[];
+      while(st.length){ const j=st.pop(); n++; comp.push(j); const x=j%W, y=(j/W)|0;
         for(const [dx,dy] of D8P){ const nx=x+dx, ny=y+dy; if(nx<0||ny<0||nx>=W||ny>=H) continue;
           const k2=ny*W+nx; if(seen[k2]||bord[k2]!==b||pid[k2]!==a) continue; seen[k2]=1; st.push(k2); } }
-      if(n>=2) list[a].ent++; } }
+      /* Проём уже игрока (32u = две клетки) проходом не считается. Порог вынесен
+         в настройку, потому что от него зависит вся статистика входов, и сверять
+         себя с реальными картами можно только при ОДНОМ его значении на обе стороны. */
+      if(n>=entMin){ list[a].ent++; list[a].strips.push({b, n, cells:comp}); } } }
   return { pid, D, list, count:list.length };
 }
 /* ---------- РАЗМЕТКА КЛЕТОК ПО ЗОНАМ ----------
@@ -2613,7 +2617,7 @@ function syncV3(){ const y=document.getElementById('sYaw'), t=document.getElemen
    80u — стена в одну клетку 96u это почти точное попадание, утоньшать её было нечего.
    narrow (сужение широких проходов) — новое и включено. */
 const DET={on:false, wall:false, door:true, zonewall:true, part:true, cover:true, narrow:true,
-           voidfill:true, shot:true, stepfix:true, deadend:true, lmark:true, cutdead:true, tier:true};
+           voidfill:true, shot:true, stepfix:true, deadend:true, lmark:true, cutdead:true, tier:true, seal:true};
 /* v107. Два числа-цели, взяты из замеров реальных карт в SVODKA_2:
    пустота — у dust2 максимум 459u, у tuscan 256u. Ставим предел 384u: дальше этого
      от любой точки пола обязана быть преграда, иначе это «широко, но пусто»;
@@ -3119,7 +3123,43 @@ function detRefine(src){
      Здесь каждое место получает имя, а те, куда влезает предмет, — ещё и один
      силуэт, не похожий на соседние. Имя уходит на карту и в .vmf как env_cs_place,
      то есть работает в игре настоящим каллаутом. */
-  const PLC_R=computePlaces(gf,Wf,Hf,16);
+  let PLC_R=computePlaces(gf,Wf,Hf,16);
+
+  /* ============ v120. ЩЕЛЬ — ЭТО НЕ ПРОХОД ============
+     «Слишком много проходов» — замечание с самого начала, и оно подтвердилось.
+     Считаем одним прибором с реальными картами: при пороге входа 96u у настоящих
+     карт входов в место максимум 4..7, у нас 8..9 — то есть чуть выше полосы.
+     Но при пороге 32u у нас 9..15 против 5..10, и вся разница — в трёх десятках
+     полос уже 96u на карту. Это не двери, это щели: проём в 32-80u игрок проходит
+     боком, он не читается как вход и не даёт ни укрытия, ни угла. Место с четырьмя
+     дверями и восемью щелями — не комната, а решето, и именно так карта и
+     ощущается однобокой: заходить можно откуда угодно, а войти некуда.
+     Щели закрываются, двери остаются. Под охраной связности и с условием, что
+     ни одно из двух мест не станет тупиком. */
+  if(DET.seal){
+    let closed=0, tries=0;
+    for(let round=0; round<2; round++){
+      const ent=PLC_R.list.map(p=>p.ent);
+      const cand=[];
+      for(const pl of PLC_R.list) for(const s of pl.strips)
+        if(s.n<6) cand.push({a:pl.id, b:s.b, n:s.n, cells:s.cells});
+      if(!cand.length) break;
+      cand.sort((u,v)=>u.n-v.n);                       // самые узкие первыми
+      for(const c of cand){
+        if(ent[c.a]<=2 || ent[c.b]<=2) continue;       // тупика не делаем
+        tries++;
+        /* стена в две клетки: полоса со своей стороны плюс смежные клетки чужой */
+        const cells=new Set(c.cells);
+        for(const i of c.cells){ const x=i%Wf, y=(i/Wf)|0;
+          for(const [dx,dy] of D8){ const nx=x+dx, ny=y+dy; if(!inb(nx,ny)) continue;
+            const j=ix(nx,ny); if(gf[j]&&PLC_R.pid[j]===c.b) cells.add(j); } }
+        if(guarded([...cells])){ closed++; ent[c.a]--; ent[c.b]--; }
+      }
+      if(!closed) break;
+      PLC_R=computePlaces(gf,Wf,Hf,16);                // границы поехали — пересчитываем
+    }
+    stat.seal=closed; stat.sealTry=tries;
+  }
 
   /* ============ v120. У КАЖДОГО МЕСТА СВОЯ ОТМЕТКА ============
      Приёмка показала: у трети мест высота такая же, как у всех соседей. Тогда
