@@ -80,11 +80,21 @@ const EXTRA = `(function(){
     return n; };
   const px=cur.px;
   const мрш={A:routes(px.T,px.A), B:routes(px.T,px.B), CTA:routes(px.CT,px.A), CTB:routes(px.CT,px.B)};
-  /* ---- зоны: сколько непустых и площадь на зону ---- */
-  const zn=cur.zones? cur.zones.area.filter(v=>v>0).length : 0;
+  /* ---- места: счёт, площадь, входы, безымянные, без предмета ---- */
   const полk=Math.round(tot*U*U/1000);
-  return { размах:Math.round(zmax-zmin), ярусов, наОдном, мрш, зон:zn,
-           полk, наЗону: zn? Math.round(полk*1000/zn/1000) : 0 };
+  let PL=cur.places; if(!PL) try{ PL=computePlaces(g,Wf,Hf,16); }catch(e){ PL=null; }
+  let мест=0, наМесто=0, вхМед=0, вхМакс=0, тупиков=0, безИм=0, безПредм=0;
+  if(PL&&PL.list&&PL.list.length){ мест=PL.list.length;
+    наМесто=Math.round(полk/мест);
+    const e=PL.list.map(p=>p.ent).sort((a,b)=>a-b);
+    вхМед=e[e.length>>1]; вхМакс=e[e.length-1];
+    тупиков=PL.list.filter(p=>p.ent<2).length;
+    безИм=PL.list.filter(p=>!p.им).length;
+    безПредм=PL.list.filter(p=>!p.lm).length; }
+  const zn=cur.zones? cur.zones.area.filter(v=>v>0).length : 0;
+  return { размах:Math.round(zmax-zmin), ярусов, наОдном, мрш, зон:zn, полk,
+           мест, наМесто, вхМед, вхМакс, тупиков, безИм, безПредм,
+           лендм:(cur.lmarks||[]).length };
 })()`;
 
 (async () => {
@@ -187,16 +197,21 @@ const EXTRA = `(function(){
   console.log(line('ярусов ≥5%', avg('ярусов'), '4-6'));
   console.log(line('на одном ярусе', avg('наОдном'), R.ярус, '%'));
   console.log('\n[СТРУКТУРА]');
-  console.log(line('зон непустых', avg('зон'), R.зон));
-  console.log(line('k u² на зону', avg('наЗону'), '192'));
-  console.log('  маршрутов T→A/B  ' + rows.map(r => `${r.мрш.A}/${r.мрш.B}`).join('  '));
-  console.log('  маршрутов CT→A/B ' + rows.map(r => `${r.мрш.CTA}/${r.мрш.CTB}`).join('  '));
+  console.log(line('мест', avg('мест'), 23));
+  console.log(line('k u² на место', avg('наМесто'), 358));
+  console.log(line('входов медиана', avg('вхМед'), 4));
+  console.log(line('входов макс', mx('вхМакс'), 8));
+  console.log(line('тупиков', avg('тупиков'), '0-3'));
+  console.log(line('БЕЗ ИМЕНИ', avg('безИм'), 0));
+  console.log(line('БЕЗ ПРЕДМЕТА', avg('безПредм'), 0));
+  console.log(line('лендмарков', avg('лендм')));
+  console.log(line('зон планировщика', avg('зон')));
   console.log('\n[БАЛАНС]');
   console.log(line('перевес A', avg('перевесA'), '', ' с'));
   console.log(line('перевес B', avg('перевесB'), '', ' с'));
   console.log(line('промах решателя', avg('bal'), '', ' с'));
   console.log('\n[СЛОЙ ДЕТАЛЕЙ]');
-  const dk = ['narrow', 'zwall', 'door', 'part', 'fill', 'chic', 'deadend', 'probka', 'steps', 'otrezano', 'ms'];
+  const dk = ['narrow', 'zwall', 'door', 'part', 'fill', 'chic', 'deadend', 'places', 'lmark', 'lmClr', 'lmCut', 'probka', 'steps', 'otrezano', 'ms'];
   for (const k of dk) {
     const v = rows.map(r => r.det[k]).filter(x => typeof x === 'number');
     if (v.length) console.log(`  ${k.padEnd(16)} ${String(+(v.reduce((s, x) => s + x, 0) / v.length).toFixed(1)).padStart(8)}`);

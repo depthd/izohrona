@@ -237,7 +237,8 @@
           <label class="tg">Рельеф высот (топо) <input type="checkbox" id="tHeight"></label>
           <label class="tg">Маршруты подхода <input type="checkbox" id="tRoutes" checked></label>
           <label class="tg">Укрытия <input type="checkbox" id="tCover" checked></label>
-          <label class="tg">Подписи зон <input type="checkbox" id="tLabels" checked></label>
+          <label class="tg">Подписи мест <input type="checkbox" id="tLabels" checked></label>
+          <label class="tg" title="v120. МЕСТА: куски пола, отделённые сужением — то, во что игрок тычет пальцем и называет одним словом. Считаются водоразделом по расстоянию до стены, тем же кодом, каким померены настоящие навы. У каждого есть имя, у большинства — свой предмет (колонна, бочки, штабель, контейнер, навес, помост). Имя уходит в .vmf как env_cs_place, то есть работает в игре настоящим каллаутом.">Места и предметы <input type="checkbox" id="tPlaces" checked></label>
           <label class="tg hid">Площадка-остров (вертикаль) <input type="checkbox" id="tIsland"></label>
           <label class="tg hid" title="Вкл: лестницы в переходах экспортируются наклонными пандусами. Выкл (дефолт): широкие ступени по 18u — как на официальных картах. Рампы паласа/острова — всегда клинья (там перепад за клетку больше шага).">Пандусы вместо лестниц <input type="checkbox" id="tRamps"></label>
           <label class="tg hid" title="ЭКСП. Сквозной 2-уровневый путь через зону: рампа вверх → верхняя дорожка → рампа вниз в соседнюю область. Внизу под ней проход продолжается (андер). Аналог паласа/апартов/девятки. Только геометрия .vmf — нав/баланс верхнюю дорогу не считают (боты не ходят), это тактический маршрут для игрока. Выключишь — обычные тупиковые палубы v28.">Сквозные 2-ур. проходы (эксп.) <input type="checkbox" id="tThru" checked></label>
@@ -2042,6 +2043,29 @@ function matOf(zi,role){
 
    Пороги подобраны на настоящих навах (tools/places.py), не на генераторе. */
 const PLC={ minR:96, mergeK:0.72, minArea:96000 };   // юниты / доля / u²
+/* ============ v120. СЛОВАРЬ СИЛУЭТОВ ============
+   Семь предметов, у каждого свой профиль сверху и сбоку. Именно РАЗНЫЕ силуэты,
+   а не разная высота одного куба: место узнаётся по тому, чем оно не похоже на
+   соседнее. Габариты в ЮНИТАХ (не в клетках — на 16u «ящик в клетку» это 16u).
+
+     minW — какой ширины должно быть место (2 x расстояние до стены в его пике),
+            чтобы предмет туда встал и остался обходимым с двух сторон;
+     solid — что из предмета мешает пройти: 'full' весь след, 'posts' только стойки;
+     en    — имя для env_cs_place, то есть каллаут в игре. Латиница: кириллицу
+             в HUD каллаутов лучше не проверять на живом человеке.
+
+   Порядок от мелкого к крупному — подбирается самый крупный, который влезает. */
+const LMV=[
+  {k:'crate1', en:'Crate',     ру:'Тумба',     w:96, h:96,  minW:256, solid:'full'},
+  {k:'pillar', en:'Pillar',    ру:'Колонна',   w:112,h:112, minW:352, solid:'full'},
+  {k:'barrels',en:'Barrels',   ру:'Бочки',     w:160,h:160, minW:384, solid:'full'},
+  {k:'stack',  en:'Stack',     ру:'Штабель',   w:192,h:192, minW:416, solid:'full'},
+  {k:'wallg',  en:'Wall',      ру:'Стенка',    w:288,h:64,  minW:416, solid:'full'},
+  {k:'truck',  en:'Container', ру:'Контейнер', w:320,h:144, minW:544, solid:'full'},
+  {k:'canopy', en:'Canopy',    ру:'Навес',     w:288,h:288, minW:640, solid:'posts'},
+  {k:'deck',   en:'Platform',  ру:'Помост',    w:320,h:320, minW:704, solid:'full'},
+];
+const LMBY={}; for(const v of LMV) LMBY[v.k]=v;
 function computePlaces(g,W,H,U,opt){
   opt=opt||{}; const minR=(opt.minR||PLC.minR)/U, mergeK=(opt.mergeK!==undefined?opt.mergeK:PLC.mergeK);
   const minArea=(opt.minArea!==undefined?opt.minArea:PLC.minArea)/(U*U);
@@ -2219,7 +2243,7 @@ function computeZones(cur){
 
 /* ============ рендер ============ */
 const cv=document.getElementById('map'), ctx=cv.getContext('2d');
-let cur=null; const opts={heat:true,height:false,routes:true,cover:true,labels:true,struct:true,zones:false};
+let cur=null; const opts={heat:true,height:false,routes:true,cover:true,labels:true,struct:true,zones:false,places:true};
 function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
 function hx(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
 function mix(a,b,t){return[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];}
@@ -2318,6 +2342,58 @@ function draw(){
       if(hh>112){ ctx.strokeStyle='rgba(255,255,255,0.5)'; ctx.lineWidth=1;
         ctx.beginPath(); ctx.moveTo(X+2,Y+2); ctx.lineTo(X+Wd-2,Y+Hd-2);
         ctx.moveTo(X+Wd-2,Y+2); ctx.lineTo(X+2,Y+Hd-2); ctx.stroke(); } } }
+  /* v120. МЕСТА И ИХ ПРЕДМЕТЫ. Без этого слоя вся работа над каллаутами не видна:
+     на карте по-прежнему рассыпанные ящики. Границы мест — тонкая линия, предмет —
+     свой значок, имя — подпись. Ровно то, что игрок увидит в игре в HUD. */
+  if(opts.places&&cur.places&&cur.places.list){
+    const P=cur.places, pid=P.pid;
+    const dpr=Math.min(window.devicePixelRatio||1,2);   // dpr живёт в fitCanvas, здесь свой
+    ctx.strokeStyle='rgba(150,200,255,0.30)'; ctx.lineWidth=Math.max(1,dpr*0.9);
+    ctx.beginPath();
+    for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const i=y*W+x; const a=pid[i]; if(a<0) continue;
+      if(x+1<W && pid[i+1]>=0 && pid[i+1]!==a){ ctx.moveTo((x+1)*cs,y*cs); ctx.lineTo((x+1)*cs,(y+1)*cs); }
+      if(y+1<H && pid[i+W]>=0 && pid[i+W]!==a){ ctx.moveTo(x*cs,(y+1)*cs); ctx.lineTo((x+1)*cs,(y+1)*cs); } }
+    ctx.stroke();
+    if(cur.lmarks) for(const L of cur.lmarks){
+      const X=L.x*cs, Y=L.y*cs, Wd=L.w*cs, Hd=L.h*cs, cx=X+Wd/2, cy=Y+Hd/2;
+      ctx.strokeStyle='rgba(255,232,150,0.95)'; ctx.fillStyle='rgba(255,232,150,0.22)';
+      ctx.lineWidth=Math.max(1.6,dpr*1.3);
+      ctx.beginPath();
+      switch(L.k){
+        case 'pillar': case 'crate1':                       // ромб
+          ctx.moveTo(cx,Y); ctx.lineTo(X+Wd,cy); ctx.lineTo(cx,Y+Hd); ctx.lineTo(X,cy); ctx.closePath(); break;
+        case 'barrels': {                                   // три кружка
+          const r=Math.min(Wd,Hd)/5;
+          for(const [ax,ay] of [[-1,-0.6],[1,-0.2],[0.1,1]]){
+            ctx.moveTo(cx+ax*r*1.3+r, cy+ay*r*1.3);
+            ctx.arc(cx+ax*r*1.3, cy+ay*r*1.3, r, 0, 6.2832); }
+          break; }
+        case 'stack':                                       // уступ
+          ctx.moveTo(X,Y+Hd); ctx.lineTo(X,Y); ctx.lineTo(X+Wd*0.62,Y);
+          ctx.lineTo(X+Wd*0.62,Y+Hd*0.55); ctx.lineTo(X+Wd,Y+Hd*0.55); ctx.lineTo(X+Wd,Y+Hd);
+          ctx.closePath(); break;
+        case 'canopy':                                      // рамка на четырёх точках
+          ctx.rect(X,Y,Wd,Hd);
+          for(const [ax,ay] of [[0,0],[1,0],[0,1],[1,1]]){
+            ctx.moveTo(X+ax*Wd+cs*0.5, Y+ay*Hd); ctx.arc(X+ax*Wd, Y+ay*Hd, cs*0.5, 0, 6.2832); }
+          break;
+        case 'deck':                                        // площадка со ступенями
+          ctx.rect(X,Y+Hd*0.25,Wd,Hd*0.75);
+          for(let s=1;s<4;s++){ ctx.moveTo(X,Y+Hd*0.25*s/4); ctx.lineTo(X+Wd,Y+Hd*0.25*s/4); }
+          break;
+        default: ctx.rect(X,Y,Wd,Hd);                       // контейнер, стенка
+      }
+      ctx.fill(); ctx.stroke();
+    }
+    if(opts.labels){
+      ctx.font=`${Math.max(9,Math.round(cs*2.6))}px ui-monospace,Menlo,monospace`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      for(const p of P.list){ if(!p.им) continue;
+        const X=(p.x+0.5)*cs, Y=(p.y+0.5)*cs;
+        ctx.lineWidth=Math.max(2.5,dpr*2.2); ctx.strokeStyle='rgba(6,10,15,0.9)';
+        ctx.strokeText(p.им,X,Y); ctx.fillStyle='rgba(240,245,252,0.92)'; ctx.fillText(p.им,X,Y); }
+    }
+  }
   // СТРУКТУРЫ: тоннели (штрих-заливка), здания (контур), двери (перемычки), палас (плато с дроп-краем)
   if(opts.struct&&cur.plan){ const plan=cur.plan;
     ctx.fillStyle='rgba(146,110,58,0.30)';
@@ -2505,7 +2581,7 @@ function syncV3(){ const y=document.getElementById('sYaw'), t=document.getElemen
    80u — стена в одну клетку 96u это почти точное попадание, утоньшать её было нечего.
    narrow (сужение широких проходов) — новое и включено. */
 const DET={on:false, wall:false, door:true, zonewall:true, part:true, cover:true, narrow:true,
-           voidfill:true, shot:true, stepfix:true, deadend:true};
+           voidfill:true, shot:true, stepfix:true, deadend:true, lmark:true};
 /* v107. Два числа-цели, взяты из замеров реальных карт в SVODKA_2:
    пустота — у dust2 максимум 459u, у tuscan 256u. Ставим предел 384u: дальше этого
      от любой точки пола обязана быть преграда, иначе это «широко, но пусто»;
@@ -2999,6 +3075,205 @@ function detRefine(src){
     runAxis(true); runAxis(false);
   }
 
+  /* ============ v120. 3.5 ПРЕДМЕТ И ИМЯ НА КАЖДОЕ МЕСТО ============
+     По числам генератор внутри полосы реальных карт почти везде: мест 22 при
+     медиане 23, площадь места 369k при 358k, ширина и прострелы в допуске.
+     А глазами карта всё равно читается как пустырь. Значит дело не в габаритах.
+     OVERPASS.md §3: из 44 названий Overpass ни одно не происходит от формы стен —
+     все от предмета (Truck, Rock, Fountain), постройки (Bank, Toilets), перепада
+     (Heaven, Pit) или даже звука (Squeaky). Пустырь — это не «место без укрытий»,
+     а МЕСТО, КОТОРОМУ НЕЛЬЗЯ ДАТЬ ИМЯ. Одинаковые ящики именем не становятся.
+
+     Здесь каждое место получает имя, а те, куда влезает предмет, — ещё и один
+     силуэт, не похожий на соседние. Имя уходит на карту и в .vmf как env_cs_place,
+     то есть работает в игре настоящим каллаутом. */
+  const PLC_R=computePlaces(gf,Wf,Hf,16);
+  const LMKS=[];
+  if(DET.lmark){
+    const busy=new Uint8Array(N);
+    /* ядра плентов и спавны неприкосновенны: там предмет закроет точку закладки */
+    for(const kk of ['A','B','T','CT']){ const p=src.px[kk]; if(!p) continue;
+      const R=(kk==='A'||kk==='B')?4*K:2*K;
+      for(let oy=-R;oy<=R;oy++)for(let ox=-R;ox<=R;ox++){
+        const x=p.x*K+ox, y=p.y*K+oy; if(inb(x,y)) busy[ix(x,y)]=1; } }
+
+    /* ---- проверка проходимости ДО постановки ----
+       Раньше предмет ставился, а пробку разгребала общая чистка укрытий — и по три
+       предмета с карты уезжало задним числом. Дешевле спросить заранее: игрок
+       шириной 32u, то есть две клетки, поэтому модель та же, что у укрытий (2x2). */
+    const erodeL=(m)=>{ const o=new Uint8Array(N);
+      for(let y=0;y<Hf-1;y++)for(let x=0;x<Wf-1;x++){ const i=ix(x,y);
+        if(m[i]&&m[i+1]&&m[i+Wf]&&m[i+Wf+1]) o[i]=1; }
+      return o; };
+    const floodL=(m)=>{ const v=new Uint8Array(N), st=[];
+      let s0=-1;
+      for(let r=0;r<=3&&s0<0;r++)
+        for(let oy=-r*K;oy<=(r+1)*K-1&&s0<0;oy++)for(let ox=-r*K;ox<=(r+1)*K-1&&s0<0;ox++){
+          const x=src.px.T.x*K+ox, y=src.px.T.y*K+oy;
+          if(inb(x,y)&&m[ix(x,y)]) s0=ix(x,y); }
+      if(s0<0) return v;
+      v[s0]=1; st.push(s0);
+      while(st.length){ const j=st.pop(), x=j%Wf, y=(j/Wf)|0;
+        for(const [dx,dy] of D8){ const nx=x+dx, ny=y+dy; if(!inb(nx,ny)) continue;
+          const k2=ix(nx,ny); if(m[k2]&&!v[k2]){ v[k2]=1; st.push(k2); } } }
+      return v; };
+    const markLM=(m,L)=>{ const V=LMBY[L.k];
+      if(V&&V.solid==='posts'){                            // навес: мешают только стойки
+        for(const [ox,oy] of [[0,0],[L.w-1,0],[0,L.h-1],[L.w-1,L.h-1]])
+          for(let a2=0;a2<2;a2++)for(let b2=0;b2<2;b2++){
+            const x=L.x+ox+(ox?-a2:a2), y=L.y+oy+(oy?-b2:b2);
+            if(inb(x,y)) m[ix(x,y)]=0; }
+        return; }
+      for(let oy=0;oy<L.h;oy++)for(let ox=0;ox<L.w;ox++){
+        const x=L.x+ox, y=L.y+oy; if(inb(x,y)) m[ix(x,y)]=0; } };
+    const baseL=floodL(erodeL(gf));
+    /* Та же поправка, что в чистке укрытий: след предмета не «потеря связности»,
+       он просто занят. Потеря — это годная позиция игрока, до которой не дойти. */
+    const lmPasses=(cand)=>{ const m=new Uint8Array(N);
+      for(let i=0;i<N;i++) m[i]=gf[i];
+      for(const L of LMKS) markLM(m,L); markLM(m,cand);
+      const e=erodeL(m), v=floodL(e);
+      for(let i=0;i<N;i++) if(e[i]&&baseL[i]&&!v[i]) return false;
+      return true; };
+
+    /* ---- имена ----
+       Внутренние коды узлов (AM2, BC, SL) игроку ничего не говорят: «AM2 Area» —
+       это не каллаут, а протечка кода наружу. Перевод в слова, которыми на реальных
+       картах называют половины: сторона A, сторона B, мид, вылазка. */
+    const KEY={A:'BombsiteA', B:'BombsiteB', T:'TSpawn', CT:'CTSpawn', M:'Middle'};
+    const QUAL={ A:'A', AM:'A', AM2:'A', AC:'A', B:'B', BM:'B', BM2:'B', BC:'B',
+                 M:'Mid', ML:'Mid', SR:'Side', SL:'Side', T:'T', CT:'CT' };
+    const nodeOf=(px_,py_)=>{ let best=null,bd=1e9;
+      for(const kk in src.px){ const p=src.px[kk]; if(!p) continue;
+        const d=(p.x*K-px_)**2+(p.y*K-py_)**2; if(d<bd){ bd=d; best=kk; } }
+      return QUAL[best]||''; };
+    /* Узел может попасть на стену или на неразмеченную клетку — тогда сайт остаётся
+       без имени, и на карте нет BombsiteA. Ищем в окрестности узла, а не в точке. */
+    const nodeNear=(pl)=>{ for(const kk in KEY){ const p=src.px[kk]; if(!p) continue;
+        for(let r=0;r<=K;r++){ let hit=false;
+          for(let oy=-r;oy<=r&&!hit;oy++)for(let ox=-r;ox<=r;ox++){
+            const x=p.x*K+ox, y=p.y*K+oy; if(!inb(x,y)) continue;
+            const q=PLC_R.pid[ix(x,y)]; if(q<0) continue;
+            if(q===pl.id) return kk; hit=true; break; }
+          if(hit) break; } }
+      return null; };
+    /* Форма тоже даёт имя, и на реальных картах чаще, чем предмет: Long, Short,
+       Connector, Ramp. Вытянутое место — коридор, и предмет ему не нужен. */
+    const shapeName=(pl)=>{ const lo=Math.min(pl.w,pl.h), hi=Math.max(pl.w,pl.h);
+      if(hi/Math.max(1,lo) >= 2.0){
+        if(pl.nb.size>=4) return 'Connector';
+        return hi>=1100 ? 'Long' : 'Short'; }
+      if(pl.R*32 < 352) return pl.nb.size<=1 ? 'Nook' : (pl.nb.size>=4 ? 'Junction' : 'Corner');
+      return null; };
+
+    const used=new Map(), claimed=[];
+    const sosed=(p)=>{ const s=new Set();
+      for(const nb of p.nb){ const t=claimed[nb]; if(t) s.add(t); } return s; };
+    const byArea=PLC_R.list.slice().sort((a,b)=>b.area-a.area);
+    let tries=0;
+    for(const pl of byArea){
+      pl.узел=nodeNear(pl);
+      if(pl.узел){ pl.им=KEY[pl.узел]; }                   // сайт/спавн/мид называются собой
+      const wu=Math.round(pl.R*2*16);                      // ширина места в юнитах
+      const форма=shapeName(pl);
+      let cand=LMV.filter(v=>v.minW<=wu);
+      /* Тумба влезает почти везде и потому забирала половину карты: шесть «Crate»
+         из девятнадцати имён. Мелочь берётся только когда крупного не поместилось. */
+      if(cand.length>1) cand=cand.filter(v=>v.k!=='crate1');
+      if(cand.length && !(форма && rng()<0.45)){
+        /* Порядок перебора, а не жребий. Раньше на каждой неудачной попытке жребий
+           кидался заново, мелкие предметы срабатывали чаще — и на карте выходило
+           шесть «Barrels» из двадцати двух имён. Теперь список строится один раз:
+           реже всего использованный тип впереди, при равенстве — крупный впереди,
+           и по нему просто идут сверху вниз. Тип, уже стоящий у соседа, уходит
+           в конец: место узнаётся именно тем, чем не похоже на смежное. */
+        const bad=sosed(pl);
+        const кап=Math.ceil(PLC_R.count/Math.max(3,LMV.length-1))+1;
+        let pool=cand.filter(v=>(used.get(v.k)||0)<кап); if(!pool.length) pool=cand.slice();
+        pool.sort((a,b)=>{ const ba=bad.has(a.k)?1:0, bb=bad.has(b.k)?1:0;
+          return (ba-bb) || ((used.get(a.k)||0)-(used.get(b.k)||0)) || (b.minW-a.minW); });
+        for(let t=0;t<pool.length;t++){
+          const V=pool[t];
+          tries++;
+          const cw=Math.max(1,Math.round(V.w/16)), ch=Math.max(1,Math.round(V.h/16));
+          const need=Math.ceil(Math.max(cw,ch)/2)+1;
+          /* точка: самая «серединная» клетка места, не занятая ядром */
+          let bi=-1,bd=-1;
+          for(let i=0;i<N;i++){ if(PLC_R.pid[i]!==pl.id||busy[i]) continue;
+            const d=PLC_R.D[i]; if(d<need) continue;
+            const jit=d+rng()*0.6; if(jit>bd){ bd=jit; bi=i; } }
+          if(bi<0) continue;
+          const cx=bi%Wf, cy=(bi/Wf)|0, x0=cx-(cw>>1), y0=cy-(ch>>1);
+          let inside=true;
+          for(let oy=-1;oy<=ch&&inside;oy++)for(let ox=-1;ox<=cw;ox++){
+            const x=x0+ox, y=y0+oy; if(!inb(x,y)||!gf[ix(x,y)]){ inside=false; break; } }
+          if(!inside) continue;
+          const L={ k:V.k, ру:V.ру, x:x0, y:y0, w:cw, h:ch, place:pl.id, cx, cy };
+          if(!lmPasses(L)){ stat.lmSkip=(stat.lmSkip||0)+1; continue; }
+          /* Имя от предмета берётся, только если место — комната. В тесном проходе
+             предмет всё равно нужен (это укрытие и точка привязки), но называется
+             такое место по форме: Long, Short, Connector, Corner — как на реальных
+             картах. Иначе полкарты зовётся «Crate», и каллаут перестаёт работать. */
+          if(!pl.им) pl.им = (wu>=352) ? V.en : (форма || (nodeOf(cx,cy)+' Area').trim());
+          L.им=pl.им;
+          pl.lm=V.k; LMKS.push(L);
+          claimed[pl.id]=V.k; used.set(V.k,(used.get(V.k)||0)+1);
+          for(let oy=-1;oy<=ch;oy++)for(let ox=-1;ox<=cw;ox++){
+            const x=x0+ox, y=y0+oy; if(inb(x,y)) busy[ix(x,y)]=1; }
+          break;
+        }
+      }
+      /* Безымянных мест не бывает: если в него нельзя ткнуть словом — это дыра. */
+      if(!pl.им) pl.им = форма || ((nodeOf(pl.x,pl.y)+' Area').trim());
+    }
+    /* Два «Pillar» на карте — это не два имени, а одно, сказанное дважды.
+       Разводим здесь, а не в экспорте: подпись на карте и каллаут в игре обязаны
+       совпадать, иначе игрок говорит одно, а видит другое. */
+    { /* РАЗВЕДЕНИЕ ОДИНАКОВЫХ ИМЁН. Три уточнения подряд, каждое применяется только
+         если реально делит группу: сторона (A / B / Mid / Side), ярус (Upper / Lower),
+         удалённость от T (Front / Back). Ровно так уточняют на настоящих картах:
+         Upper Tunnels, A Long, Back Alley. Номер — последнее средство, потому что
+         «Side Corner 4» это не каллаут, а отписка. */
+      const zOf=pl=>{ const i=Math.min(N-1,Math.max(0,pl.y*Wf+pl.x)); return (zff[i]||0)*72; };
+      const dT=pl=>{ const p=src.px.T; return p?Math.hypot(pl.x-p.x*K, pl.y-p.y*K):0; };
+      const bySide=gp=>{ const q=gp.map(p=>nodeOf(p.x,p.y));
+        return new Set(q).size>1 ? q : null; };
+      const byTier=gp=>{ const z=gp.map(zOf), lo=Math.min(...z), hi=Math.max(...z);
+        if(hi-lo<64) return null; const mid=(hi+lo)/2;
+        return z.map(v=>v>=mid?'Upper':'Lower'); };
+      const byDist=gp=>{ const d=gp.map(dT), lo=Math.min(...d), hi=Math.max(...d);
+        if(hi-lo<6*K) return null; const mid=(hi+lo)/2;
+        return d.map(v=>v<=mid?'Front':'Back'); };
+      /* Уточнение ровно одно. Три подряд дают «Back Upper A Corner» — такое
+         в голосовой связи не выговаривают, и как каллаут оно мертво. */
+      { const group=new Map();
+        for(const pl of PLC_R.list){ if(!pl.им) continue;
+          let arr=group.get(pl.им); if(!arr){ arr=[]; group.set(pl.им,arr); } arr.push(pl); }
+        for(const [,gp] of group){ if(gp.length<2) continue;
+          for(const disc of [bySide,byTier,byDist]){ const w=disc(gp); if(!w) continue;
+            gp.forEach((pl,i)=>{ if(w[i] && !pl.им.startsWith(w[i]+' ') && pl.им!==w[i])
+              pl.им=w[i]+' '+pl.им; });
+            break; } } }
+      /* Ключевые имена назначаются последними и поверх всего: место, в котором
+         лежит точка закладки, обязано называться BombsiteA, чем бы его ни назвали
+         раньше. Иначе на карте бывает BombsiteB и нет BombsiteA — а это то самое
+         имя, ради которого каллауты и заводятся. */
+      for(const kk in KEY){ const p=src.px[kk]; if(!p) continue;
+        let id=-1;
+        for(let r=0;r<=K*2&&id<0;r++)
+          for(let oy=-r;oy<=r&&id<0;oy++)for(let ox=-r;ox<=r;ox++){
+            const x=p.x*K+ox, y=p.y*K+oy; if(!inb(x,y)) continue;
+            const q=PLC_R.pid[ix(x,y)]; if(q>=0){ id=q; break; } }
+        if(id>=0) PLC_R.list[id].им=KEY[kk]; }
+      const seen2=new Set();
+      for(const pl of PLC_R.list){ if(!pl.им) continue;
+        let nm=pl.им, n=2; while(seen2.has(nm)) nm=pl.им+' '+(n++);
+        pl.им=nm; seen2.add(nm); }
+      for(const L of LMKS){ const pl=PLC_R.list[L.place]; if(pl) L.им=pl.им; } }
+    stat.lmark=LMKS.length; stat.places=PLC_R.count; stat.lmTry=tries;
+  }
+
+
   /* 4. УКРЫТИЯ СЧИТАЮТСЯ ПО ФИНАЛЬНОМУ РАСТРУ.
      v117. Раньше расстановка бралась готовой с КРУПНОГО растра — то есть до сужений,
      зонных стен, изломов и перегородок. Половина тел потом оказывалась в местах,
@@ -3055,6 +3330,17 @@ function detRefine(src){
     for(let oy=0;oy<c.h;oy++)for(let ox=0;ox<c.w;ox++){ const x=c.x+ox,y=c.y+oy;
       tot++; if(inb(x,y)&&gf[ix(x,y)]) free++; }
     return tot&&free/tot>0.6; });
+  /* v120. Предмет места главнее россыпи: ящик, налезший на колонну или на навес,
+     стирает силуэт — а силуэт и есть весь смысл лендмарка. Снимаем ящики с его
+     следа плюс клетка вокруг, чтобы предмет читался отдельно стоящим. */
+  if(LMKS.length){ const lz=new Uint8Array(N);
+    for(const L of LMKS) for(let oy=-1;oy<=L.h;oy++)for(let ox=-1;ox<=L.w;ox++){
+      const x=L.x+ox, y=L.y+oy; if(inb(x,y)) lz[ix(x,y)]=1; }
+    const before=cov.length;
+    cov=cov.filter(c=>{ for(let oy=0;oy<c.h;oy++)for(let ox=0;ox<c.w;ox++){
+        const x=c.x+ox, y=c.y+oy; if(inb(x,y)&&lz[ix(x,y)]) return false; }
+      return true; });
+    stat.lmClr=before-cov.length; }
 
   /* px: и координата, и ГАБАРИТ комнаты в клетках. Не масштабировать room — значит
      отдать экспорту комнату вшестеро мельче: палубы, рампы и перила схлопываются. */
@@ -3069,12 +3355,26 @@ function detRefine(src){
      проходом. Всё, что потерялось, отдаётся обратно: тела на границе потери снимаются,
      пока карта не станет проходимой. */
   if(DET.cover){
+    /* v120. Лендмарки входят в проверку наравне с ящиками, но кандидатами на снятие
+       не становятся: предмет — смысл места, а ящик рядом с ним заменим. Если пробку
+       делает сам предмет, снимется его сосед; если и это не помогло, предмет уедет
+       позже (ниже по коду), а не молча запечатает проход. */
+    const lmBlock=(m)=>{ for(const L of LMKS){ const V=LMBY[L.k];
+        if(V&&V.solid==='posts'){                       // навес: мешают только стойки
+          for(const [ox,oy] of [[0,0],[L.w-1,0],[0,L.h-1],[L.w-1,L.h-1]]){
+            for(let a=0;a<2;a++)for(let b2=0;b2<2;b2++){
+              const x=L.x+ox+(ox?-a:a), y=L.y+oy+(oy?-b2:b2);
+              if(inb(x,y)) m[ix(x,y)]=0; } }
+          continue; }
+        for(let oy=0;oy<L.h;oy++)for(let ox=0;ox<L.w;ox++){
+          const x=L.x+ox, y=L.y+oy; if(inb(x,y)) m[ix(x,y)]=0; } }
+      return m; };
     const blockOf=(list)=>{ const m=new Uint8Array(N);
       for(let i=0;i<N;i++) m[i]=gf[i];
       for(const c of list){ const hh=(c.hgt==='full')?999:(c.hgt||40); if(hh<=40) continue;
         for(let oy=0;oy<c.h;oy++)for(let ox=0;ox<c.w;ox++){
           const x=c.x+ox, y=c.y+oy; if(inb(x,y)) m[ix(x,y)]=0; } }
-      return m; };
+      return lmBlock(m); };
     /* v117. Было: эрозия на клетку, то есть проход считался проходимым, только если
        вокруг свободен квадрат 3x3 — 48 юнитов во все стороны. Игрок в CS шириной
        32u, то есть ДВЕ наши клетки, и коридор в три клетки он проходит спокойно.
@@ -3097,12 +3397,25 @@ function detRefine(src){
         for(const [dx,dy] of D8){ const nx=x+dx, ny=y+dy; if(!inb(nx,ny)) continue;
           const k2=ix(nx,ny); if(m[k2]&&!v[k2]){ v[k2]=1; st.push(k2); } } }
       return v; };
-    const base=flood(erode1(gf));
+    /* ============ v120. ЧТО ЗНАЧИТ «УКРЫТИЕ ЗАКРЫЛО ПРОХОД» ============
+       Здесь была подмена, из-за которой чистка снимала по 60 тел из 120.
+       Потерянной считалась любая клетка, достижимая ДО расстановки и недостижимая
+       ПОСЛЕ. Но клетка, на которой ящик стоит, недостижима по определению — она
+       занята. То есть каждое тело «теряло» само себя плюс кайму, где перестал
+       помещаться квадрат 2x2. В список потерь попадали ВСЕ тела, снятие одного
+       чужую кайму не возвращало, и цикл выносил подряд всё, до чего дотягивался.
+       Это мерило площади пола, а не проходимости.
+       Правильно: клетка потеряна, если она ОСТАЛАСЬ годной позицией игрока
+       (в эродированной маске С телами) и при этом до неё больше не дойти.
+       След тела и кайма из эродированной маски выпадают сами и в счёт не идут. */
+    const eBase=erode1(gf);
+    const base=flood(eBase);
     let removed=0;
     for(let pass=0; pass<4; pass++){
-      const withCov=flood(erode1(blockOf(cov)));
+      const eCov=erode1(blockOf(cov));
+      const withCov=flood(eCov);
       const lost=[];
-      for(let i=0;i<N;i++) if(base[i]&&!withCov[i]) lost.push(i);
+      for(let i=0;i<N;i++) if(eCov[i]&&base[i]&&!withCov[i]) lost.push(i);
       if(!lost.length) break;
       const lostSet=new Uint8Array(N); for(const i of lost) lostSet[i]=1;
       /* v116.1. Снимать разом всё, что касается потерянной области, — слишком грубо:
@@ -3122,13 +3435,28 @@ function detRefine(src){
       for(const c of cand){
         const idx=cov.indexOf(c); if(idx<0) continue;
         cov.splice(idx,1); removed++;
-        const chk=flood(erode1(blockOf(cov)));
-        let still=0; for(const i of lost) if(!chk[i]){ still=1; break; }
+        const eChk=erode1(blockOf(cov)), chk=flood(eChk);
+        let still=0; for(const i of lost) if(eChk[i]&&!chk[i]){ still=1; break; }
         if(!still){ opened=true; break; }
       }
       if(!opened && !cand.length) break;
     }
     stat.probka=removed;
+    /* Ящики кончились, а проход всё ещё закрыт — значит виноват сам предмет.
+       Тогда уезжает он: место останется без силуэта, но проходимость важнее. */
+    { let cut=0;
+      for(let pass=0; pass<3 && LMKS.length; pass++){
+        const eAll=erode1(blockOf(cov)), withAll=flood(eAll);
+        const lost=[]; for(let i=0;i<N;i++) if(eAll[i]&&base[i]&&!withAll[i]) lost.push(i);
+        if(!lost.length) break;
+        const lostSet=new Uint8Array(N); for(const i of lost) lostSet[i]=1;
+        let hit=-1;
+        for(let n=0;n<LMKS.length&&hit<0;n++){ const L=LMKS[n];
+          for(let oy=-1;oy<=L.h&&hit<0;oy++)for(let ox=-1;ox<=L.w;ox++){
+            const x=L.x+ox, y=L.y+oy; if(inb(x,y)&&lostSet[ix(x,y)]){ hit=n; break; } } }
+        if(hit<0) break;
+        LMKS.splice(hit,1); cut++; }
+      stat.lmCut=cut; }
   }
 
   const px={}; for(const k in src.px){ const s=src.px[k];
@@ -3228,6 +3556,7 @@ function detRefine(src){
   }
 
   return { g:gf, zfield:zff, px, cover:cov, plan, W:Wf, H:Hf, CELL:16,
+           lmarks:LMKS, places:PLC_R,
            seed:src.seed, coverSeed:src.coverSeed, m:src.m, det:stat,
            stairMask:up(src.stairMask), rampMask:up(src.rampMask), vmask:up(src.vmask),
            pitMask:up(src.pitMask),
@@ -3483,6 +3812,7 @@ document.getElementById('sZex').oninput=e=>{ V3.zex=+e.target.value;
 document.getElementById('tRoutes').onchange=e=>{opts.routes=e.target.checked;draw();};
 document.getElementById('tCover').onchange=e=>{opts.cover=e.target.checked;draw();};
 document.getElementById('tLabels').onchange=e=>{opts.labels=e.target.checked;draw();};
+document.getElementById('tPlaces').onchange=e=>{opts.places=e.target.checked;draw();};
 document.getElementById('tIsland').onchange=e=>{ISLAND=e.target.checked;run();};   // меняет геометрию -> перегенерация
 document.getElementById('tRamps').onchange=e=>{RAMPS=e.target.checked;};            // влияет только на .vmf при скачивании
 document.getElementById('tThru').onchange=e=>{THRU=e.target.checked;};              // ЭКСП: только .vmf (сквозные проходы)
@@ -4272,6 +4602,90 @@ function buildVMF(cur){
       /* без вылета: перегородка стоит вплотную к стенам, вылет дал бы совпадающие грани */
       solids.push(box(X0,Y0,top, X1,Y1,top+24, {t:cm2,w:cm2,b:cm2})); } }
   ECOL="0 180 220";
+
+  /* ============ v120. ПРЕДМЕТЫ МЕСТ ============
+     Семь силуэтов. Не «ящик повыше» и не «ящик пошире» — разный профиль и сверху,
+     и сбоку, потому что место узнаётся по тому, чем оно НЕ похоже на соседнее.
+     Ставятся поверх готового пола, высота берётся из zfield под центром предмета,
+     чтобы на склоне предмет не висел и не тонул. */
+  if(cur.lmarks && cur.lmarks.length){
+    const ACC={p:DARKTRIM,s:UVS}, ACCM={t:ACC,w:ACC,b:ACC};
+    for(const L of cur.lmarks){
+      const ci=Math.min(W*H-1,Math.max(0,(L.cy|0)*W+(L.cx|0)));
+      const zi=zAt(ci); ECOL=ZE[zi];
+      const body=ZC[zi], trim=ACCM;                      // корпус — акцент зоны, обвязка тёмная
+      /* пол под предметом бывает ступенчатым: берём САМУЮ ВЫСОКУЮ точку следа,
+         иначе угол предмета зависает над обрывом */
+      let ft=-1e9;
+      for(let oy=0;oy<L.h;oy++)for(let ox=0;ox<L.w;ox++){
+        const x=L.x+ox, y=L.y+oy; if(x<0||y<0||x>=W||y>=H) continue;
+        const v=qz(zf[y*W+x]||0); if(v>ft) ft=v; }
+      if(ft<-1e8) continue;
+      const X0=wx(L.x), X1=wx(L.x+L.w), Y0=wy(L.y+L.h), Y1=wy(L.y);
+      const cxm=(X0+X1)/2, cym=(Y0+Y1)/2;
+      switch(L.k){
+        /* Ромб в плане, а не куб: восьмигранник получился бы ПЕРЕСЕЧЕНИЕМ двух
+           квадратов, а сборка умеет только вычитание — из объединения вышла бы
+           восьмиконечная звезда. Повёрнутый квадрат читается колонной и стоит
+           одним брашем. Низкополигонально — и не похоже ни на один ящик карты. */
+        case 'pillar': {
+          const r=Math.min(X1-X0,Y1-Y0)/2, h=384;
+          solids.push(rboxZ(cxm-r,cym-r,ft,cxm+r,cym+r,ft+h,45,body));
+          solids.push(box(X0,Y0,ft,X1,Y1,ft+20,trim));                   // цоколь
+          solids.push(box(X0,Y0,ft+h-20,X1,Y1,ft+h,trim));               // капитель
+          break; }
+        case 'crate1': {                                  // тумба со скошенной крышкой
+          solids.push(box(X0,Y0,ft, X1,Y1, ft+72, body));
+          solids.push(box(X0+8,Y0+8,ft+72, X1-8,Y1-8, ft+88, trim));
+          break; }
+        case 'barrels': {                                 // три бочки разной высоты
+          const r=Math.min(X1-X0,Y1-Y0)/4.6;
+          const sp=[[-1,-0.6,96],[1,-0.2,112],[0.1,1,80]];
+          for(const [ax,ay,hh] of sp){ const px2=cxm+ax*r*1.25, py2=cym+ay*r*1.25;
+            solids.push(rboxZ(px2-r,py2-r,ft,px2+r,py2+r,ft+hh-10,45,body));
+            solids.push(rboxZ(px2-r,py2-r,ft+hh-10,px2+r,py2+r,ft+hh,45,trim)); }
+          break; }
+        case 'stack': {                                   // штабель уступом: 112 / 80 / 48
+          const w2=(X1-X0), h2=(Y1-Y0);
+          solids.push(box(X0,Y0,ft, X0+w2*0.62, Y0+h2*0.62, ft+112, body));
+          solids.push(box(X0+w2*0.62,Y0,ft, X1, Y0+h2*0.55, ft+80, body));
+          solids.push(box(X0,Y0+h2*0.62,ft, X0+w2*0.55, Y1, ft+48, body));
+          solids.push(box(X0,Y0,ft+112, X0+w2*0.62, Y0+h2*0.62, ft+120, trim));
+          break; }
+        case 'wallg': {                                   // стенка с козырьком — граффити-стена
+          solids.push(box(X0,Y0,ft, X1,Y1, ft+112, body));
+          solids.push(box(X0-12,Y0-12,ft+112, X1+12,Y1+12, ft+128, trim));
+          break; }
+        case 'truck': {                                   // контейнер плюс кабина у торца
+          const along=(X1-X0)>=(Y1-Y0);
+          const cabin=along? (X1-X0)*0.28 : (Y1-Y0)*0.28;
+          if(along){
+            solids.push(box(X0+cabin,Y0,ft, X1,Y1, ft+136, body));
+            solids.push(box(X0,Y0+ (Y1-Y0)*0.12, ft, X0+cabin, Y1-(Y1-Y0)*0.12, ft+96, trim));
+            solids.push(box(X0+cabin-8,Y0-8,ft+136, X1+8,Y1+8, ft+148, trim));
+          } else {
+            solids.push(box(X0,Y0+cabin,ft, X1,Y1, ft+136, body));
+            solids.push(box(X0+(X1-X0)*0.12,Y0,ft, X1-(X1-X0)*0.12, Y0+cabin, ft+96, trim));
+            solids.push(box(X0-8,Y0+cabin-8,ft+136, X1+8,Y1+8, ft+148, trim)); }
+          break; }
+        case 'canopy': {                                  // навес: четыре стойки и крыша
+          const P=32, HH=176;
+          for(const [ax,ay] of [[0,0],[1,0],[0,1],[1,1]]){
+            const px2=ax?X1-P:X0, py2=ay?Y1-P:Y0;
+            solids.push(box(px2,py2,ft, px2+P,py2+P, ft+HH, trim)); }
+          solids.push(box(X0-16,Y0-16,ft+HH, X1+16,Y1+16, ft+HH+16, body));
+          break; }
+        case 'deck': {                                    // помост +64 со ступенями с одной стороны
+          const HH=64, ST=4, sw=(Y1-Y0)/ST;
+          solids.push(box(X0,Y0+sw,ft, X1,Y1, ft+HH, body));
+          for(let s=0;s<ST;s++)                            // 4 ступени по 16u — заходится ногами
+            solids.push(box(X0, Y0+sw*s/ST, ft, X1, Y0+sw*(s+1)/ST, ft+16*(s+1), trim));
+          solids.push(box(X0,Y0+sw,ft+HH, X1,Y1, ft+HH+8, trim));
+          break; }
+      }
+    }
+    ECOL="0 180 220";
+  }
   // ======= СТРУКТУРЫ (2-й уровень): палубы-палас/апарты/мид со сквозным проходом-андером, здания, арки =======
   /* v60 L4: ядро плента для палуб — НЕ ПОЛ. Иначе двухуровневая дорожка ложится прямо
      над точкой закладки: просвет UNDER=176u, и плент превращается в тоннель.
@@ -4610,6 +5024,33 @@ function buildVMF(cur){
         castshadows:"0", rendertocubemaps:"1", brightnessscale:"1.0" })); nz++; }
     cur.__zl=nz; cur.__zlSkip=nzs; cur.__zlOpen=nzo; }
   spawns(P.T,"info_player_terrorist",8); spawns(P.C,"info_player_counterterrorist",8);
+  /* ============ v120. КАЛЛАУТЫ ============
+     env_cs_place — то, что игра показывает в HUD и в чате как название места.
+     До сих пор карта была безымянной: игрок не мог сказать «я на A через колонну»,
+     потому что ни колонны, ни имени не существовало. Теперь у каждого МЕСТА
+     (см. computePlaces) есть имя, а у большинства — предмет, от которого оно взято.
+     Браш кисти — габаритная рамка места, приподнятая на рост игрока. */
+  if(cur.places && cur.places.list){
+    const seenNm=new Set(); let nPl=0;
+    for(const p of cur.places.list){
+      let nm=p.им; if(!nm||seenNm.has(nm)) continue;   // имена разведены в detRefine
+      seenNm.add(nm);
+      const X0=wx(p.minx), X1=wx(p.maxx+1), Y0=wy(p.maxy+1), Y1=wy(p.miny);
+      if(X1-X0<32||Y1-Y0<32) continue;
+      const zc=qz(zf[Math.min(W*H-1,p.y*W+p.x)]||0);
+      ents.push(ent("env_cs_place",{ place_name:nm, origin:`${(X0+X1)>>1} ${(Y0+Y1)>>1} ${zc+32}` },
+        `\tsolid\n\t{\n\t"id" "${nid()}"\n`+
+        [[`${X1} ${Y0} ${zc+128}`,`${X0} ${Y0} ${zc+128}`,`${X0} ${Y1} ${zc+128}`],
+         [`${X1} ${Y1} ${zc}`,`${X0} ${Y1} ${zc}`,`${X0} ${Y0} ${zc}`],
+         [`${X0} ${Y1} ${zc+128}`,`${X0} ${Y0} ${zc+128}`,`${X0} ${Y0} ${zc}`],
+         [`${X1} ${Y0} ${zc+128}`,`${X1} ${Y1} ${zc+128}`,`${X1} ${Y1} ${zc}`],
+         [`${X0} ${Y1} ${zc+128}`,`${X1} ${Y1} ${zc+128}`,`${X1} ${Y1} ${zc}`],
+         [`${X1} ${Y0} ${zc+128}`,`${X0} ${Y0} ${zc+128}`,`${X0} ${Y0} ${zc}`]]
+          .map(pl=>S6(pl[0],pl[1],pl[2],"TOOLS/TOOLSTRIGGER",UX,VY)).join("\n")+
+        `\n\t\teditor { "color" "220 220 60" }\n\t}`));
+      nPl++; }
+    cur.__places=nPl;
+  }
   ents.push(flat(P.A,"bombsite_a","func_bomb_target")); ents.push(flat(P.B,"bombsite_b","func_bomb_target"));
   ents.push(flat(P.T,"buy_t","func_buyzone")); ents.push(flat(P.C,"buy_ct","func_buyzone"));
   /* v103. Солнце. Ключи _light/_ambient/pitch — Source 1, их читает импортёр VMF.
