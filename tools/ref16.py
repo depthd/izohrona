@@ -141,15 +141,16 @@ def metrics(g, W, H, cell):
         лучМед=q(.5, rays), лучP90=q(.9, rays), лучМакс=rays[-1] if rays else 0,
         полОболочка=round(100 * floor / max(1, shell)))
 
-for mode in ('touch', 'center'):
-    print(f'\nКЛЕТКА {CELL}u, режим {mode!r} — '
-          + ('дыры от мебели ЗАКЛЕЕНЫ' if mode == 'touch' else 'дыры от мебели СОХРАНЕНЫ') + '\n')
-    hdr = ['карта', 'пол_k', 'прогонМед', 'локШирМед', 'локP90', '<192u', 'лучМакс', 'пол/обол']
-    print('  '.join(h.ljust(9) for h in hdr))
-    for name, path in FILES:
-        if not os.path.exists(path): continue
-        g, W, H = raster(path, CELL, mode)
-        m = metrics(g, W, H, CELL)
-        print('  '.join(str(v).ljust(9) for v in
-              [name, m['пол_k'], m['мед'], m['локМед'], m['локP90'], f"{m['м192']}%",
-               m['лучМакс'], f"{m['полОболочка']}%"]))
+if __name__ == '__main__':
+    for mode in ('touch', 'center'):
+        print(f'\nКЛЕТКА {CELL}u, режим {mode!r} — '
+              + ('дыры от мебели ЗАКЛЕЕНЫ' if mode == 'touch' else 'дыры от мебели СОХРАНЕНЫ') + '\n')
+        hdr = ['карта', 'пол_k', 'прогонМед', 'локШирМед', 'локP90', '<192u', 'лучМакс', 'пол/обол']
+        print('  '.join(h.ljust(9) for h in hdr))
+        for name, path in FILES:
+            if not os.path.exists(path): continue
+            g, W, H = raster(path, CELL, mode)
+            m = metrics(g, W, H, CELL)
+            print('  '.join(str(v).ljust(9) for v in
+                  [name, m['пол_k'], m['мед'], m['локМед'], m['локP90'], f"{m['м192']}%",
+                   m['лучМакс'], f"{m['полОболочка']}%"]))
