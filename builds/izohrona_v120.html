@@ -199,8 +199,8 @@
           <div class="row"><label>Разброс геометрии</label><span class="val" id="vJit">средний</span></div>
           <input type="range" id="sJit" min="0.01" max="0.035" step="0.005" value="0.02">
         </div>
-        <div class="ctl">
-          <div class="row"><label>Плотность укрытий</label><span class="val" id="vCov">средняя</span></div>
+        <div class="ctl" title="Насколько плотно тела заполняют открытые поля: перегородки-ломатели прострелов, кластеры ящиков и досыпка в пустые места. На баланс и тайминги не влияет — нав укрытий не видит. Слева гуще, справа реже. v120: ручек с этим именем было ДВЕ, с одинаковым id; работала первая, вторая молча ничего не делала, а плотность из-за путаницы шкал всегда стояла на максимуме.">
+          <div class="row"><label>Укрытия: гуще ← → реже</label><span class="val" id="vCov">средне</span></div>
           <input type="range" id="sCov" min="3" max="9" step="1" value="6">
         </div>
         <div class="ctl">
@@ -210,10 +210,6 @@
         <div class="ctl">
           <div class="row"><label>Кольца (хаос петель)</label><span class="val" id="vRing">средне</span></div>
           <input type="range" id="sRing" min="0.2" max="0.85" step="0.05" value="0.5">
-        </div>
-        <div class="ctl" title="Насколько плотно открытые поля заполняются укрытиями: перегородки-ломатели прострелов + кластеры ящиков. На баланс/тайминги НЕ влияет (укрытия нав не видит). Слева — просторно, справа — плотно.">
-          <div class="row"><label>Плотность укрытий</label><span class="val" id="vCov">средне</span></div>
-          <input type="range" id="sCov" min="0" max="1" step="0.1" value="0.6">
         </div>
         <div class="ctl" title="Доля коридоров между зонами, накрытых крышей (168u) — настоящие тоннели/крытые проходы со светом внутри. На баланс/тайминги НЕ влияет (крыша нав не трогает), крутится без перегенерации. На карте — коричневая заливка.">
           <div class="row"><label>Крытость проходов</label><span class="val" id="vTun">средне</span></div>
@@ -292,7 +288,9 @@ let LMARK=true, ZONELIGHT=false;   // v81: заливка у стен выжиг
 let TUNP=0.5;                  // доля коридоров, накрытых крышей (тоннели), 0..1
 const JUMPZ=0.82;
 const TUNH=192;                // высота крыши тоннелей над полом, юниты              // макс. подъём за шаг (~59u прыжок): выше — непроходимо вверх, дроп только вниз
-let COVDENS=0.55;               // плотность заполнения открытых полей укрытиями (0 редко .. 1 плотно)
+let COVDENS=1.0;                // плотность заполнения открытых полей телами (0 редко .. 1 плотно)
+/* v120: было 0.55, но ползунок годами загонял сюда сырое 3..9, оно зажималось
+   до 1, и фактически всё время работала единица. Ставим то, что и работало. */
 let PWIDTH=0;                  // смещение ширины коридоров (горлышки-входы всегда >=1)
 const BW=104, BH=74;
 /* ====== ЯДРО ПЛЕНТА (v60) ======
@@ -3938,7 +3936,11 @@ const BAL={ tries:4, tol:0.55, damp:0.7 };
    Снос у слоя деталей систематический — он свойство слоя, а не карты. Значит его
    надо помнить между картами, а не выводить заново каждый раз. Скользящее
    среднее: первая попытка следующей карты уже целится с поправкой. */
-let DRIFTAVG=null;
+/* Память ПОСВОЙ ПРОФИЛЬ. Снос — свойство слоя деталей на конкретной геометрии,
+   а профиль геометрию и меняет: ширину проходов, размер, вертикаль, кольца.
+   С одной общей памятью cache получал поправку, выведенную на dust2 (-1.93),
+   и промахивался на 1.84 с. */
+const DRIFTBY={};
 
 function buildDetail(r, cfg){
   const t0=performance.now();
@@ -3979,7 +3981,8 @@ const recoverLater=(newSeed)=>{ clearTimeout(__recT);
 
 function generateBalanced(cfg){
   const want=cfg.M;
-  let corr=(DRIFTAVG!==null?DRIFTAVG:0), best=null, bestErr=1e9, log=[];
+  const pk=PROFILE||'—';
+  let corr=(DRIFTBY[pk]!==undefined?DRIFTBY[pk]:0), best=null, bestErr=1e9, log=[];
   for(let att=0; att<BAL.tries; att++){
     const aim=Math.max(2.0, Math.min(6.5, want-corr));
     const c2=Object.assign({}, cfg, {M:aim});
@@ -3998,7 +4001,13 @@ function generateBalanced(cfg){
               вышло:[+mf.mA.toFixed(2), +mf.mB.toFixed(2)], промах:+err.toFixed(2)});
     if(err<bestErr){ bestErr=err; best=out; }
     if(err<=BAL.tol) break;
-    corr += BAL.damp*(((mf.mA+mf.mB)/2) - want);
+    /* Демпфирование 0.7 бережёт от раскачки, когда поправка уже примерно верна.
+       Но на ПЕРВОМ знакомстве с профилем поправки нет вовсе, и 0.7 означает, что
+       вторая попытка закрывает только семь десятых промаха, а третья доедает
+       остаток — две попытки из четырёх уходят на разгон. Пока профиль незнаком,
+       берём шаг целиком. */
+    const dmp=(DRIFTBY[pk]===undefined && att===0) ? 1.0 : BAL.damp;
+    corr += dmp*(((mf.mA+mf.mB)/2) - want);
     /* следующая попытка идёт с новой геометрией: восстанавливаем крупный размер */
     const s=SIZES[+sSize.value]; if(s) setSize(s[0],s[1]);
     CELL=96; SC=1;
@@ -4013,7 +4022,7 @@ function generateBalanced(cfg){
      примерно на каждой четвёртой карте. Теперь состояние сетки восстанавливается
      по самой карте, а не по тому, чем кончился цикл. */
   if(best){ best.__bal={попыток:log.length, промах:+bestErr.toFixed(2), ход:log, снос:+corr.toFixed(2)};
-    DRIFTAVG = (DRIFTAVG===null) ? corr : DRIFTAVG*0.65 + corr*0.35;
+    DRIFTBY[pk] = (DRIFTBY[pk]===undefined) ? corr : DRIFTBY[pk]*0.65 + corr*0.35;
     if(best.CELL){ CELL=best.CELL; SC=Math.round(96/CELL); }
     if(best.W && best.H) setSize(best.W, best.H); }
   return best;
@@ -5296,16 +5305,15 @@ function buildVMF(cur){
       const X0=wx(p.minx), X1=wx(p.maxx+1), Y0=wy(p.maxy+1), Y1=wy(p.miny);
       if(X1-X0<32||Y1-Y0<32) continue;
       const zc=qz(zf[Math.min(W*H-1,p.y*W+p.x)]||0);
-      ents.push(ent("env_cs_place",{ place_name:nm, origin:`${(X0+X1)>>1} ${(Y0+Y1)>>1} ${zc+32}` },
-        `\tsolid\n\t{\n\t"id" "${nid()}"\n`+
-        [[`${X1} ${Y0} ${zc+128}`,`${X0} ${Y0} ${zc+128}`,`${X0} ${Y1} ${zc+128}`],
-         [`${X1} ${Y1} ${zc}`,`${X0} ${Y1} ${zc}`,`${X0} ${Y0} ${zc}`],
-         [`${X0} ${Y1} ${zc+128}`,`${X0} ${Y0} ${zc+128}`,`${X0} ${Y0} ${zc}`],
-         [`${X1} ${Y0} ${zc+128}`,`${X1} ${Y1} ${zc+128}`,`${X1} ${Y1} ${zc}`],
-         [`${X0} ${Y1} ${zc+128}`,`${X1} ${Y1} ${zc+128}`,`${X1} ${Y1} ${zc}`],
-         [`${X1} ${Y0} ${zc+128}`,`${X0} ${Y0} ${zc+128}`,`${X0} ${Y0} ${zc}`]]
-          .map(pl=>S6(pl[0],pl[1],pl[2],"TOOLS/TOOLSTRIGGER",UX,VY)).join("\n")+
-        `\n\t\teditor { "color" "220 220 60" }\n\t}`));
+      /* Кисть строится тем же box(), что и всё остальное в файле. Свои шесть
+         плоскостей я развернул руками и чуть не оставил так: обмотка граней
+         в VMF задаётся порядком трёх точек, ошибиться в ней легко, а Хаммер
+         на невалидном солиде ругается уже после импорта. box() эту обмотку
+         знает, а материал TOOLS/ он пропускает мимо вычитания (isTool). */
+      const brush=box(X0,Y0,zc, X1,Y1,zc+128, "TOOLS/TOOLSTRIGGER");
+      if(!brush) continue;
+      ents.push(ent("env_cs_place",
+        { place_name:nm, origin:`${(X0+X1)>>1} ${(Y0+Y1)>>1} ${zc+32}` }, brush));
       nPl++; }
     cur.__places=nPl;
   }
@@ -5387,7 +5395,19 @@ const sVert=document.getElementById('sVert'), sRing=document.getElementById('sRi
 sVert.oninput=()=>vVert.textContent=parseFloat(sVert.value)<0.8?'мягкая':parseFloat(sVert.value)>1.3?'резкая':'норма';
 sRing.oninput=()=>vRing.textContent=parseFloat(sRing.value)<0.4?'мало':parseFloat(sRing.value)>0.65?'много':'средне';
 const sCov=document.getElementById('sCov');
-sCov.oninput=()=>{ COVDENS=parseFloat(sCov.value); document.getElementById('vCov').textContent=COVDENS<0.34?'редко':COVDENS>0.66?'плотно':'средне';
+/* v120. ОДНА РУЧКА, ОДНА ВЕЛИЧИНА. Ползунков с id="sCov" было ДВА: 3..9 и 0..1.
+   getElementById возвращает первый, поэтому второй молча ничего не делал, а в
+   COVDENS (плотность, 0..1) уезжало сырое 3..9 и зажималось до единицы — то есть
+   плотность всегда стояла на максимуме, что бы ни стояло на ручке.
+   Ручка означает РАДИУС ДОСЫПКИ (V71F.fillR, в клетках): чем больше, тем дальше
+   от уже стоящего тела должно быть пустое место, чтобы туда что-то поставили,
+   то есть тем реже. Профили настраивались именно под неё.
+   COVDENS остаётся отдельной величиной и держится на 1.0 — на этом значении
+   сняты все замеры v120 и на нём укрытий выходит 105..139 вместо 61..82.
+   Выводить её из той же ручки — значит крутить одним движком две вещи разом
+   и вдвое, а «слишком много пустого пространства» было прямым замечанием. */
+sCov.oninput=()=>{ const v=parseFloat(sCov.value);
+  document.getElementById('vCov').textContent=v<=4?'гуще':v>=8?'реже':'средне';
   recoverLater(false); };
 /* ===== подсказки-превью параметров (наведи и подержи) ===== */
 const PINFO={
