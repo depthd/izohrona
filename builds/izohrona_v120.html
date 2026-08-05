@@ -2615,7 +2615,7 @@ function syncV3(){ const y=document.getElementById('sYaw'), t=document.getElemen
    80u — стена в одну клетку 96u это почти точное попадание, утоньшать её было нечего.
    narrow (сужение широких проходов) — новое и включено. */
 const DET={on:false, wall:false, door:true, zonewall:true, part:true, cover:true, narrow:true,
-           voidfill:true, shot:true, stepfix:true, deadend:true, lmark:true, cutdead:true, tier:true, seal:true, thickwall:true};
+           voidfill:true, shot:true, stepfix:true, deadend:true, lmark:true, cutdead:true, tier:true, seal:true, thickwall:true, deadplace:true};
 /* v107. Два числа-цели, взяты из замеров реальных карт в SVODKA_2:
    пустота — у dust2 максимум 459u, у tuscan 256u. Ставим предел 384u: дальше этого
      от любой точки пола обязана быть преграда, иначе это «широко, но пусто»;
@@ -3157,6 +3157,73 @@ function detRefine(src){
       PLC_R=computePlaces(gf,Wf,Hf,16);                // границы поехали — пересчитываем
     }
     stat.seal=closed; stat.sealTry=tries;
+  }
+
+  /* ============ v122. КРУПНЫЙ ТУПИК — ЛИБО ВТОРОЙ ВЫХОД, ЛИБО ЕГО НЕТ ============
+     Приёмка v120 считала тупик допустимым, если в нём стоит предмет. Правило
+     неверное, и это видно на карте: «Barrels 2» и «Nook 2» висят отростками на
+     краю, игрок зайдёт туда один раз, увидит бочки и больше не вернётся.
+     У реальных карт тупики есть (dust2 1, mirage 3, nuke 11), но это НИША на
+     боевом маршруте: закуток, откуда держат угол, куда прыгают с буста, где
+     сажают бомбу. Ниша маленькая и лежит вплотную к тому, за что дерутся.
+     Комната в четверть мегаюнита на отшибе — не ниша, а мёртвый груз: она стоит
+     времени компиляции, света, брашей и ничего не даёт.
+     Поэтому: маленький тупик остаётся. Крупному сначала ищется второй выход —
+     если рядом, за тонкой стеной, есть ДРУГОЕ место, прорезается проём 112u.
+     Не нашлось — место стирается из растра. Пол, на который никто не ходит,
+     хуже, чем отсутствие пола: у нас его и так на 15% больше, чем у dust2. */
+  if(DET.deadplace){
+    const KEYC=['A','B','T','CT','M'];
+    let прорезано=0, стёрто=0, оставлено=0;
+    for(let round=0; round<3; round++){
+      /* место с ключевым узлом неприкосновенно, каким бы оно ни было */
+      const свято=new Set();
+      for(const kk of KEYC){ const pt=src.px[kk]; if(!pt) continue;
+        for(let r=0;r<=K*2;r++){ let hit=-1;
+          for(let oy=-r;oy<=r&&hit<0;oy++)for(let ox=-r;ox<=r;ox++){
+            const x=pt.x*K+ox, y=pt.y*K+oy; if(!inb(x,y)) continue;
+            const q=PLC_R.pid[ix(x,y)]; if(q>=0){ hit=q; break; } }
+          if(hit>=0){ свято.add(hit); break; } } }
+      const тупики=PLC_R.list.filter(pl=>pl.ent<2 && !свято.has(pl.id));
+      if(!тупики.length) break;
+      let было=прорезано+стёрто;
+      for(const pl of тупики){
+        if(pl.area<=120){ оставлено++; continue; }       // ниша до 120k u² — оставляем
+        const сосед=pl.strips.length?pl.strips[0].b:-1;
+        /* --- 1. второй выход: ищем чужое место за тонкой стеной --- */
+        let прорез=null;
+        for(let i=0;i<N&&!прорез;i++){
+          if(PLC_R.pid[i]!==pl.id) continue;
+          const x=i%Wf, y=(i/Wf)|0;
+          for(const [dx,dy] of D4){
+            let k2=1, cx=x+dx, cy=y+dy;
+            while(k2<=5 && inb(cx,cy) && !gf[ix(cx,cy)]){ k2++; cx+=dx; cy+=dy; }
+            if(k2>5 || !inb(cx,cy) || !gf[ix(cx,cy)]) continue;
+            const цель=PLC_R.pid[ix(cx,cy)];
+            if(цель<0 || цель===pl.id || цель===сосед) continue;
+            прорез={x,y,dx,dy,len:k2}; break; }
+        }
+        if(прорез){
+          /* проём 112u = 7 клеток поперёк направления прокопки */
+          const {x,y,dx,dy,len}=прорез, px2=-dy, py2=dx;
+          let z0=0, n2=0;
+          for(let s=-3;s<=3;s++)for(let k2=0;k2<=len;k2++){
+            const cx=x+dx*k2+px2*s, cy=y+dy*k2+py2*s; if(!inb(cx,cy)) continue;
+            if(gf[ix(cx,cy)]){ z0+=zff[ix(cx,cy)]; n2++; } }
+          const zср=n2?z0/n2:0;
+          for(let s=-3;s<=3;s++)for(let k2=0;k2<=len;k2++){
+            const cx=x+dx*k2+px2*s, cy=y+dy*k2+py2*s; if(!inb(cx,cy)) continue;
+            const j=ix(cx,cy); if(!gf[j]){ gf[j]=1; zff[j]=zср; } }
+          прорезано++; continue;
+        }
+        /* --- 2. не к чему подключать: место стирается --- */
+        const cells=[]; for(let i=0;i<N;i++) if(PLC_R.pid[i]===pl.id) cells.push(i);
+        if(cells.length && guarded(cells)) стёрто++;
+      }
+      if(прорезано+стёрто===было) break;
+      PLC_R=computePlaces(gf,Wf,Hf,16);
+    }
+    stat.dpCut=прорезано; stat.dpDel=стёрто; stat.dpKeep=оставлено;
   }
 
   /* ============ v120. У КАЖДОГО МЕСТА СВОЯ ОТМЕТКА ============
@@ -3961,7 +4028,12 @@ function placesAudit(){
   const пол=L.reduce((s,p)=>s+p.area,0);
   const ок=(v,lo,hi)=>v>=lo&&v<=hi?'#7fbf7f':'#e8a24a';
   const bad=v=>v?'#e06c5a':'#7fbf7f';
-  const тупИм=туп.filter(p=>!p.lm);          // тупик БЕЗ предмета — это и есть дефект
+  /* v122. Критерий тупика переписан. Было «тупик без предмета» — и он пропускал
+     комнату в четверть мегаюнита на краю карты, потому что в ней стояли бочки.
+     Предмет тупик не оправдывает. Оправдывает РАЗМЕР: ниша до 120k u² это закуток
+     на маршруте (такие есть у всех реальных карт), а всё крупнее — мёртвый груз,
+     куда игрок зайдёт один раз и больше не вернётся. */
+  const тупИм=туп.filter(p=>p.area>120);     // крупный тупик — вот это и есть дефект
   return `<br><b>ПРИЁМКА ПО МЕСТАМ</b> <span style='color:#7d92a4'>(эталон — те же навы тем же кодом)</span><br>`+
     `мест <b style='color:${ок(L.length,14,28)}'>${L.length}</b> `+
     `<span style='color:#7d92a4'>(реальные 15–25)</span> · `+
@@ -3972,7 +4044,7 @@ function placesAudit(){
     `<span style='color:#7d92a4'>(медиана 2–5, макс 5–10)</span><br>`+
     `<span style='color:${bad(безИм.length)}'>без имени ${безИм.length}</span> · `+
     `<span style='color:${bad(безПр.length>L.length*0.35?1:0)}'>без предмета ${безПр.length}</span> · `+
-    `<span style='color:${bad(тупИм.length)}'>тупиков пустых ${тупИм.length}</span> `+
+    `<span style='color:${bad(тупИм.length)}'>тупиков КРУПНЫХ ${тупИм.length}</span> `+
     `<span style='color:#7d92a4'>(тупиков всего ${туп.length}, у реальных 0–3)</span> · `+
     `<span style='color:${bad(плоск.length>L.length*0.6?1:0)}'>без своей высоты ${плоск.length}</span><br>`+
     `<span style='color:#7d92a4'>${L.slice().sort((a,b)=>b.area-a.area).slice(0,10).map(p=>p.им||'?').join(' · ')}</span>`;

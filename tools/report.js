@@ -211,7 +211,7 @@ const EXTRA = `(function(){
   console.log(line('перевес B', avg('перевесB'), '', ' с'));
   console.log(line('промах решателя', avg('bal'), '', ' с'));
   console.log('\n[СЛОЙ ДЕТАЛЕЙ]');
-  const dk = ['narrow', 'zwall', 'door', 'part', 'fill', 'chic', 'deadend', 'places', 'seal', 'thick', 'thickNo', 'marsh', 'sealTry', 'tier', 'lmark', 'lmClr', 'lmCut', 'cutDead', 'cutCov', 'probka', 'steps', 'otrezano', 'ms'];
+  const dk = ['narrow', 'zwall', 'door', 'part', 'fill', 'chic', 'deadend', 'places', 'seal', 'dpCut', 'dpDel', 'dpKeep', 'thick', 'thickNo', 'marsh', 'sealTry', 'tier', 'lmark', 'lmClr', 'lmCut', 'cutDead', 'cutCov', 'probka', 'steps', 'otrezano', 'ms'];
   for (const k of dk) {
     const v = rows.map(r => r.det[k]).filter(x => typeof x === 'number');
     if (v.length) console.log(`  ${k.padEnd(16)} ${String(+(v.reduce((s, x) => s + x, 0) / v.length).toFixed(1)).padStart(8)}`);
