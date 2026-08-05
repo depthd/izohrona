@@ -2615,7 +2615,12 @@ function syncV3(){ const y=document.getElementById('sYaw'), t=document.getElemen
    80u — стена в одну клетку 96u это почти точное попадание, утоньшать её было нечего.
    narrow (сужение широких проходов) — новое и включено. */
 const DET={on:false, wall:false, door:true, zonewall:true, part:true, cover:true, narrow:true,
-           voidfill:true, shot:true, stepfix:true, deadend:true, lmark:true, cutdead:true, tier:true, seal:true, thickwall:true, deadplace:true, spawnwall:true};
+           voidfill:true, shot:true, stepfix:true, deadend:true, lmark:true, cutdead:true, tier:true, seal:true, thickwall:true, deadplace:true,
+           /* v123: замуровывание спавна выключено. Это была починка не той
+              проблемы: спавны ломались не проходимостью, а тем, что точки
+              стояли в стенах и на ступеньках. Механизм оставлен на случай
+              по-настоящему открытого спавна. */
+           spawnwall:false};
 /* v107. Два числа-цели, взяты из замеров реальных карт в SVODKA_2:
    пустота — у dust2 максимум 459u, у tuscan 256u. Ставим предел 384u: дальше этого
      от любой точки пола обязана быть преграда, иначе это «широко, но пусто»;
@@ -5420,8 +5425,54 @@ function buildVMF(cur){
     for(let y=Math.max(0,y0);y<=Math.min(H-1,y1);y++)
       for(let x=Math.max(0,x0);x<=Math.min(W-1,x1);x++){ const v=gndC[y*W+x]; if(v>mx) mx=v; }
     return mx<-1e8 ? qz(zf[Math.max(0,Math.min(H-1,y0))*W+Math.max(0,Math.min(W-1,x0))]||0) : mx; };
-  const spawns=(pt,cls,n)=>{ const cx=(pt[0]+0.5)*S, cy=wy(pt[1])-0.5*S, cz=groundZ(pt[0],pt[1],pt[0],pt[1])+16;
-    for(let k=0;k<n;k++){ const ox=((k%3)-1)*40, oy=(((k/3)|0)-1)*40; ents.push(ent(cls,{origin:`${Math.round(cx+ox)} ${Math.round(cy+oy)} ${cz}`,angles:"0 90 0"})); } };
+  /* ============ v123. СПАВН ИЩЕТ РОВНУЮ ПЛОЩАДКУ, А НЕ СТАВИТСЯ ПО СЕТКЕ ============
+     Было: восемь точек по жёсткой сетке 3x3 с шагом 40u вокруг узла, и ОДНА высота
+     на все восемь — взятая из клетки узла. Никто не проверял, что под точкой вообще
+     пол, что рядом нет стены и что высота там та же. Отсюда всё, что видно на
+     скриншотах: половина отряда стоит внутри стены, кто-то висит на ступеньке.
+     Шаг 40u к тому же меньше габарита игрока (32u плюс зазор), поэтому модели
+     ещё и налезали друг на друга.
+
+     Теперь точка спавна обязана удовлетворять трём условиям сразу:
+       1. вокруг неё кольцо 3x3 — сплошной пол (48u во все стороны, игрок 32u);
+       2. вся эта девятка на ОДНОЙ отметке — иначе модель стоит на ступеньке;
+       3. до ближайшей стены не меньше 48u — иначе плечо уходит в кладку.
+     Кандидаты сортируются по удалённости от узла и разбираются жадно с зазором
+     в 64u между точками. Высота у каждой своя, из её собственной клетки. */
+  const spawns=(pt,cls,n)=>{
+    const R=cells(576), cand=[];
+    for(let oy=-R;oy<=R;oy++)for(let ox=-R;ox<=R;ox++){
+      const x=pt[0]+ox, y=pt[1]+oy;
+      if(x<2||y<2||x>=W-2||y>=H-2) continue;
+      const i=y*W+x; if(!g[i]) continue;
+      const z0=qz(zf[i]||0);
+      let ровно=true;
+      for(let dy=-1;dy<=1&&ровно;dy++)for(let dx=-1;dx<=1;dx++){
+        const j=(y+dy)*W+(x+dx);
+        if(!g[j] || qz(zf[j]||0)!==z0){ ровно=false; break; } }
+      if(!ровно) continue;
+      /* до стены не меньше 48u: считаем по кольцу радиуса 3 клетки при S=16 */
+      const RR=Math.max(1,Math.round(48/S)); let чисто=true;
+      for(let dy=-RR;dy<=RR&&чисто;dy++)for(let dx=-RR;dx<=RR;dx++){
+        const nx=x+dx, ny=y+dy; if(nx<0||ny<0||nx>=W||ny>=H) continue;
+        if(!g[ny*W+nx]){ чисто=false; break; } }
+      if(!чисто) continue;
+      cand.push({x,y,z:z0,d:ox*ox+oy*oy});
+    }
+    cand.sort((a,b)=>a.d-b.d);
+    const взято=[], SEP=Math.max(2,Math.round(64/S));
+    for(const c of cand){ if(взято.length>=n) break;
+      let ок=true;
+      for(const v of взято) if(Math.abs(v.x-c.x)<SEP && Math.abs(v.y-c.y)<SEP){ ок=false; break; }
+      if(ок) взято.push(c); }
+    for(const c of взято)
+      ents.push(ent(cls,{origin:`${wx(c.x)+hc} ${wy(c.y+1)+hc} ${c.z+16}`, angles:"0 90 0"}));
+    /* Ровной площадки на восьмерых может не найтись — тогда ставим сколько нашлось,
+       но не меньше одной: без спавна карта не запускается вовсе. */
+    if(!взято.length){ const cz=groundZ(pt[0],pt[1],pt[0],pt[1])+16;
+      ents.push(ent(cls,{origin:`${wx(pt[0])+hc} ${wy(pt[1]+1)+hc} ${cz}`, angles:"0 90 0"})); }
+    if(cls==='info_player_terrorist') cur.__spT=взято.length; else cur.__spC=взято.length;
+  };
   /* v114. Триггер плента брался как «три клетки в каждую сторону»: на клетке 96u это
      288u — нормальная зона закладки, на 16u это 48u, и он висел кубиком в воздухе
      (высота бралась как МАКСИМУМ пола в этих трёх клетках, то есть по ближайшему
