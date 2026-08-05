@@ -4502,7 +4502,16 @@ function buildVMF(cur){
          стены»: из 943 узких высоких брашей 796 оказались стенами.
          Теперь отсчёт берётся на блок 96u: внутри блока он один, значит стена
          не может дробиться мельче шести клеток. */
-      const FB=Math.max(1,Math.round(96/S));
+      /* v121.1. Блок отсчёта берётся ТОТ ЖЕ, что у разброса высот (384u), а не свой
+         96u. Замер снял вопрос: в растре перегородки нормальной толщины — медиана
+         96u при 80u у реальных карт, ровно 16u нет вообще. Значит торчащие лезвия
+         это не тонкие стены, а куски толстых: ключ склейки менялся каждые 96u,
+         на каждой границе жадный мешер отрезал полоску в одну клетку, и она
+         торчала над соседкой на ступень округления. Когда отсчёт и разброс идут
+         одним блоком, отметка верха постоянна на 384u — стена склеивается в
+         длинную коробку, а ломаную линию крыш по-прежнему даёт разброс. */
+      const WBLK=Math.max(1,Math.round(384/S));   // блок одинаковой высоты стены — 384 юнита
+      const FB=WBLK;
       const bw=Math.ceil(W/FB), bh=Math.ceil(H/FB), blk=new Int32Array(bw*bh).fill(-1e9);
       for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const j=y*W+x; if(!g[j]) continue;
         const b=((y/FB)|0)*bw+((x/FB)|0), v=qz(zf[j]||0); if(v>blk[b]) blk[b]=v; }
@@ -4514,7 +4523,6 @@ function buildVMF(cur){
           if(cx<0||cy<0||cx>=bw||cy>=bh) continue;
           const v=blk[cy*bw+cx]; if(v>m) m=v; }
         return m<-1e8 ? qz(zf[y*W+x]||0) : m; };
-      const WBLK=Math.max(1,Math.round(384/S));    // блок одинаковой высоты стены — 384 юнита
       const wlf=new Int32Array(W*H), wtop=new Int32Array(W*H);
       for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const i=y*W+x; if(!wm[i])continue;
         const st=brd(x,y)?V70H.outer:V70H.inner;
@@ -5311,13 +5319,27 @@ function buildVMF(cur){
   // крыша теперь одна на компоненту, и лампа оказалась бы замурована внутри неё.
   /* шаг по площади: одна лампа на квадрат stepTun x stepTun юнитов, а не «каждая
      девятая клетка» — иначе мелкая клетка даёт в 36 раз больше ламп */
+  /* v121. ЛАМПА ТОЛЬКО ТАМ, ГДЕ НАД НЕЙ ЕСТЬ КРЫША.
+     Плита тоннеля кладётся ТОЛЬКО над клетками пола (см. выше: `if(g[c])`), а лампа
+     ставилась на любую клетку компоненты подряд — в том числе туда, где слой деталей
+     потом прорезал стену. Подвес уходил вверх и кончался в воздухе: ровно то, что
+     видно на скриншоте. Второй случай — компонента, у которой крыша выше потолка:
+     плита не кладётся вовсе (`if(!(rz<CEIL-16)) continue`), а лампа всё равно вешалась.
+     Теперь оба условия проверяются там же, где вешается лампа. */
   { const perLamp=Math.max(4, Math.round((V102L.stepTun*V102L.stepTun)/(S*S)));
+    let повисло=0;
     for(let ci=0; ci<plan.tunComps.length; ci++){ const cl=plan.tunComps[ci], rz=tunRZ[ci];
-      for(let k=Math.min(perLamp>>1, cl.length>>1);k<cl.length;k+=perLamp){ const c=cl[k],lx=c%W,ly=(c/W)|0;
+      if(!(rz<CEIL-16)) continue;                       // крыши у этой компоненты нет
+      for(let k=Math.min(perLamp>>1, cl.length>>1);k<cl.length;k+=perLamp){ const c=cl[k];
+        if(!g[c]){ повисло++; continue; }                // над стеной плиты не клали
+        const lx=c%W, ly=(c/W)|0;
         const LX=wx(lx)+(S>>1), LY=wy(ly)-(S>>1);
-        omni(LX, LY, rz-56, LUM_TUN, null, V71L.rTun); fixture(LX, LY, rz-56, rz); } } }
-  for(const bR of plan.builds){ const bcx=(wx(bR.x0)+wx(bR.x1))>>1, bcy=(wy(bR.y1)+wy(bR.y0))>>1;
-    const brz=bldRZ.get(bR); omni(bcx, bcy, brz-64, LUM_BLD, null, V71L.rBld); fixture(bcx, bcy, brz-64, brz); }
+        omni(LX, LY, rz-56, LUM_TUN, null, V71L.rTun); fixture(LX, LY, rz-56, rz); } }
+    cur.__lampSkip=повисло; }
+  for(const bR of plan.builds){ const brz=bldRZ.get(bR);
+    if(!(brz<CEIL-16)) continue;                        // у здания крыши нет — лампе не на чем висеть
+    const bcx=(wx(bR.x0)+wx(bR.x1))>>1, bcy=(wy(bR.y1)+wy(bR.y0))>>1;
+    omni(bcx, bcy, brz-64, LUM_BLD, null, V71L.rBld); fixture(bcx, bcy, brz-64, brz); }
   /* ====== СВЕТ ПО ЗОНАМ v58 ======
      Цвет света читается быстрее текстуры: половина T тёплая, половина CT холодная,
      мид нейтральный, пленты — свои оттенки. Заливка без теней (castshadows 0), чтобы
