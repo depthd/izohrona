@@ -3655,6 +3655,26 @@ function buildVMF(cur){
   cur.__ftopC=null;   // выставляется ниже, когда карта высот пола готова (для диагностики)
   // стены: не-пол -> пол..потолок (включая периметр острова — он emergent из g). VIS-чисто до крышки.
   const wm=new Uint8Array(W*H); for(let i=0;i<W*H;i++) wm[i]= g[i]?0:1;
+  /* v119.2. ЛЕЗВИЯ В СТЕНАХ. Стена группируется по «зона + отметка верха» и внутри
+     группы склеивается жадно. На мелкой клетке принадлежность стены зоне шумит по
+     границам: соседние клетки одной и той же стены попадают в разные группы, склейка
+     обрывается, и стена уезжает в файл лоскутами 16x80 высотой под 700 — те самые
+     тонкие пластины, торчащие в воздухе.
+     Сглаживаем принадлежность по большинству в окне 96u: шов между материалами
+     остаётся на границе области (ради этого группировка по зонам и делалась, v58),
+     но перестаёт дрожать от клетки к клетке. */
+  const wzSm=new Uint8Array(W*H);
+  { const R=Math.max(1,Math.round(48/S));
+    for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const i=y*W+x;
+      if(!wm[i]){ wzSm[i]=255; continue; }
+      const cnt={};
+      for(let oy=-R;oy<=R;oy++){ const ny=y+oy; if(ny<0||ny>=H) continue;
+        for(let ox=-R;ox<=R;ox++){ const nx=x+ox; if(nx<0||nx>=W) continue;
+          const j=ny*W+nx; if(!wm[j]) continue;
+          const z=Z.wzid[j]; cnt[z]=(cnt[z]||0)+1; } }
+      let bz=Z.wzid[i], bc=-1;
+      for(const kk in cnt) if(cnt[kk]>bc){ bc=cnt[kk]; bz=+kk; }
+      wzSm[i]=bz; } }
   if(!FINEW){
     /* v58: стена берёт материал ЗОНЫ СОСЕДНЕГО ПОЛА. Иначе игрок видит границу области
        только под ногами, а стены на всю карту одинаковые — глаз её не ловит. */
@@ -3681,7 +3701,7 @@ function buildVMF(cur){
         wlf[i]=locF(x,y); wtop[i]=wlf[i]+st[hs7((x/WBLK)|0,(y/WBLK)|0,11)%st.length]; }
       /* группа = зона + АБСОЛЮТНАЯ отметка верха: иначе слияние смешает разные крыши в одну коробку */
       const wgrp={};
-      for(let i=0;i<W*H;i++) if(wm[i]){ const k=wzAt(i)+'|'+wtop[i]; (wgrp[k]=wgrp[k]||new Uint8Array(W*H))[i]=1; }
+      for(let i=0;i<W*H;i++) if(wm[i]){ const k=wzSm[i]+'|'+wtop[i]; (wgrp[k]=wgrp[k]||new Uint8Array(W*H))[i]=1; }
       const rects=[];
       for(const k in wgrp){ const pr=k.split('|'), zi=+pr[0], top=+pr[1];
         for(const [x,y,w,h] of greedy(wgrp[k])){ let lf=-1e9;
@@ -3744,7 +3764,7 @@ function buildVMF(cur){
       }
     } else {
       const wgrp={};
-      for(let i=0;i<W*H;i++) if(wm[i]){ const k=String(wzAt(i)); (wgrp[k]=wgrp[k]||new Uint8Array(W*H))[i]=1; }
+      for(let i=0;i<W*H;i++) if(wm[i]){ const k=String(wzSm[i]); (wgrp[k]=wgrp[k]||new Uint8Array(W*H))[i]=1; }
       for(const k in wgrp){ const zi=+k; const mat=(zi===255)?BULK:ZW[zi]; ECOL=(zi===255)?"70 80 92":ZE[zi];
         for(const [x,y,w,h] of greedy(wgrp[k])) solids.push(box(wx(x),wy(y+h),baseZ, wx(x+w),wy(y),CEIL, mat)); }
       ECOL="0 180 220";
