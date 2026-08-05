@@ -3737,7 +3737,7 @@ function detRefine(src){
            palaces:(src.palaces||[]).map(q=>Object.assign({},q,
              {x0:q.x0*K,y0:q.y0*K,x1:q.x1*K+K-1,y1:q.y1*K+K-1,rampCells:[]})),
            vprof:src.vprof, zscale:src.zscale, interzones:src.interzones,
-           bodies:null, zones:null, rings:src.rings, __coarse:src };
+           bodies:null, zones:null, rings:src.rings, __coarse:src, __cw:sW, __ch:sH };
 }
 const f1=x=>x.toFixed(1).replace('.',','), f2=x=>x.toFixed(2).replace('.',',');
 function paint(){ const m=cur.m;
@@ -3928,7 +3928,17 @@ let BAKING=false;
    пересобрали с целью, сдвинутой на этот снос в обратную сторону. Снос у слоя
    деталей систематический, поэтому двух-трёх попыток хватает.
    Коррекция демпфированная (0.7), иначе решатель начинает раскачиваться. */
-const BAL={ tries:3, tol:0.55, damp:0.7 };
+const BAL={ tries:4, tol:0.55, damp:0.7 };
+/* v120. ПАМЯТЬ О СНОСЕ. Обратная связь начинала с нуля на КАЖДОЙ карте: первая
+   попытка целилась мимо заведомо, вторая училась на первой. Но учится она на
+   ОДНОЙ карте, а применяет к ДРУГОЙ — решатель на каждой попытке берёт новое
+   зерно и строит новую геометрию. Поэтому за три попытки промах оставался
+   0.5..1.6 с при допуске 0.55, и отметки мест (v120.2) его ещё увеличили:
+   перепад высот стоит времени, дейкстра это честно считает.
+   Снос у слоя деталей систематический — он свойство слоя, а не карты. Значит его
+   надо помнить между картами, а не выводить заново каждый раз. Скользящее
+   среднее: первая попытка следующей карты уже целится с поправкой. */
+let DRIFTAVG=null;
 
 function buildDetail(r, cfg){
   const t0=performance.now();
@@ -3942,9 +3952,34 @@ function buildDetail(r, cfg){
   return f;
 }
 
+/* ============ v120. ПЕРЕСБОРКА ТЕЛ ============
+   Три ручки — «перекатить укрытия», ползунок плотности и тумблер богатого декора —
+   звали makeCover ПРЯМО ПО МЕЛКОМУ РАСТРУ. Там клетка 16u, поэтому «ящик в клетку»
+   выходил размером 16 юнитов; габаритного прохода (32..64 x 76..132) не было вовсе,
+   предметы мест не ставились, проверка проходимости не запускалась, чистка пробок
+   тоже. То есть любая из трёх ручек молча превращала готовую карту в труху,
+   причём ползунок плотности стоит на видимой панели.
+   Правильно — пересобрать весь слой деталей на сохранённом крупном плане: rng слоя
+   привязан к seed карты, поэтому геометрия выходит та же, меняются только тела. */
+let __recT=null;
+function recoverBodies(newSeed){
+  if(!cur||!cur.__coarse||BAKING) return;
+  const src=cur.__coarse;
+  if(newSeed) src.coverSeed=(Math.random()*4294967296)>>>0;
+  const cfg={CTtarget:parseFloat(sTempo.value), M:parseFloat(sMargin.value), jit:parseFloat(sJit.value),
+             tol:1.0, tolMid:1.8, vert:parseFloat(sVert.value), ringP:parseFloat(sRing.value)};
+  const cw=cur.__cw, ch=cur.__ch;
+  let out=null;
+  try{ setSize(cw,ch); CELL=96; SC=1; out=buildDetail(src,cfg); } catch(e){ out=null; }
+  if(out){ out.CELL=out.CELL||16; cur=out; }
+  useCur(); cur.zones=computeZones(cur); draw(); paint(); renderAudit();
+}
+const recoverLater=(newSeed)=>{ clearTimeout(__recT);
+  __recT=setTimeout(()=>recoverBodies(newSeed), 220); };   // ползунок сыплет событиями
+
 function generateBalanced(cfg){
   const want=cfg.M;
-  let corr=0, best=null, bestErr=1e9, log=[];
+  let corr=(DRIFTAVG!==null?DRIFTAVG:0), best=null, bestErr=1e9, log=[];
   for(let att=0; att<BAL.tries; att++){
     const aim=Math.max(2.0, Math.min(6.5, want-corr));
     const c2=Object.assign({}, cfg, {M:aim});
@@ -3977,7 +4012,8 @@ function generateBalanced(cfg){
      Ловилось только когда решатель не уложился в допуск с первого раза, то есть
      примерно на каждой четвёртой карте. Теперь состояние сетки восстанавливается
      по самой карте, а не по тому, чем кончился цикл. */
-  if(best){ best.__bal={попыток:log.length, промах:+bestErr.toFixed(2), ход:log};
+  if(best){ best.__bal={попыток:log.length, промах:+bestErr.toFixed(2), ход:log, снос:+corr.toFixed(2)};
+    DRIFTAVG = (DRIFTAVG===null) ? corr : DRIFTAVG*0.65 + corr*0.35;
     if(best.CELL){ CELL=best.CELL; SC=Math.round(96/CELL); }
     if(best.W && best.H) setSize(best.W, best.H); }
   return best;
@@ -4030,7 +4066,7 @@ document.getElementById('tPlaces').onchange=e=>{opts.places=e.target.checked;dra
 document.getElementById('tIsland').onchange=e=>{ISLAND=e.target.checked;run();};   // меняет геометрию -> перегенерация
 document.getElementById('tRamps').onchange=e=>{RAMPS=e.target.checked;};            // влияет только на .vmf при скачивании
 document.getElementById('tThru').onchange=e=>{THRU=e.target.checked;};              // ЭКСП: только .vmf (сквозные проходы)
-document.getElementById('tDecor').onchange=e=>{DECOR=e.target.checked; if(cur){ cur.cover=makeCover(cur.g,cur.px,cur.coverSeed||(cur.coverSeed=(Math.random()*4294967296)>>>0)); draw(); } };
+document.getElementById('tDecor').onchange=e=>{DECOR=e.target.checked; recoverLater(false); };
 document.getElementById('tPalace').onchange=e=>{PALACE=e.target.checked;run();};    // меняет геометрию/баланс -> перегенерация
 document.getElementById('tDoors').onchange=e=>{DOORS=e.target.checked;draw();};     // двери: VMF + отметки на карте, g не трогает
 document.getElementById('tFine').onchange=e=>{FINEW=e.target.checked;};
@@ -5352,7 +5388,7 @@ sVert.oninput=()=>vVert.textContent=parseFloat(sVert.value)<0.8?'мягкая':p
 sRing.oninput=()=>vRing.textContent=parseFloat(sRing.value)<0.4?'мало':parseFloat(sRing.value)>0.65?'много':'средне';
 const sCov=document.getElementById('sCov');
 sCov.oninput=()=>{ COVDENS=parseFloat(sCov.value); document.getElementById('vCov').textContent=COVDENS<0.34?'редко':COVDENS>0.66?'плотно':'средне';
-  if(cur){ useCur(); cur.coverSeed=cur.coverSeed||(Math.random()*4294967296)>>>0; cur.cover=makeCover(cur.g,cur.px,cur.coverSeed); draw(); } };
+  recoverLater(false); };
 /* ===== подсказки-превью параметров (наведи и подержи) ===== */
 const PINFO={
   sSize:{name:'Размер карты', lo:0, hi:4, size:true, topo:false, loCap:'крошка', hiCap:'большая', desc:'Габарит карты. Меньше — теснее и плотнее (короче тайминги), больше — просторнее. Сходимость/баланс проверены на всех.'},
@@ -5444,7 +5480,7 @@ document.getElementById('vmf').onclick=()=>{ downloadVMF(); if(V81.radar) downlo
   b('tTurn92', v=>{ V92.turn=v; });
   b('tZ14',    v=>{ V92.zones14=v; applyZoneMode(); });
 })();
-document.getElementById('reroll').onclick=()=>{ if(!cur)return; useCur(); cur.coverSeed=(Math.random()*4294967296)>>>0; cur.cover=makeCover(cur.g,cur.px,cur.coverSeed); draw(); paint(); };
+document.getElementById('reroll').onclick=()=>{ recoverBodies(true); };
 window.addEventListener('resize',()=>{if(cur)draw();});
 /* ============ v99. РЕШЕНИЯ ПРИБИТЫ ============
    В панели остались только те ручки, которые человек реально крутит.
