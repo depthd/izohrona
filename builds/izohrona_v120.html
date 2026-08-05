@@ -2615,7 +2615,7 @@ function syncV3(){ const y=document.getElementById('sYaw'), t=document.getElemen
    80u — стена в одну клетку 96u это почти точное попадание, утоньшать её было нечего.
    narrow (сужение широких проходов) — новое и включено. */
 const DET={on:false, wall:false, door:true, zonewall:true, part:true, cover:true, narrow:true,
-           voidfill:true, shot:true, stepfix:true, deadend:true, lmark:true, cutdead:true, tier:true, seal:true, thickwall:true, deadplace:true};
+           voidfill:true, shot:true, stepfix:true, deadend:true, lmark:true, cutdead:true, tier:true, seal:true, thickwall:true, deadplace:true, spawnwall:true};
 /* v107. Два числа-цели, взяты из замеров реальных карт в SVODKA_2:
    пустота — у dust2 максимум 459u, у tuscan 256u. Ставим предел 384u: дальше этого
      от любой точки пола обязана быть преграда, иначе это «широко, но пусто»;
@@ -3224,6 +3224,40 @@ function detRefine(src){
       PLC_R=computePlaces(gf,Wf,Hf,16);
     }
     stat.dpCut=прорезано; stat.dpDel=стёрто; stat.dpKeep=оставлено;
+  }
+
+  /* ============ v122. СПАВН — ЭТО КОМНАТА С ДВУМЯ ВЫХОДАМИ ============
+     Спавны стоят голыми посреди карты: со стороны мида в них простреливается всё,
+     и первые секунды раунда решает не выбор маршрута, а то, кто раньше повернул
+     голову. На реальных картах спавн замурован и выпускает наружу двумя-тремя
+     горловинами — поэтому «выход со спавна» вообще существует как понятие.
+     Здесь: место со спавном оставляет две самые широкие горловины, остальные
+     закладываются. Стена ставится с обеих сторон стыка (32u), под охраной
+     связности — если закладка что-то отрезает, она откатывается. */
+  if(DET.spawnwall){
+    let заложено=0;
+    for(const kk of ['T','CT']){
+      const pt=src.px[kk]; if(!pt) continue;
+      let id=-1;
+      for(let r=0;r<=K*2&&id<0;r++)
+        for(let oy=-r;oy<=r&&id<0;oy++)for(let ox=-r;ox<=r;ox++){
+          const x=pt.x*K+ox, y=pt.y*K+oy; if(!inb(x,y)) continue;
+          const q=PLC_R.pid[ix(x,y)]; if(q>=0){ id=q; break; } }
+      if(id<0) continue;
+      const pl=PLC_R.list[id]; if(!pl||pl.strips.length<=2) continue;
+      /* две самые широкие горловины — это и есть выходы со спавна */
+      const по=pl.strips.slice().sort((a,b)=>b.n-a.n);
+      for(let s=2;s<по.length;s++){
+        const st=по[s];
+        const cells=new Set(st.cells);
+        for(const i of st.cells){ const x=i%Wf, y=(i/Wf)|0;
+          for(const [dx,dy] of D8){ const nx=x+dx, ny=y+dy; if(!inb(nx,ny)) continue;
+            const j=ix(nx,ny); if(gf[j]&&PLC_R.pid[j]===st.b) cells.add(j); } }
+        if(guarded([...cells])) заложено++;
+      }
+    }
+    if(заложено){ PLC_R=computePlaces(gf,Wf,Hf,16); }
+    stat.spawnWall=заложено;
   }
 
   /* ============ v120. У КАЖДОГО МЕСТА СВОЯ ОТМЕТКА ============
@@ -5303,23 +5337,35 @@ function buildVMF(cur){
                         wx(lx+1)-bIns, wy(ly+1)+bB, rz-6, BM2)); } }
   }
   if(V64.decor){
+    /* v122. ПИЛЯСТРЫ. Задумано: выступ 12u примерно раз в 288u стены, чтобы длинная
+       глухая плоскость перестала быть бесконечной и давала точку отсчёта при беге.
+       Написано было `%3` — «через три КЛЕТКИ». На клетке 96u это и есть 288u,
+       а на 16u — раз в 48 юнитов: вшестеро гуще, и вместо редкого выступа выходит
+       частокол вторичных стенок вдоль каждой основной. Ровно те «торчащие тонкие
+       стены»: браш 48 x 12 x 176 в статус-баре Хаммера — это она.
+       Плюс длина 80u (Y+8..Y+88) была подобрана под клетку 96u; на 16u пилястра
+       перекрывает пять клеток и налезает на соседнюю, а вычитание оставляет от
+       них осколки по 8-12u. Шаг переведён в ЮНИТЫ, длина — в долю клетки. */
     const dm={p:M_.wRough,s:UVS}, DM={t:dm,w:dm,b:dm}, PT=12, PH=176;
+    const PSTEP=Math.max(1,Math.round(288/S));     // одна пилястра на 288 юнитов стены
+    const PA=Math.round(S*8/96), PB=Math.round(S*88/96);   // вылет вдоль стены — доля клетки
     let np=0;
     for(let y=2;y<H-2;y++)for(let x=2;x<W-2;x++){
       if(g[y*W+x]) continue;                       // сама клетка — стена
-      if(((x*7+y*13)%3)!==0) continue;             // через три, детерминированно
+      if(((x*7+y*13)%PSTEP)!==0) continue;         // раз в 288u, детерминированно
       const ft=qz(zf[y*W+x]||0);
       if(g[(y)*W+x+1]){ const X=wx(x+1), Y=wy(y+1);
-        solids.push(box(X,Y+8,ft, X+PT,Y+88,ft+PH, DM)); np++; }
+        solids.push(box(X,Y+PA,ft, X+PT,Y+PB,ft+PH, DM)); np++; }
       else if(g[(y)*W+x-1]){ const X=wx(x), Y=wy(y+1);
-        solids.push(box(X-PT,Y+8,ft, X,Y+88,ft+PH, DM)); np++; }
+        solids.push(box(X-PT,Y+PA,ft, X,Y+PB,ft+PH, DM)); np++; }
       /* wy() убывает с ростом y: сосед y+1 лежит НИЖЕ по мировому Y, значит выступать надо
          в минус. Было наоборот — пилястра пряталась в браше стены и давала ребристость. */
       else if(g[(y+1)*W+x]){ const X=wx(x), Y=wy(y+1);
-        solids.push(box(X+8,Y-PT,ft, X+88,Y,ft+PH, DM)); np++; }
+        solids.push(box(X+PA,Y-PT,ft, X+PB,Y,ft+PH, DM)); np++; }
       else if(g[(y-1)*W+x]){ const X=wx(x), Y=wy(y);
-        solids.push(box(X+8,Y,ft, X+88,Y+PT,ft+PH, DM)); np++; }
-      if(np>220) break; }
+        solids.push(box(X+PA,Y,ft, X+PB,Y+PT,ft+PH, DM)); np++; }
+      if(np>60) break; }
+    cur.__pil=np;
   }
   // (буфер бра объявлен выше)
   // ДВЕРНЫЕ ПРОЁМЫ (по плану): каждый вход между зонами — перемычка от 128u (дверь) / 152u (арка x2) до потолка.
