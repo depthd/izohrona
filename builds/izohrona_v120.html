@@ -2498,6 +2498,11 @@ function draw3D(){
   if(opts.cover&&cover) for(const c of cover){
     const hh=(c.hgt==='full')?999:(c.hgt||40); if(hh<=18) continue;
     items.push({d:dep(c.x+(c.w||1)/2, c.y+(c.h||1)/2)+0.002, k:1, b:c}); }
+  /* v120. Предметы мест рисуются и здесь: в объёме их и надо смотреть — колонна
+     во всю высоту и помост в 64u с плоского вида одинаковы, а в игре это разные
+     вещи. Габарит берётся тот же, что уходит в .vmf. */
+  if(opts.places&&cur.lmarks) for(const L of cur.lmarks)
+    items.push({d:dep(L.x+L.w/2, L.y+L.h/2)+0.004, k:2, b:L});
   items.sort((a,b)=>a.d-b.d);
 
   const SIDE=[[0,0, 1,0,  0,-1],   // север: (x,y)->(x+1,y), нормаль вверх
@@ -2520,7 +2525,7 @@ function draw3D(){
         quad(P(ax,ay,z), P(bx,by,z), P(bx,by,nz), P(ax,ay,nz), shade(col,lit(nx,ny)));
       }
       quad(P(x,y,z), P(x+1,y,z), P(x+1,y+1,z), P(x,y+1,z), shade(col,1));
-    } else {
+    } else if(it.k===1){
       const c=it.b, base=(zf?zf[c.y*W+c.x]:0)*ZU;
       const hgt=(c.hgt==='full')?999:(c.hgt||40);
       const top=base+((c.hgt==='full')?384:(c.hgt||40))*UU;    // 'full' в экспорте это ft+384
@@ -2540,8 +2545,35 @@ function draw3D(){
       }
       quad(P(cr[0][0],cr[0][1],top), P(cr[1][0],cr[1][1],top),
            P(cr[2][0],cr[2][1],top), P(cr[3][0],cr[3][1],top), shade(col,1.06));
+    } else {
+      const L=it.b, base=(zf?zf[Math.min(W*H-1,L.cy*W+L.cx)]:0)*ZU;
+      const HT={crate1:88, pillar:384, barrels:112, stack:112, wallg:128,
+                truck:148, canopy:192, deck:72}[L.k]||96;
+      const top=base+HT*UU;
+      const dia=(L.k==='pillar'||L.k==='crate1');            // ромб в плане
+      const ccx=L.x+L.w/2, ccy=L.y+L.h/2, hw=L.w/2, hh2=L.h/2;
+      const ra=dia?Math.PI/4:0, ca=Math.cos(ra), sa=Math.sin(ra);
+      const kf=dia?0.72:1;
+      const cr=[[-hw*kf,-hh2*kf],[hw*kf,-hh2*kf],[hw*kf,hh2*kf],[-hw*kf,hh2*kf]]
+        .map(q=>[ccx+q[0]*ca-q[1]*sa, ccy+q[0]*sa+q[1]*ca]);
+      const col=hx('e8d08a');
+      for(let e=0;e<4;e++){ const p0=cr[e], p1=cr[(e+1)%4];
+        const ex=p1[0]-p0[0], ey=p1[1]-p0[1], Ln=Math.hypot(ex,ey)||1;
+        const nx=ey/Ln, ny=-ex/Ln;
+        if(nx*si+ny*co <= -0.02) continue;
+        quad(P(p0[0],p0[1],top), P(p1[0],p1[1],top), P(p1[0],p1[1],base), P(p0[0],p0[1],base), shade(col,lit(nx,ny))); }
+      quad(P(cr[0][0],cr[0][1],top), P(cr[1][0],cr[1][1],top),
+           P(cr[2][0],cr[2][1],top), P(cr[3][0],cr[3][1],top), shade(col,1.10));
     }
   }
+  /* подписи мест поверх объёма — иначе непонятно, что за предмет и как он зовётся */
+  if(opts.places&&opts.labels&&cur.places&&cur.places.list){
+    ctx.font="600 11px ui-monospace,Menlo,monospace"; ctx.textAlign='center'; ctx.textBaseline='middle';
+    for(const pl of cur.places.list){ if(!pl.им) continue;
+      const z=(zf?zf[Math.min(W*H-1,pl.y*W+pl.x)]:0)*ZU;
+      const p=P(pl.x+0.5, pl.y+0.5, z+2.2);
+      ctx.lineWidth=3; ctx.strokeStyle='rgba(6,10,15,0.85)'; ctx.strokeText(pl.им,p[0],p[1]);
+      ctx.fillStyle='rgba(238,244,250,0.9)'; ctx.fillText(pl.им,p[0],p[1]); } }
 
   if(opts.labels){
     const tag=(pt,txt,fill,ring,big)=>{ if(!pt) return;
@@ -2581,7 +2613,7 @@ function syncV3(){ const y=document.getElementById('sYaw'), t=document.getElemen
    80u — стена в одну клетку 96u это почти точное попадание, утоньшать её было нечего.
    narrow (сужение широких проходов) — новое и включено. */
 const DET={on:false, wall:false, door:true, zonewall:true, part:true, cover:true, narrow:true,
-           voidfill:true, shot:true, stepfix:true, deadend:true, lmark:true};
+           voidfill:true, shot:true, stepfix:true, deadend:true, lmark:true, cutdead:true, tier:true};
 /* v107. Два числа-цели, взяты из замеров реальных карт в SVODKA_2:
    пустота — у dust2 максимум 459u, у tuscan 256u. Ставим предел 384u: дальше этого
      от любой точки пола обязана быть преграда, иначе это «широко, но пусто»;
@@ -3088,6 +3120,69 @@ function detRefine(src){
      силуэт, не похожий на соседние. Имя уходит на карту и в .vmf как env_cs_place,
      то есть работает в игре настоящим каллаутом. */
   const PLC_R=computePlaces(gf,Wf,Hf,16);
+
+  /* ============ v120. У КАЖДОГО МЕСТА СВОЯ ОТМЕТКА ============
+     Приёмка показала: у трети мест высота такая же, как у всех соседей. Тогда
+     граница между ними не читается — идёшь и не понимаешь, что попал в другое
+     место. Это и есть «однобокий, неинтересный проход» с лаймовой пометки:
+     перепад не работает, потому что его нет.
+     Соседние места разводятся по трём уровням (-64 / 0 / +64) жадной раскраской
+     по графу смежности. Дальше поле уклона ОГРАНИЧИВАЕТСЯ: 8 юнитов на клетку,
+     то есть половина шага. Значит переход между уровнями сам растягивается
+     примерно на 128u и остаётся ходибельным, а середина крупного места успевает
+     набрать свою отметку целиком. Мелкое место ограничение сплющит — и правильно:
+     на сотне юнитов своя отметка не читается всё равно. */
+  if(DET.tier && PLC_R.count>1){
+    const L=PLC_R.list, pid=PLC_R.pid, NL=PLC_R.count;
+    const lvl=new Int8Array(NL).fill(9);
+    for(const pl of L.slice().sort((a,b)=>b.area-a.area)){
+      const занято=new Set();
+      for(const n of pl.nb) if(lvl[n]!==9) занято.add(lvl[n]);
+      /* крупному месту охотнее даём ноль: пусть выделяются мелкие, а не наоборот */
+      const порядок = pl.area>420 ? [0,1,-1] : [1,-1,0];
+      let v=порядок.find(k=>!занято.has(k));
+      if(v===undefined) v=порядок[(rng()*3)|0];
+      lvl[pl.id]=v; }
+    const STEP64=48/72, GMAX=16/72, QUANT=16/72;
+    const raw=new Float32Array(N);
+    for(let i=0;i<N;i++) if(gf[i]&&pid[i]>=0) raw[i]=lvl[pid[i]]*STEP64;
+    /* Ограничение уклона: клетка не может быть выше соседа больше чем на GMAX.
+       Один и тот же проход по полю сверху вниз опускает пики; тот же проход по
+       перевёрнутому полю поднимает ямы. Среднее двух полей тоже удовлетворяет
+       ограничению, но не съезжает целиком ни вверх, ни вниз. */
+    const grade=(src0)=>{ const a=Float32Array.from(src0);
+      for(let pass=0; pass<14; pass++){
+        const fwd=(pass&1)===0;
+        const y0=fwd?1:Hf-2, y1=fwd?Hf-1:0, ys=fwd?1:-1;
+        const x0=fwd?1:Wf-2, x1=fwd?Wf-1:0, xs=fwd?1:-1;
+        for(let y=y0;y!==y1;y+=ys)for(let x=x0;x!==x1;x+=xs){ const i=ix(x,y); if(!gf[i]) continue;
+          let m=1e9;
+          for(const [dx,dy] of D4){ const nx=x+dx, ny=y+dy; if(!inb(nx,ny)) continue;
+            const j=ix(nx,ny); if(!gf[j]) continue; if(a[j]+GMAX<m) m=a[j]+GMAX; }
+          if(m<a[i]) a[i]=m; } }
+      return a; };
+    const up=grade(raw);
+    const neg=new Float32Array(N); for(let i=0;i<N;i++) neg[i]=-raw[i];
+    const dn=grade(neg);
+    /* Прибавка КВАНТУЕТСЯ по 16u — по одной ступени. Непрерывный уклон в 8u на
+       клетку означает, что каждая клетка пола на 8u отличается от соседней: жадный
+       мешер перестаёт склеивать вообще что-либо, и вместо 3.9 тысяч брашей выходит
+       7.6, из них 2.2 тысячи лезвий, а файл раздувается вдвое. Со ступенью 16u
+       переход сам собой ложится террасами шириной от двух клеток: полки склеиваются,
+       а перепад между ними ровно 16u — ниже шага в 18u, то есть заходится ногами. */
+    let сдв=0;
+    for(let i=0;i<N;i++){ if(!gf[i]||pid[i]<0) continue;
+      const d=Math.round(((up[i]-dn[i])/2)/QUANT)*QUANT;
+      if(Math.abs(d)>1e-4) сдв++;
+      /* Без обрезки снизу. Обрезка по нулю казалась безобидной страховкой, а на деле
+         срезала утопленный мид: у него отметка отрицательная, и всё, что уходило
+         ниже нуля, ложилось на ноль. Размах высот падал с 384u до 210u, доля пола
+         на одном ярусе росла до 78% — то есть проход, задуманный ради рельефа,
+         рельеф уничтожал. Прибавка ограничена +-48u, ниже базы не уедет. */
+      zff[i]=zff[i]+d; }
+    stat.tier=сдв;
+  }
+
   const LMKS=[];
   if(DET.lmark){
     const busy=new Uint8Array(N);
@@ -3523,6 +3618,42 @@ function detRefine(src){
     }
   }
 
+  /* ============ v120. ПОЛ, ДО КОТОРОГО НЕ ДОЙТИ, — НЕ ПОЛ ============
+     Это и есть «пустая тупиковая комната, куда нельзя залезть» со скриншотов.
+     Берётся она не из планировщика: сужения и зонные стены иногда отрезают карман,
+     а сторож связности этого не запрещает — он следит только за тем, чтобы не стало
+     ХУЖЕ по ключевым узлам, и терять боковой карман ему разрешено. Ступенчатая
+     правка обрывов (stepfix) чинит только то, до чего есть сосед; отрезанный
+     стеной кусок она не видит.
+     Раньше такой кусок всё равно уезжал в экспорт: пол, стены, свет, укрытия —
+     полноценная комната, в которую нельзя войти. Теперь он просто перестаёт быть
+     полом. Стены сомкнутся сами, потому что стена — это отсутствие пола. */
+  if(DET.cutdead){
+    const JUMP=64/72, D8c=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+    const v=new Uint8Array(N), st=[];
+    const s0=anyFloor(src.px.T,2);
+    if(s0>=0){ v[s0]=1; st.push(s0);
+      while(st.length){ const j=st.pop(), x=j%Wf, y=(j/Wf)|0;
+        for(const [dx,dy] of D8c){ const nx=x+dx, ny=y+dy; if(!inb(nx,ny)) continue;
+          const k2=ix(nx,ny); if(!gf[k2]||v[k2]) continue;
+          if(zff[k2]-zff[j] > JUMP) continue;
+          v[k2]=1; st.push(k2); } }
+      let cut=0;
+      for(let i=0;i<N;i++) if(gf[i]&&!v[i]){ gf[i]=0; cut++; }
+      if(cut){
+        /* тела и предметы, оставшиеся на срезанном полу, уходят вместе с ним */
+        const alive=c=>{ for(let oy=0;oy<(c.h||1);oy++)for(let ox=0;ox<(c.w||1);ox++){
+            const x=c.x+ox, y=c.y+oy; if(inb(x,y)&&gf[ix(x,y)]) return true; }
+          return false; };
+        const c0=cov.length, l0=LMKS.length;
+        cov=cov.filter(alive);
+        for(let n=LMKS.length-1;n>=0;n--) if(!alive(LMKS[n])) LMKS.splice(n,1);
+        stat.cutCov=(c0-cov.length)+(l0-LMKS.length);
+      }
+      stat.cutDead=Math.round(cut*16*16/1000);            // срезано, k u²
+    }
+  }
+
   /* v113. ПРОВЕРКА ПРОХОДИМОСТИ ПО-ИГРОЦКИ. Сторож связности ходит по полу без оглядки
      на высоту, а игрок не запрыгнет выше 64u. После того как на мелкой клетке была
      выключена угловая лесенка (v105), обрывы выше прыжка остались вообще без ступеней,
@@ -3699,7 +3830,50 @@ function renderAudit(){
     (cur.drift?`<b>контроль по мелкому растру:</b> перевес A ${f1(cur.mFine.mA)} с, B ${f1(cur.mFine.mB)} с `+
         `<span style='color:${Math.max(Math.abs(cur.drift.A),Math.abs(cur.drift.B))>1.0?"#e8a24a":"#7d92a4"}'>`+
         `(расхождение с планом ${cur.drift.A>=0?"+":""}${f1(cur.drift.A)} / ${cur.drift.B>=0?"+":""}${f1(cur.drift.B)} с)</span><br>`:'')+
-    `клетка растра <b>${CELL}u</b> · сетка ${W}x${H}`+(cur.coverCut?` · <span style='color:#7d92a4'>снято укрытий из проёмов: ${cur.coverCut}</span>`:'');
+    `клетка растра <b>${CELL}u</b> · сетка ${W}x${H}`+(cur.coverCut?` · <span style='color:#7d92a4'>снято укрытий из проёмов: ${cur.coverCut}</span>`:'')+
+    placesAudit();
+}
+/* ============ v120. ПРИЁМКА ПО МЕСТАМ ============
+   У проекта не было критерия «хорошо/плохо» (SVODKA_2 §7.1): все метрики попадали
+   внутрь полосы реальных карт, и ни одна не отличала удачную карту от неудачной.
+   Критерий, который отличает, — не габаритный, а содержательный, и он ровно про то,
+   что было обведено на скриншотах. У места должно быть четыре вещи:
+
+     имя      — иначе про него нельзя сказать ни слова (розовое «пустое место»);
+     предмет  — силуэт, по которому место узнаётся (то же розовое);
+     два входа — иначе это тупик (красное);
+     своя высота — иначе соседние места сливаются в одно (лаймовое «однобоко»).
+
+   Числа-ориентиры сняты ТЕМ ЖЕ кодом с настоящих навов (tools/plcnode.js):
+   мест 15..25, площадь места 282..538k, входов медиана 2..5, тупиков 0..3. */
+function placesAudit(){
+  const P=cur&&cur.places; if(!P||!P.list||!P.list.length) return '';
+  const L=P.list, zf=cur.zfield;
+  const zOf=p=>((zf?zf[Math.min(W*H-1,p.y*W+p.x)]:0)||0)*72;
+  const ent=L.map(p=>p.ent).sort((a,b)=>a-b);
+  const туп=L.filter(p=>p.ent<2), безИм=L.filter(p=>!p.им), безПр=L.filter(p=>!p.lm);
+  /* «своя высота»: хотя бы один сосед отличается по отметке на ступень (>=48u) */
+  const плоск=L.filter(p=>{ if(!p.nb||!p.nb.size) return false; const z0=zOf(p);
+    for(const n of p.nb){ const q=L[n]; if(q&&Math.abs(zOf(q)-z0)>=48) return false; }
+    return true; });
+  const пол=L.reduce((s,p)=>s+p.area,0);
+  const ок=(v,lo,hi)=>v>=lo&&v<=hi?'#7fbf7f':'#e8a24a';
+  const bad=v=>v?'#e06c5a':'#7fbf7f';
+  const тупИм=туп.filter(p=>!p.lm);          // тупик БЕЗ предмета — это и есть дефект
+  return `<br><b>ПРИЁМКА ПО МЕСТАМ</b> <span style='color:#7d92a4'>(эталон — те же навы тем же кодом)</span><br>`+
+    `мест <b style='color:${ок(L.length,14,28)}'>${L.length}</b> `+
+    `<span style='color:#7d92a4'>(реальные 15–25)</span> · `+
+    `площадь места <b style='color:${ок(Math.round(пол/L.length),250,560)}'>${Math.round(пол/L.length)}k</b> `+
+    `<span style='color:#7d92a4'>(282–538k)</span><br>`+
+    `входов: медиана <b style='color:${ок(ent[ent.length>>1],2,6)}'>${ent[ent.length>>1]}</b> `+
+    `· макс <b style='color:${ок(ent[ent.length-1],3,10)}'>${ent[ent.length-1]}</b> `+
+    `<span style='color:#7d92a4'>(медиана 2–5, макс 5–10)</span><br>`+
+    `<span style='color:${bad(безИм.length)}'>без имени ${безИм.length}</span> · `+
+    `<span style='color:${bad(безПр.length>L.length*0.35?1:0)}'>без предмета ${безПр.length}</span> · `+
+    `<span style='color:${bad(тупИм.length)}'>тупиков пустых ${тупИм.length}</span> `+
+    `<span style='color:#7d92a4'>(тупиков всего ${туп.length}, у реальных 0–3)</span> · `+
+    `<span style='color:${bad(плоск.length>L.length*0.6?1:0)}'>без своей высоты ${плоск.length}</span><br>`+
+    `<span style='color:#7d92a4'>${L.slice().sort((a,b)=>b.area-a.area).slice(0,10).map(p=>p.им||'?').join(' · ')}</span>`;
 }
 let BAKING=false;
 /* ============ v119. БАЛАНС С ОБРАТНОЙ СВЯЗЬЮ ============
@@ -4181,7 +4355,15 @@ function buildVMF(cur){
            На 96u это 384 юнита, на 16u — 64: стена меняла высоту каждые 64u,
            жадная склейка резала её на лезвия 16x64 высотой под 700, и в игре
            это читалось как пила из треугольников. Блок теперь в ЮНИТАХ. */
-        wlf[i]=locF(x,y); wtop[i]=wlf[i]+st[hs7((x/WBLK)|0,(y/WBLK)|0,11)%st.length]; }
+        /* v120. Верх стены КВАНТУЕТСЯ по 64u. Ключ склейки — «зона плюс абсолютная
+           отметка верха», а отметка считается от самого высокого соседнего пола.
+           Пока пол был плоским, у длинной стены верх был один и она склеивалась в
+           одну коробку. С отметками мест пол вдоль стены гуляет на десятки юнитов —
+           и та же стена рассыпается на полсотни групп по одной клетке, то есть на
+           лезвия. Округление до 64u возвращает склейку, а ломаную линию крыш даёт
+           не оно, а разброс st по блокам в 384u — он остаётся. */
+        wlf[i]=locF(x,y);
+        wtop[i]=Math.round((wlf[i]+st[hs7((x/WBLK)|0,(y/WBLK)|0,11)%st.length])/64)*64; }
       /* группа = зона + АБСОЛЮТНАЯ отметка верха: иначе слияние смешает разные крыши в одну коробку */
       const wgrp={};
       for(let i=0;i<W*H;i++) if(wm[i]){ const k=wzSm[i]+'|'+wtop[i]; (wgrp[k]=wgrp[k]||new Uint8Array(W*H))[i]=1; }
