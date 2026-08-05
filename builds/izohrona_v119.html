@@ -3351,6 +3351,13 @@ function buildVMF(cur){
   const ramps=RAMPS;
   const g=cur.g, zf=cur.zfield, P=cur.m.pts;
   const S=CELL, ZS=72, STEP=8;            // v93: юнитов в клетке берётся из режима
+  const cells=u=>Math.max(1,Math.round(u/S));
+  /* v113. Смещения 48, 36, 60 — это «половина клетки» и её доли, записанные числом
+     при клетке 96u. На клетке 16u они уезжают на две-четыре клетки от своего места:
+     арка встаёт поперёк прохода и наглухо его закрывает, притолока висит в стороне.
+     hc — половина клетки, fr(u) — доля клетки, заданная в старых 96-х. */
+  const hc=S>>1, fr=u=>Math.round(S*u/96);
+
   let idc=0; const nid=()=>(++idc);
   const wx=cx=>Math.round(cx*S), wy=cy=>Math.round((H-cy)*S), zu=zc=>Math.round(zc*ZS);
   const qz=zc=>Math.round(zu(zc)/STEP)*STEP;
@@ -3685,15 +3692,20 @@ function buildVMF(cur){
       if(V70.terrace) for(const r of rects){
         if(nT>=12) break;
         if(brd(r.x,r.y)||brd(r.x+r.w-1,r.y+r.h-1)) continue;          // периметр — задник, не терраса
-        if(!((r.w>=2&&r.h>=2)||r.w>=3||r.h>=3)) continue;             // мелкий пятак террасой не читается
+        /* v119. Порог был в КЛЕТКАХ: «две на две или три в длину». На клетке 96u это
+           192x192u — нормальная терраса. На 16u это 32x32u, и террасой становится
+           любой огрызок стены: отсюда странные площадки, на которые нельзя залезть.
+           Порог переведён в юниты: 192x192 или 288 в длину. */
+        if(!((r.w>=cells(192)&&r.h>=cells(192))||r.w>=cells(288)||r.h>=cells(288))) continue;
         if(r.top-64 < r.lf+384) continue;                             // под террасой стена ниже гарантии -> нельзя
         let touch=false;
         for(let y=r.y;y<r.y+r.h&&!touch;y++)for(let x=r.x;x<r.x+r.w&&!touch;x++)
           if(isF7(x-1,y)||isF7(x+1,y)||isF7(x,y-1)||isF7(x,y+1)) touch=true;
         if(!touch) continue;                                          // не видно с игровой части — не нужна
         if(hs7(r.x,r.y,21)%100>=45) continue;
-        if(used.some(p=>Math.abs(p[0]-r.x)<5&&Math.abs(p[1]-r.y)<5)) continue;   // не кучей
-        r.terr=true; r.cnp=(hs7(r.x,r.y,33)%3===0 && r.w>=2 && r.h>=2);
+        const apart=cells(480);   // v119: «не кучей» было 5 клеток — 480u на крупной, 80u на мелкой
+        if(used.some(p=>Math.abs(p[0]-r.x)<apart&&Math.abs(p[1]-r.y)<apart)) continue;
+        r.terr=true; r.cnp=(hs7(r.x,r.y,33)%3===0 && r.w>=cells(192) && r.h>=cells(192));   // навес только над крупной террасой
         used.push([r.x,r.y]); nT++; }
       cur.__terr=nT;
       { let mc=1e9,mt=1e9;                                    // гарантия в числах, а не на слово
@@ -3935,7 +3947,8 @@ function buildVMF(cur){
         if(ok&&wall) cand.push([x,y,nx,ny,z0,z0+dz]); } }
     let nl=0; const used=[];
     for(const c of cand){ if(nl>=V81.ladderMax) break;
-      if(used.some(p=>Math.abs(p[0]-c[0])<8&&Math.abs(p[1]-c[1])<8)) continue;
+      const farApart=cells(768);   // v119: «врозь» было 8 клеток — 768u на крупной, 128u на мелкой
+      if(used.some(p=>Math.abs(p[0]-c[0])<farApart&&Math.abs(p[1]-c[1])<farApart)) continue;
       const [x,y,nx,ny,zlo,zhi]=c;
       const X0=wx(x),X1=wx(x+1),Y0=wy(y+1),Y1=wy(y);
       const dx=nx-x, dy=ny-y;
@@ -4101,12 +4114,7 @@ function buildVMF(cur){
      На клетке 16u рампа в 3 клетки стала 48u при подъёме 192u — почти отвесный клин,
      он и торчал в проходах на скриншотах. Переводим в юниты: cells(u) — сколько
      клеток нужно, чтобы получить u юнитов. */
-  const cells=u=>Math.max(1,Math.round(u/S));
-  /* v113. Смещения 48, 36, 60 — это «половина клетки» и её доли, записанные числом
-     при клетке 96u. На клетке 16u они уезжают на две-четыре клетки от своего места:
-     арка встаёт поперёк прохода и наглухо его закрывает, притолока висит в стороне.
-     hc — половина клетки, fr(u) — доля клетки, заданная в старых 96-х. */
-  const hc=S>>1, fr=u=>Math.round(S*u/96);
+
   const floorFrac=(x0,y0,x1,y1)=>{ let f=0,t=0; for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){t++; if(fl(x,y))f++;} return f/t; };
   const rampRun=(dir,dx0,dy0,dx1,dy1,want)=>{ const cells=[];
     if(dir==='W'||dir==='E'){ const wR=Math.min(2,dy1-dy0+1),ry0=dy0,ry1=ry0+wR-1;
@@ -4121,8 +4129,10 @@ function buildVMF(cur){
     solids.push(box(wx(dx0),wy(dy1+1),under, wx(dx1+1),wy(dy0),top, FLOORMAT));            // ходибельная плита
     deckTops.push([dx0,dy0,dx1,dy1,top]);   // приподнятый пол: крыша обязана его учесть
     const posts=[[dx0,dy0],[dx1,dy0],[dx0,dy1],[dx1,dy1]];
-    if(dx1-dx0>=4){const mx=(dx0+dx1)>>1; posts.push([mx,dy0],[mx,dy1]);}
-    if(dy1-dy0>=4){const my=(dy0+dy1)>>1; posts.push([dx0,my],[dx1,my]);}
+    /* v119: «палуба длиннее четырёх клеток получает средние стойки» — на 16u это 64u,
+       и стойки лезли под каждую палубу пачками. Порог в юнитах: 384u. */
+    if(dx1-dx0>=cells(384)){const mx=(dx0+dx1)>>1; posts.push([mx,dy0],[mx,dy1]);}
+    if(dy1-dy0>=cells(384)){const my=(dy0+dy1)>>1; posts.push([dx0,my],[dx1,my]);}
     for(const [cx,cy] of posts){ if(!fl(cx,cy))continue; const X=wx(cx),Y=wy(cy+1); solids.push(box(X,Y,ft-16,X+COLW,Y+COLW,under, WALLMAT)); }
     if(rmp.axis==='X'){ const y0=rmp.ry0,y1=rmp.ry1,xs=rmp.cells.map(p=>p[0]),xlo=Math.min(...xs),xhi=Math.max(...xs);
       if(dir==='W') solids.push(wedgeX(wx(xlo),wy(y1+1),baseZ, wx(xhi+1),wy(y0), ft, top, FLOORMAT));
