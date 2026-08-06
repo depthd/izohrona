@@ -3140,7 +3140,7 @@ function detRefine(src){
      Щели закрываются, двери остаются. Под охраной связности и с условием, что
      ни одно из двух мест не станет тупиком. */
   if(DET.seal){
-    let closed=0, tries=0;
+    let closed=0, tries=0, skipped=0;
     for(let round=0; round<2; round++){
       const ent=PLC_R.list.map(p=>p.ent);
       const cand=[];
@@ -3148,6 +3148,42 @@ function detRefine(src){
         if(s.n<6) cand.push({a:pl.id, b:s.b, n:s.n, cells:s.cells});
       if(!cand.length) break;
       cand.sort((u,v)=>u.n-v.n);                       // самые узкие первыми
+      /* ============ v126. ЩЕЛЬ ИЛИ КОРИДОР ============
+         Здесь была ошибка, из-за которой на картах появлялись стены поперёк ровных
+         прямых проходов. Пасс закрывал ЛЮБУЮ полосу уже 96u, считая её щелью.
+         Но вход в коридор шириной 80u выглядит ровно так же, как щель, — а это
+         нормальный проход, по нему ходят. Сторож связности не возражал, потому что
+         обход всегда находился: он бережёт СВЯЗНОСТЬ, а не МАРШРУТ. Генератор,
+         как и было сказано, просто не понимал, что загородил то, что не должен.
+
+         Отличаем по цене обхода. Щель — это дыра рядом с настоящей дверью: закрыл,
+         и путь удлинился на сотню-другую юнитов. Коридор — самостоятельный маршрут:
+         закрыл, и обход вырастает на тысячи или пропадает вовсе. Считаем длину пути
+         между двумя сторонами полосы ДО и ПОСЛЕ закладки; дороже порога — не трогаем. */
+      const обход=(cells,c)=>{
+        /* точка со стороны a и точка со стороны b, вплотную к полосе */
+        let sa=-1, sb=-1;
+        for(const i of c.cells){ const x=i%Wf, y=(i/Wf)|0;
+          for(const [dx,dy] of D8){ const nx=x+dx, ny=y+dy; if(!inb(nx,ny)) continue;
+            const j=ix(nx,ny); if(!gf[j]||cells.has(j)) continue;
+            if(PLC_R.pid[j]===c.a && sa<0) sa=j;
+            if(PLC_R.pid[j]===c.b && sb<0) sb=j; } }
+        if(sa<0||sb<0) return 0;                       // одна из сторон исчезает — это не щель
+        const dist=(закрыто)=>{ const D=new Int32Array(N).fill(-1); D[sa]=0;
+          const q=[sa];
+          for(let h=0;h<q.length;h++){ const j=q[h];
+            if(j===sb) return D[j];
+            const x=j%Wf, y=(j/Wf)|0;
+            for(const [dx,dy] of D8){ const nx=x+dx, ny=y+dy; if(!inb(nx,ny)) continue;
+              const k2=ix(nx,ny); if(!gf[k2]||D[k2]>=0) continue;
+              if(закрыто&&cells.has(k2)) continue;
+              D[k2]=D[j]+1; q.push(k2); } }
+          return -1; };
+        const было=dist(false), стало=dist(true);
+        if(стало<0) return 1e9;                        // обхода нет вовсе
+        return (стало-было)*16;                        // насколько длиннее, в юнитах
+      };
+      const ПОРОГ=512;                                 // дороже полутысячи юнитов — это маршрут
       for(const c of cand){
         if(ent[c.a]<=2 || ent[c.b]<=2) continue;       // тупика не делаем
         tries++;
@@ -3156,12 +3192,14 @@ function detRefine(src){
         for(const i of c.cells){ const x=i%Wf, y=(i/Wf)|0;
           for(const [dx,dy] of D8){ const nx=x+dx, ny=y+dy; if(!inb(nx,ny)) continue;
             const j=ix(nx,ny); if(gf[j]&&PLC_R.pid[j]===c.b) cells.add(j); } }
+        const цена=обход(cells,c);
+        if(цена>ПОРОГ){ skipped++; continue; }         // это не щель, это проход
         if(guarded([...cells])){ closed++; ent[c.a]--; ent[c.b]--; }
       }
       if(!closed) break;
       PLC_R=computePlaces(gf,Wf,Hf,16);                // границы поехали — пересчитываем
     }
-    stat.seal=closed; stat.sealTry=tries;
+    stat.seal=closed; stat.sealTry=tries; stat.sealKeep=skipped;
   }
 
   /* ============ v122. КРУПНЫЙ ТУПИК — ЛИБО ВТОРОЙ ВЫХОД, ЛИБО ЕГО НЕТ ============
