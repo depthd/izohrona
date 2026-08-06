@@ -91,7 +91,7 @@ const HTML=`<!doctype html><meta charset=utf-8><style>
 <div class=sub>Клетка рисунка = один повтор текстуры, посчитан по настоящим uaxis/vaxis из .vmf.
 Рамка = грань браша. Слева повтор обрезан краем, справа кончается ровно на ребре.</div>
 <table id=t></table><script>
-const ROWS=${JSON.stringify(rows)}, TEXW=${(96/8)};
+const ROWS=${JSON.stringify(rows)}, TEXW=${(+(process.argv[5]||32))/8};
 function draw(cv,w,h,x0,z1,ax,tile){
   const K=Math.min(3.2, 300/Math.max(w,h));
   cv.width=Math.round(w*K)+2; cv.height=Math.round(h*K)+2;
