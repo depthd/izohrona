@@ -166,6 +166,7 @@
         <button class="gen" id="gen">Сгенерировать карту</button>
         <button class="gen alt" id="reroll">↻ Перекатить только укрытия</button>
         <button class="gen alt" id="vmf">⬇ Скачать .vmf (для Hammer)</button>
+        <div id="uvrep" style="font-family:var(--mono); font-size:11px; color:#9fb2c2; margin-top:7px; line-height:1.5"></div>
         <details class="grp"><summary>Настройки карты</summary>
         <div class="ctl" title="v110. Профиль ставит все ручки разом под характер одной реальной карты. Раньше каждая ручка стояла в середине диапазона, и карта попадала внутрь полосы между dust2 и tuscan по всем метрикам сразу — то есть не походила ни на что. Совпадают статистики, а не форма.">
           <div class="row"><label>Стиль карты</label><span class="val" id="vProf">dust2</span></div>
@@ -215,6 +216,10 @@
           <div class="row"><label>Крытость проходов</label><span class="val" id="vTun">средне</span></div>
           <input type="range" id="sTun" min="0" max="1" step="0.1" value="0.5">
         </div>
+        <div class="ctl" title="v127. Сколько юнитов занимает ОДИН повтор текстуры. От этого числа зависит только выбор числа повторов на грань: чем крупнее тайл, тем меньше повторов и тем крупнее рисунок. Если в CS2 рисунок выходит вдвое мельче ожидаемого — поставь вдвое меньше. Только .vmf, на баланс и геометрию не влияет, перегенерация не нужна.">
+          <div class="row"><label>Тайл текстуры, юнитов</label><span class="val" id="vTile">96</span></div>
+          <input type="range" id="sTile" min="48" max="384" step="16" value="96">
+        </div>
         </details>
         <div class="ctl" title="v97. Вид под углом. Пол поднят на свою настоящую высоту из zfield, борта достроены там, где сосед ниже или пола нет, укрытия стоят коробками своей высоты (hgt в юнитах) и под своим углом (rot) — с тем же ужатием при повороте, что уходит в .vmf. Нужно потому, что перепад высот цветом не читается. Тяни мышью по карте — крутится.">
           <label class="tg" style="margin-bottom:9px">3D-превью (вид под углом) <input type="checkbox" id="t3D"></label>
@@ -242,6 +247,8 @@
           <label class="tg hid" title="Палас: дроп-площадка у плента. Подъём ТОЛЬКО по рампе, спрыгивание через открытый край на сайт, обратно не залезть (обрыв выше прыжка). Баланс это ЧЕСТНО считает — в дейкстру добавлено правило прыжка (подъём >59u непроходим). На карте — жёлтое плато, белая линия = дроп-край. Меняет геометрию -> перегенерация.">Дроп-площадки (плато) <input type="checkbox" id="tPalace"></label>
           <label class="tg hid" title="Каждый вход между зонами получает перемычку: от 128u (дверь) или 152u (арка на 2 клетки) до потолка. Щель полной высоты превращается в стену с дверным проёмом — входы читаются. Только VMF+карта, баланс не трогает. На карте — белые чёрточки.">Дверные проёмы <input type="checkbox" id="tDoors" checked></label>
           <label class="tg hid" title="ЭКСП. Грань стены перестаёт совпадать с границей клетки 96u: перегородка ужимается до 16-48u, а отвоёванная полоса отдаётся полу. Отступ дрожит по сторонам, поэтому край перестаёт быть идеально прямым. Замер по 7 реальным картам: плотность периметра 0.0111, у генератора без этого 0.0069. Только VMF, логику/баланс/нав не трогает. Брашей становится больше.">Тонкие стены (эксп.) <input type="checkbox" id="tFine"></label>
+          <label class="tg hid" title="v127. Скейл текстуры считается ПОД КАЖДУЮ ГРАНЬ так, чтобы вдоль неё уложилось целое число повторов, а шов сел ровно на ребро браша. Ящик 96u получает текстуру ровно по своему размеру, а не обрубок мировой сетки. Работает на телах, укрытиях и предметах мест. Только .vmf, перегенерация не нужна.">Текстура по размеру браша (v127) <input type="checkbox" id="tUVfit" checked></label>
+          <label class="tg hid" title="v127. Подгонять текстуру и у ПОЛА со СТЕНАМИ, а не только у тел. Осторожно: пол и стены нарезаны жадным мешером на плиты произвольного размера, и своя подгонка у каждой плиты разрывает рисунок на каждом стыке. Включай, если материал бесшовный и стыки не видны.">…и у пола со стенами <input type="checkbox" id="tUVall"></label>
           <label class="tg" title="Показывать структуры на 2D-карте: тоннели (коричневая заливка), здания (пунктирный контур), двери (белые чёрточки).">Структуры на карте <input type="checkbox" id="tStruct" checked></label>
           <label class="tg" title="v58. Раскрасить 2D-карту по ЗОНАМ (9 областей, как 9 именованных зон dust2). Это то же разбиение, по которому в .vmf раздаются материалы и editor-цвета брашей.">Зоны (разбиение) <input type="checkbox" id="tZones"></label>
           <label class="tg hid" title="v58. Лендмарки: плита-маркер 8u на каждой развилке (>=3 направления, >=2 зоны) и косяки-пилястры по бокам дверных проёмов. Ходьбу не трогают, дают точки самоориентации.">Лендмарки/косяки <input type="checkbox" id="tLmark" checked></label>
@@ -406,6 +413,30 @@ const V102L = { falloff:"0.55", stepTun:512, stepZone:640, wallFind:288, perZone
 const V83 = { site:true };
 const V81 = { radar:true, ladder:true, ladderMax:6, ladderDrop:112 };   // v87: столько, сколько ловушек   // v84: порог по факту перепадов
 const V79 = { pal:true, smooth:true, minRun:1, accent:true, steps:true, stepMax:96 };
+/* ====== v127: ТЕКСТУРА ПО РАЗМЕРУ БРАША ======
+   Раньше на все грани шёл один скейл UVS, а смещение было нулевое. Значит рисунок
+   лежал сеткой мира и резался краем браша где придётся: ящик 96u получал кусок
+   тайла 128u, стена 736u — пять с половиной повторов, последний обрубленный.
+   Теперь на каждую грань считается СВОЙ скейл так, чтобы вдоль грани уложилось
+   ЦЕЛОЕ число повторов, и своё смещение так, чтобы шов сел ровно на край браша.
+
+   tile — сколько юнитов занимает один повтор текстуры при опорном скейле UVS.
+   Это единственное число, которое я не могу проверить отсюда (нужен CS2), поэтому
+   оно вынесено ползунком: если рисунок выходит вдвое мельче ожидаемого — вдвое
+   меньше tile. На математику подгонки оно не влияет, только на выбор ЧИСЛА повторов.
+
+   snap — на сколько можно тянуть текстуру, чтобы попасть в целое число повторов.
+   1.35 значит: повтор растягивается максимум в 1.35 раза или жмётся в 1/1.35.
+   Дальше берётся соседнее число повторов — искажение всегда меньше корня из двух.
+
+   minFrac — ниже какой доли тайла грань не подгоняется вовсе. Обвязка 24u при
+   тайле 96 потребовала бы сжать картинку вчетверо — вместо ящика вышла бы каша,
+   и такая грань остаётся на мировой сетке. 0.42 значит: сжимать не сильнее 2.4 раза.
+
+   Тела карты — 32..64u в плане и 76..132u в высоту, поэтому тайл по умолчанию 96,
+   а не 128: при 128 почти каждая грань тела оказывалась короче порога и подгонка
+   не срабатывала там, ради чего затевалась. */
+const V127 = { fit:true, tile:96, snap:1.35, minFrac:0.42, all:false };
 const V75 = { swallow:true };   // удалять браши, целиком спрятанные внутри других
 const V72 = { clipLid:true, clipH:400, clipT:256, variety:true, routeGuard:true, routeMax:1.20 };
 const V61 = {
@@ -4341,6 +4372,13 @@ document.getElementById('tZlight').onchange=e=>{ZONELIGHT=e.target.checked;};
 const sTun=document.getElementById('sTun'), vTun=document.getElementById('vTun');
 sTun.oninput=()=>{ vTun.textContent=parseFloat(sTun.value)<0.05?'нет':parseFloat(sTun.value)<0.34?'мало':parseFloat(sTun.value)>0.75?'много':'средне'; };
 sTun.onchange=()=>{ TUNP=parseFloat(sTun.value); if(cur){ useCur(); cur.plan=planStructures(cur,TUNP); draw(); } };   // без перегенерации: тоннели g не трогают
+/* v127. Подгон текстуры. Ничего не пересчитывается: величины читаются в момент
+   сборки .vmf, поэтому перегенерация карте не нужна — достаточно скачать заново. */
+document.getElementById('tUVfit').onchange=e=>{ V127.fit=e.target.checked; };
+document.getElementById('tUVall').onchange=e=>{ V127.all=e.target.checked; };
+{ const sTile=document.getElementById('sTile'), vTile=document.getElementById('vTile');
+  sTile.oninput=()=>{ vTile.textContent=sTile.value; };
+  sTile.onchange=()=>{ V127.tile=+sTile.value; }; }
 /* ============ VMF-экспорт в браузере (VIS-чистый, с высотами) ============ */
 function buildVMF(cur){
   const ramps=RAMPS;
@@ -4370,6 +4408,75 @@ function buildVMF(cur){
   const MS=m=>(m&&m.t)?m:{t:m,w:m,b:m};        // набор граней: верх / боковины / низ
   const AX={ux:"1 0 0 0", uy:"0 1 0 0", vy:"0 -1 0 0", vz:"0 0 -1 0"};
   const A=(v,s)=>`[${v}] ${s}`;
+  /* ===== v127. ПОДГОН ТЕКСТУРЫ ПОД ГРАНЬ =====
+     Формат VMF: "uaxis" "[ux uy uz uoffset] uscale", и тексель считается как
+        u = (точка · ось) / uscale + uoffset.
+     Отсюда два следствия, на которых стоит вся подгонка:
+       период в юнитах = uscale · (текселей в повторе);
+       текстура начинается там, где u = 0, то есть в точке (точка·ось) = -uoffset·uscale.
+     Опорная точка: при скейле UVS повтор занимает V127.tile юнитов. Значит
+     текселей в повторе = tile/UVS — величина постоянная, от скейла не зависит.
+     Чтобы повтор занял ровно P юнитов, нужен скейл UVS·P/tile.
+     Чтобы шов сел на край браша c0, нужно смещение -c0/скейл.
+     Обе формулы точные, приближения нет.
+     Смещение сворачивается по модулю «текселей в повторе» — это сдвиг на целое
+     число повторов, картинку не двигает, но держит числа в файле маленькими. */
+  const AXV={ux:"1 0 0", uy:"0 1 0", vy:"0 -1 0", vz:"0 0 -1"};
+  let UVFIT={fit:0, grid:0, stretch:0};              // счётчик для панели приёмки
+  function fitAx(vec, c0, L, T, n, s0){
+    const grid=()=>{ UVFIT.grid++; return `[${vec} 0] ${s0}`; };
+    if(!V127.fit || !(L>0) || !(T>0)) return grid();
+    const K=Math.max(V127.snap,1.02);
+    let reps = n|0;
+    if(!reps){
+      /* Грань КОРОЧЕ одного повтора с запасом (обвязка 24u при тайле 128) не
+         подгоняется вовсе: чтобы уложить туда целый повтор, картинку пришлось бы
+         сжать вчетверо, и вместо ящика вышла бы каша. Такая грань остаётся на
+         мировой сетке — там она хотя бы продолжает рисунок соседней плоскости. */
+      if(L < T*(V127.minFrac||0.42)) return grid();
+      reps = Math.max(1, Math.round(L/T));
+      /* Ближайшее целое иногда требует растянуть повтор вдвое (грань 200u при тайле 128).
+         Порог snap ограничивает перекос: за ним берём соседнее число повторов. */
+      const k=L/(reps*T);
+      if(k>K) reps=Math.max(1,Math.ceil(L/(T*K)));
+      else if(k<1/K) reps=Math.max(1,Math.floor(L*K/T));
+    }
+    const sc = L*UVS/(V127.tile*reps);
+    const TW = V127.tile/UVS;
+    let off = (-c0/sc) % TW; if(off<0) off+=TW;
+    UVFIT.fit++;
+    const kk=L/(reps*T); if(kk>1.5||kk<0.67) UVFIT.stretch++;
+    return `[${vec} ${+off.toFixed(3)}] ${+sc.toFixed(6)}`;
+  }
+  /* Сколько юнитов должен занимать повтор у ЭТОГО материала: собственный скейл
+     материала остаётся смыслом «мельче/крупнее», но теперь влияет только на выбор
+     ЧИСЛА повторов, а не на итоговый скейл — иначе подгонка его же и затрёт. */
+  const tileOf=mm=>V127.tile*ms(mm)/UVS;
+  /* Шесть граней осевой коробки одним вызовом. n — принудительное число повторов
+     (1 = «текстура ровно по брашу», для ящиков и контейнеров), 0 = автоматически. */
+  function uvBox(x0,y0,z0,x1,y1,z1,m,n){
+    const q=MS(m), Lx=x1-x0, Ly=y1-y0, Lz=z1-z0;
+    return {
+      ut:fitAx(AXV.ux, x0, Lx, tileOf(q.t), n, ms(q.t)),
+      vt:fitAx(AXV.vy, -y1, Ly, tileOf(q.t), n, ms(q.t)),
+      ub:fitAx(AXV.ux, x0, Lx, tileOf(q.b), n, ms(q.b)),
+      vb:fitAx(AXV.vy, -y1, Ly, tileOf(q.b), n, ms(q.b)),
+      uY:fitAx(AXV.uy,  y0, Ly, tileOf(q.w), n, ms(q.w)),
+      uX:fitAx(AXV.ux,  x0, Lx, tileOf(q.w), n, ms(q.w)),
+      vw:fitAx(AXV.vz, -z1, Lz, tileOf(q.w), n, ms(q.w)) };
+  }
+  /* Мировая сетка — прежнее поведение: нулевое смещение, общий скейл. Нужно для
+     СПЛОШНЫХ поверхностей: соседние плиты пола нарезаны жадным мешером как попало,
+     и если каждой дать свой период, рисунок разъедется на каждом стыке. */
+  function uvGrid(m){ const q=MS(m); UVFIT.grid+=7; return {
+      ut:A(AX.ux,ms(q.t)), vt:A(AX.vy,ms(q.t)), ub:A(AX.ux,ms(q.b)), vb:A(AX.vy,ms(q.b)),
+      uY:A(AX.uy,ms(q.w)), uX:A(AX.ux,ms(q.w)), vw:A(AX.vz,ms(q.w)) }; }
+  /* fitN: 0/undefined — сетка мира, 1..N — столько повторов, 'a' — автоматически.
+     fitReps переводит это в число повторов для fitAx, либо null = не подгонять. */
+  const fitReps=fitN=>(!V127.fit||(!fitN&&!V127.all))?null
+    :((fitN==='a'||fitN===true)?0:(fitN|0));
+  const uvFor=(x0,y0,z0,x1,y1,z1,m,fitN)=>{ const n=fitReps(fitN);
+    return n===null ? uvGrid(m) : uvBox(x0,y0,z0,x1,y1,z1,m,n); };
   let ECOL="0 180 220";                       // v58: editor-цвет браша = цвет зоны. Виден в 2D-видах Хаммера.
   const UX="[1 0 0 0] 0.25", UY="[0 1 0 0] 0.25", VY="[0 -1 0 0] 0.25", VZ="[0 0 -1 0] 0.25";
   const S6=(p1,p2,p3,mat,ua,va)=>`\tside\n\t\t{\n\t\t"id" "${nid()}"\n\t\t"plane" "(${p1}) (${p2}) (${p3})"\n\t\t"material" "${mat}"\n\t\t"uaxis" "${ua}"\n\t\t"vaxis" "${va}"\n\t\t"rotation" "0"\n\t\t"lightmapscale" "16"\n\t\t"smoothing_groups" "0"\n\t\t}`;
@@ -4393,19 +4500,23 @@ function buildVMF(cur){
      целиком: значит она почти вся внутри чужого объёма и не нужна. */
   const REG=[];                       // {id,x0,y0,z0,x1,y1,z1,m}
   const TOK=n=>String.fromCharCode(0)+'B'+n+String.fromCharCode(0);
-  function boxAABB(x0,y0,z0,x1,y1,z1,m){
+  function boxAABB(x0,y0,z0,x1,y1,z1,m,fitN){
     if(!(x1>x0 && y1>y0 && z1>z0)){
       const st=(new Error()).stack||''; const at=(st.split('\n')[2]||'?').trim();
       DEGEN.push(`${Math.round(x1-x0)}x${Math.round(y1-y0)}x${Math.round(z1-z0)} @ ${at}`);
       return ''; }
-    REG.push({x0,y0,z0,x1,y1,z1,m,col:ECOL});
+    /* v127. UV считается ЗДЕСЬ, по ЦЕЛОЙ коробке, и дальше только копируется.
+       Вычитание режет ящик на куски; если каждому куску подогнать текстуру по его
+       собственному габариту, на месте разреза рисунок прыгнет. А оси и смещения
+       заданы в мировых координатах, поэтому кусок с ними ложится в общий узор сам. */
+    REG.push({x0,y0,z0,x1,y1,z1,m,col:ECOL,uv:uvFor(x0,y0,z0,x1,y1,z1,m,fitN)});
     return TOK(REG.length-1);
   }
   /* A минус B для осевых коробок: до шести кусков, точно */
   function subAABB(a,b){
     if(a.x1<=b.x0||b.x1<=a.x0||a.y1<=b.y0||b.y1<=a.y0||a.z1<=b.z0||b.z1<=a.z0) return [a];
     const out=[], cp=(x0,y0,z0,x1,y1,z1)=>{ if(x1>x0&&y1>y0&&z1>z0)
-      out.push({x0,y0,z0,x1,y1,z1,m:a.m,col:a.col}); };
+      out.push({x0,y0,z0,x1,y1,z1,m:a.m,col:a.col,uv:a.uv}); };
     const mx0=Math.max(a.x0,b.x0), mx1=Math.min(a.x1,b.x1);
     cp(a.x0,a.y0,a.z0, mx0,a.y1,a.z1);                       // слева
     cp(mx1,a.y0,a.z0, a.x1,a.y1,a.z1);                       // справа
@@ -4449,8 +4560,8 @@ function buildVMF(cur){
   }
   function emitAABB(q){ const sid=nid(), qq=MS(q.m);
     const x0=q.x0,y0=q.y0,z0=q.z0,x1=q.x1,y1=q.y1,z1=q.z1;
-    const ut=A(AX.ux,ms(qq.t)), vt=A(AX.vy,ms(qq.t)), ub=A(AX.ux,ms(qq.b)), vb=A(AX.vy,ms(qq.b));
-    const uY=A(AX.uy,ms(qq.w)), uXw=A(AX.ux,ms(qq.w)), vw=A(AX.vz,ms(qq.w));
+    const U=q.uv||uvGrid(q.m);
+    const ut=U.ut, vt=U.vt, ub=U.ub, vb=U.vb, uY=U.uY, uXw=U.uX, vw=U.vw;
     const s=[ S6(`${x0} ${y1} ${z1}`,`${x1} ${y1} ${z1}`,`${x1} ${y0} ${z1}`,mp(qq.t),ut,vt),
       S6(`${x0} ${y0} ${z0}`,`${x1} ${y0} ${z0}`,`${x1} ${y1} ${z0}`,mp(qq.b),ub,vb),
       S6(`${x0} ${y1} ${z1}`,`${x0} ${y0} ${z1}`,`${x0} ${y0} ${z0}`,mp(qq.w),uY,vw),
@@ -4472,15 +4583,15 @@ function buildVMF(cur){
     if(m.p) return /^tools\//i.test(m.p);
     for(const k of ['t','w','b']) if(m[k] && /^tools\//i.test(__toolPath(m[k]))) return true;
     return false; }
-  function box(x0,y0,z0,x1,y1,z1,m){
-    if(BOXREG && !isTool(m)) return boxAABB(x0,y0,z0,x1,y1,z1,m);
+  function box(x0,y0,z0,x1,y1,z1,m,fitN){
+    if(BOXREG && !isTool(m)) return boxAABB(x0,y0,z0,x1,y1,z1,m,fitN);
     if(!(x1>x0 && y1>y0 && z1>z0)){
       const st=(new Error()).stack||''; const at=(st.split('\n')[2]||'?').trim();
       DEGEN.push(`${Math.round(x1-x0)}x${Math.round(y1-y0)}x${Math.round(z1-z0)} @ ${at}`);
       return ''; }
     const sid=nid(), q=MS(m);
-    const ut=A(AX.ux,ms(q.t)), vt=A(AX.vy,ms(q.t)), ub=A(AX.ux,ms(q.b)), vb=A(AX.vy,ms(q.b));
-    const uY=A(AX.uy,ms(q.w)), uXw=A(AX.ux,ms(q.w)), vw=A(AX.vz,ms(q.w));
+    const U=isTool(m)?uvGrid(m):uvFor(x0,y0,z0,x1,y1,z1,m,fitN);
+    const ut=U.ut, vt=U.vt, ub=U.ub, vb=U.vb, uY=U.uY, uXw=U.uX, vw=U.vw;
     const s=[ S6(`${x0} ${y1} ${z1}`,`${x1} ${y1} ${z1}`,`${x1} ${y0} ${z1}`,mp(q.t),ut,vt),
       S6(`${x0} ${y0} ${z0}`,`${x1} ${y0} ${z0}`,`${x1} ${y1} ${z0}`,mp(q.b),ub,vb),
       S6(`${x0} ${y1} ${z1}`,`${x0} ${y0} ${z1}`,`${x0} ${y0} ${z0}`,mp(q.w),uY,vw),
@@ -4489,11 +4600,16 @@ function buildVMF(cur){
       S6(`${x1} ${y0} ${z0}`,`${x0} ${y0} ${z0}`,`${x0} ${y0} ${z1}`,mp(q.w),uXw,vw)];
     return `\tsolid\n\t{\n\t"id" "${sid}"\n${s.join("\n")}\n\t\teditor { "color" "${ECOL}" }\n\t}`; }
   // клин по Y. UV верхней грани идёт ВДОЛЬ СКАТА — иначе проекция сверху растягивает текстуру на 1/cos наклона.
-  function wedgeY(x0,y0,z0,x1,y1,ta,tb,m){ if(ta===tb) return box(x0,y0,z0,x1,y1,ta,m); const sid=nid(), q=MS(m);
+  function wedgeY(x0,y0,z0,x1,y1,ta,tb,m,fitN){ if(ta===tb) return box(x0,y0,z0,x1,y1,ta,m,fitN); const sid=nid(), q=MS(m);
     const dy=y1-y0, dz=tb-ta, Ln=Math.hypot(dy,dz)||1;
-    const ut=A(AX.ux,ms(q.t)), vt=`[0 ${(-dy/Ln).toFixed(6)} ${(-dz/Ln).toFixed(6)} 0] ${ms(q.t)}`;
-    const ub=A(AX.ux,ms(q.b)), vb=A(AX.vy,ms(q.b));
-    const uY=A(AX.uy,ms(q.w)), uXw=A(AX.ux,ms(q.w)), vw=A(AX.vz,ms(q.w));
+    const U=uvFor(x0,y0,z0,x1,y1,Math.max(ta,tb),m,fitN);
+    const ut=U.ut, ub=U.ub, vb=U.vb, uY=U.uY, uXw=U.uX, vw=U.vw;
+    /* v127. Скат: ось V идёт ВДОЛЬ ската, поэтому и подгонять её надо по ДЛИНЕ ската,
+       а не по проекции. c0 — самый дальний конец ската в проекции на эту ось. */
+    const sv=`0 ${(-dy/Ln).toFixed(6)} ${(-dz/Ln).toFixed(6)}`;
+    const pv=(y,z)=>(-dy*y-dz*z)/Ln, fn=fitReps(fitN);
+    const vt=(fn===null)?`[${sv} 0] ${ms(q.t)}`
+      :fitAx(sv, Math.min(pv(y0,ta),pv(y1,tb)), Ln, tileOf(q.t), fn, ms(q.t));
     const s=[ S6(`${x0} ${y1} ${tb}`,`${x1} ${y1} ${tb}`,`${x1} ${y0} ${ta}`,mp(q.t),ut,vt),
       S6(`${x0} ${y0} ${z0}`,`${x1} ${y0} ${z0}`,`${x1} ${y1} ${z0}`,mp(q.b),ub,vb),
       S6(`${x0} ${y1} ${tb}`,`${x0} ${y0} ${ta}`,`${x0} ${y0} ${z0}`,mp(q.w),uY,vw),
@@ -4502,11 +4618,14 @@ function buildVMF(cur){
       S6(`${x1} ${y0} ${z0}`,`${x0} ${y0} ${z0}`,`${x0} ${y0} ${ta}`,mp(q.w),uXw,vw)];
     return `\tsolid\n\t{\n\t"id" "${sid}"\n${s.join("\n")}\n\t\teditor { "color" "${ECOL}" }\n\t}`; }
   // клин по X. То же самое, скат вдоль X.
-  function wedgeX(x0,y0,z0,x1,y1,ta,tb,m){ if(ta===tb) return box(x0,y0,z0,x1,y1,ta,m); const sid=nid(), q=MS(m);
+  function wedgeX(x0,y0,z0,x1,y1,ta,tb,m,fitN){ if(ta===tb) return box(x0,y0,z0,x1,y1,ta,m,fitN); const sid=nid(), q=MS(m);
     const dx=x1-x0, dz=tb-ta, Ln=Math.hypot(dx,dz)||1;
-    const ut=`[${(dx/Ln).toFixed(6)} 0 ${(dz/Ln).toFixed(6)} 0] ${ms(q.t)}`, vt=A(AX.vy,ms(q.t));
-    const ub=A(AX.ux,ms(q.b)), vb=A(AX.vy,ms(q.b));
-    const uY=A(AX.uy,ms(q.w)), uXw=A(AX.ux,ms(q.w)), vw=A(AX.vz,ms(q.w));
+    const U=uvFor(x0,y0,z0,x1,y1,Math.max(ta,tb),m,fitN);
+    const vt=U.vt, ub=U.ub, vb=U.vb, uY=U.uY, uXw=U.uX, vw=U.vw;
+    const su=`${(dx/Ln).toFixed(6)} 0 ${(dz/Ln).toFixed(6)}`;
+    const pu=(x,z)=>(dx*x+dz*z)/Ln, fn=fitReps(fitN);
+    const ut=(fn===null)?`[${su} 0] ${ms(q.t)}`
+      :fitAx(su, Math.min(pu(x0,ta),pu(x1,tb)), Ln, tileOf(q.t), fn, ms(q.t));
     const s=[ S6(`${x0} ${y1} ${ta}`,`${x1} ${y1} ${tb}`,`${x1} ${y0} ${tb}`,mp(q.t),ut,vt),
       S6(`${x0} ${y0} ${z0}`,`${x1} ${y0} ${z0}`,`${x1} ${y1} ${z0}`,mp(q.b),ub,vb),
       S6(`${x0} ${y1} ${ta}`,`${x0} ${y0} ${ta}`,`${x0} ${y0} ${z0}`,mp(q.w),uY,vw),
@@ -4514,11 +4633,28 @@ function buildVMF(cur){
       S6(`${x1} ${y1} ${tb}`,`${x0} ${y1} ${ta}`,`${x0} ${y1} ${z0}`,mp(q.w),uXw,vw),
       S6(`${x1} ${y0} ${z0}`,`${x0} ${y0} ${z0}`,`${x0} ${y0} ${ta}`,mp(q.w),uXw,vw)];
     return `\tsolid\n\t{\n\t"id" "${sid}"\n${s.join("\n")}\n\t\teditor { "color" "${ECOL}" }\n\t}`; }
-  function rboxZ(x0,y0,z0,x1,y1,z1,deg,m){ if(!deg) return box(x0,y0,z0,x1,y1,z1,m); const sid=nid(), q=MS(m);
+  function rboxZ(x0,y0,z0,x1,y1,z1,deg,m,fitN){ if(!deg) return box(x0,y0,z0,x1,y1,z1,m,fitN); const sid=nid(), q=MS(m);
     const cx=(x0+x1)/2, cy=(y0+y1)/2, th=deg*Math.PI/180, c=Math.cos(th), sn=Math.sin(th);
     const P=(x,y,z)=>{ const X=cx+(x-cx)*c-(y-cy)*sn, Y=cy+(x-cx)*sn+(y-cy)*c; return `${Math.round(X)} ${Math.round(Y)} ${z}`; };
-    const ut=A(AX.ux,ms(q.t)), vt=A(AX.vy,ms(q.t)), ub=A(AX.ux,ms(q.b)), vb=A(AX.vy,ms(q.b));
-    const uY=A(AX.uy,ms(q.w)), uXw=A(AX.ux,ms(q.w)), vw=A(AX.vz,ms(q.w));
+    /* v127. У повёрнутой коробки грани повёрнуты, а оси UV были мировые: текстура
+       ложилась на грань наискось и на стыке двух граней ломалась. Оси теперь
+       СОБСТВЕННЫЕ, вдоль рёбер коробки.
+       Проекция точки на локальную ось раскладывается на постоянную и локальную
+       координату: p·(cos,sin,0) = (cx·cos + cy·sin) + (x - cx). Отсюда c0 сразу. */
+    const fn=fitReps(fitN);
+    const K1=cx*c+cy*sn, K2=-cx*sn+cy*c;
+    const aU=`${c.toFixed(6)} ${sn.toFixed(6)} 0`;          // вдоль локального X
+    const aV=`${(-sn).toFixed(6)} ${c.toFixed(6)} 0`;       // вдоль локального Y
+    const aVn=`${sn.toFixed(6)} ${(-c).toFixed(6)} 0`;      // против локального Y (верх/низ)
+    const Lx=x1-x0, Ly=y1-y0, Lz=z1-z0;
+    const F=(vec,c0,L,mm,fb)=>(fn===null)?A(fb,ms(mm)):fitAx(vec,c0,L,tileOf(mm),fn,ms(mm));
+    const ut =F(aU,  K1+x0-cx, Lx, q.t, AX.ux);
+    const vt =F(aVn,-(K2+y1-cy), Ly, q.t, AX.vy);
+    const ub =F(aU,  K1+x0-cx, Lx, q.b, AX.ux);
+    const vb =F(aVn,-(K2+y1-cy), Ly, q.b, AX.vy);
+    const uY =F(aV,  K2+y0-cy, Ly, q.w, AX.uy);
+    const uXw=F(aU,  K1+x0-cx, Lx, q.w, AX.ux);
+    const vw =F(AXV.vz, -z1,   Lz, q.w, AX.vz);
     const s=[ S6(P(x0,y1,z1),P(x1,y1,z1),P(x1,y0,z1),mp(q.t),ut,vt), S6(P(x0,y0,z0),P(x1,y0,z0),P(x1,y1,z0),mp(q.b),ub,vb),
       S6(P(x0,y1,z1),P(x0,y0,z1),P(x0,y0,z0),mp(q.w),uY,vw), S6(P(x1,y1,z0),P(x1,y0,z0),P(x1,y0,z1),mp(q.w),uY,vw),
       S6(P(x1,y1,z1),P(x0,y1,z1),P(x0,y1,z0),mp(q.w),uXw,vw), S6(P(x1,y0,z0),P(x0,y0,z0),P(x0,y0,z1),mp(q.w),uXw,vw)];
@@ -5205,11 +5341,13 @@ function buildVMF(cur){
        и утапливается только там, где под коробкой пандус или лестница. */
     const onSlope=(cur.rampMask&&cur.rampMask[i])||(cur.stairMask&&cur.stairMask[i]);
     const bot=onSlope?ft-16:ft;
-    if(c.rot) solids.push(rboxZ(rX0,rY0,bot,rX1,rY1,top,c.rot,cmat));
-    else      solids.push(box(X0,Y0,bot,X1,Y1,top,cmat));
+    /* v127. Тело — ПРЕДМЕТ, а не кусок сплошной поверхности: текстура ящика обязана
+       кончаться на его же ребре. 'a' = столько целых повторов, сколько влезает. */
+    if(c.rot) solids.push(rboxZ(rX0,rY0,bot,rX1,rY1,top,c.rot,cmat,'a'));
+    else      solids.push(box(X0,Y0,bot,X1,Y1,top,cmat,'a'));
     if(V70.sky&&c.hgt==='full'){ const cm2={p:DARKTRIM,s:UVS};
       /* без вылета: перегородка стоит вплотную к стенам, вылет дал бы совпадающие грани */
-      solids.push(box(X0,Y0,top, X1,Y1,top+24, {t:cm2,w:cm2,b:cm2})); } }
+      solids.push(box(X0,Y0,top, X1,Y1,top+24, {t:cm2,w:cm2,b:cm2},'a')); } }
   ECOL="0 180 220";
 
   /* ============ v120. ПРЕДМЕТЫ МЕСТ ============
@@ -5249,13 +5387,13 @@ function buildVMF(cur){
              мид недостижим на двух картах из трёх, и главный виновник — ровно этот
              браш 158x158x384. Вписываем повёрнутый квадрат в след. */
           const r=Math.min(X1-X0,Y1-Y0)/2/Math.SQRT2, h=384;
-          solids.push(rboxZ(cxm-r,cym-r,ft,cxm+r,cym+r,ft+h,45,body));
-          solids.push(box(X0,Y0,ft,X1,Y1,ft+20,trim));                   // цоколь
-          solids.push(box(X0,Y0,ft+h-20,X1,Y1,ft+h,trim));               // капитель
+          solids.push(rboxZ(cxm-r,cym-r,ft,cxm+r,cym+r,ft+h,45,body,'a'));
+          solids.push(box(X0,Y0,ft,X1,Y1,ft+20,trim,'a'));                   // цоколь
+          solids.push(box(X0,Y0,ft+h-20,X1,Y1,ft+h,trim,'a'));               // капитель
           break; }
         case 'crate1': {                                  // тумба со скошенной крышкой
-          solids.push(box(X0,Y0,ft, X1,Y1, ft+72, body));
-          solids.push(box(X0+8,Y0+8,ft+72, X1-8,Y1-8, ft+88, trim));
+          solids.push(box(X0,Y0,ft, X1,Y1, ft+72, body,'a'));
+          solids.push(box(X0+8,Y0+8,ft+72, X1-8,Y1-8, ft+88, trim,'a'));
           break; }
         case 'barrels': {                                 // три бочки разной высоты
           /* та же поправка: бочка — повёрнутый квадрат, её полудиагональ r*sqrt(2),
@@ -5265,45 +5403,45 @@ function buildVMF(cur){
           const r=half/(1.25+Math.SQRT2);
           const sp=[[-1,-0.6,96],[1,-0.2,112],[0.1,1,80]];
           for(const [ax,ay,hh] of sp){ const px2=cxm+ax*r*1.25, py2=cym+ay*r*1.25;
-            solids.push(rboxZ(px2-r,py2-r,ft,px2+r,py2+r,ft+hh-10,45,body));
-            solids.push(rboxZ(px2-r,py2-r,ft+hh-10,px2+r,py2+r,ft+hh,45,trim)); }
+            solids.push(rboxZ(px2-r,py2-r,ft,px2+r,py2+r,ft+hh-10,45,body,'a'));
+            solids.push(rboxZ(px2-r,py2-r,ft+hh-10,px2+r,py2+r,ft+hh,45,trim,'a')); }
           break; }
         case 'stack': {                                   // штабель уступом: 112 / 80 / 48
           const w2=(X1-X0), h2=(Y1-Y0);
-          solids.push(box(X0,Y0,ft, X0+w2*0.62, Y0+h2*0.62, ft+112, body));
-          solids.push(box(X0+w2*0.62,Y0,ft, X1, Y0+h2*0.55, ft+80, body));
-          solids.push(box(X0,Y0+h2*0.62,ft, X0+w2*0.55, Y1, ft+48, body));
-          solids.push(box(X0,Y0,ft+112, X0+w2*0.62, Y0+h2*0.62, ft+120, trim));
+          solids.push(box(X0,Y0,ft, X0+w2*0.62, Y0+h2*0.62, ft+112, body,'a'));
+          solids.push(box(X0+w2*0.62,Y0,ft, X1, Y0+h2*0.55, ft+80, body,'a'));
+          solids.push(box(X0,Y0+h2*0.62,ft, X0+w2*0.55, Y1, ft+48, body,'a'));
+          solids.push(box(X0,Y0,ft+112, X0+w2*0.62, Y0+h2*0.62, ft+120, trim,'a'));
           break; }
         case 'wallg': {                                   // стенка с козырьком — граффити-стена
-          solids.push(box(X0,Y0,ft, X1,Y1, ft+112, body));
-          solids.push(box(X0-12,Y0-12,ft+112, X1+12,Y1+12, ft+128, trim));
+          solids.push(box(X0,Y0,ft, X1,Y1, ft+112, body,'a'));
+          solids.push(box(X0-12,Y0-12,ft+112, X1+12,Y1+12, ft+128, trim,'a'));
           break; }
         case 'truck': {                                   // контейнер плюс кабина у торца
           const along=(X1-X0)>=(Y1-Y0);
           const cabin=along? (X1-X0)*0.28 : (Y1-Y0)*0.28;
           if(along){
-            solids.push(box(X0+cabin,Y0,ft, X1,Y1, ft+136, body));
-            solids.push(box(X0,Y0+ (Y1-Y0)*0.12, ft, X0+cabin, Y1-(Y1-Y0)*0.12, ft+96, trim));
-            solids.push(box(X0+cabin-8,Y0-8,ft+136, X1+8,Y1+8, ft+148, trim));
+            solids.push(box(X0+cabin,Y0,ft, X1,Y1, ft+136, body,'a'));
+            solids.push(box(X0,Y0+ (Y1-Y0)*0.12, ft, X0+cabin, Y1-(Y1-Y0)*0.12, ft+96, trim,'a'));
+            solids.push(box(X0+cabin-8,Y0-8,ft+136, X1+8,Y1+8, ft+148, trim,'a'));
           } else {
-            solids.push(box(X0,Y0+cabin,ft, X1,Y1, ft+136, body));
-            solids.push(box(X0+(X1-X0)*0.12,Y0,ft, X1-(X1-X0)*0.12, Y0+cabin, ft+96, trim));
-            solids.push(box(X0-8,Y0+cabin-8,ft+136, X1+8,Y1+8, ft+148, trim)); }
+            solids.push(box(X0,Y0+cabin,ft, X1,Y1, ft+136, body,'a'));
+            solids.push(box(X0+(X1-X0)*0.12,Y0,ft, X1-(X1-X0)*0.12, Y0+cabin, ft+96, trim,'a'));
+            solids.push(box(X0-8,Y0+cabin-8,ft+136, X1+8,Y1+8, ft+148, trim,'a')); }
           break; }
         case 'canopy': {                                  // навес: четыре стойки и крыша
           const P=32, HH=176;
           for(const [ax,ay] of [[0,0],[1,0],[0,1],[1,1]]){
             const px2=ax?X1-P:X0, py2=ay?Y1-P:Y0;
-            solids.push(box(px2,py2,ft, px2+P,py2+P, ft+HH, trim)); }
-          solids.push(box(X0-16,Y0-16,ft+HH, X1+16,Y1+16, ft+HH+16, body));
+            solids.push(box(px2,py2,ft, px2+P,py2+P, ft+HH, trim,'a')); }
+          solids.push(box(X0-16,Y0-16,ft+HH, X1+16,Y1+16, ft+HH+16, body,'a'));
           break; }
         case 'deck': {                                    // помост +64 со ступенями с одной стороны
           const HH=64, ST=4, sw=(Y1-Y0)/ST;
-          solids.push(box(X0,Y0+sw,ft, X1,Y1, ft+HH, body));
+          solids.push(box(X0,Y0+sw,ft, X1,Y1, ft+HH, body,'a'));
           for(let s=0;s<ST;s++)                            // 4 ступени по 16u — заходится ногами
-            solids.push(box(X0, Y0+sw*s/ST, ft, X1, Y0+sw*(s+1)/ST, ft+16*(s+1), trim));
-          solids.push(box(X0,Y0+sw,ft+HH, X1,Y1, ft+HH+8, trim));
+            solids.push(box(X0, Y0+sw*s/ST, ft, X1, Y0+sw*(s+1)/ST, ft+16*(s+1), trim,'a'));
+          solids.push(box(X0,Y0+sw,ft+HH, X1,Y1, ft+HH+8, trim,'a'));
           break; }
       }
     }
@@ -5812,6 +5950,13 @@ function buildVMF(cur){
     __kept+=ps.length;
     return ps.map(emitAABB).join('\n'); });
   cur.__csg={emitted:REG.length, pieces:__kept, dropped:__dropped, split:__split};
+  cur.__uv={подогнано:UVFIT.fit, сетка:UVFIT.grid, перекос:UVFIT.stretch,
+            тайл:V127.tile, всё:!!V127.all};
+  /* выгрузка для tools/uvchk.js: включается только извне, чтобы обычный экспорт
+     не тащил за собой копию всего списка коробок */
+  if(typeof window!=='undefined' && window.__UVDUMP)
+    window.__REGDUMP=REG.map(b=>({x0:b.x0,y0:b.y0,z0:b.z0,x1:b.x1,y1:b.y1,z1:b.z1,
+      uv:b.uv, split:(b.__parts||[]).length>1}));
   return __txt.replace(/\n{3,}/g,'\n');
 }
 function downloadVMF(){ if(!cur){return;} useCur(); const txt=buildVMF(cur);
@@ -5924,7 +6069,16 @@ function downloadRadar(){ if(!cur){return;} useCur();
   const bl=new Blob([txt],{type:'text/plain'}); const a2=document.createElement('a');
   a2.href=URL.createObjectURL(bl); a2.download=nm+'.txt';
   document.body.appendChild(a2); a2.click(); a2.remove(); }
-document.getElementById('vmf').onclick=()=>{ downloadVMF(); if(V81.radar) downloadRadar(); };
+document.getElementById('vmf').onclick=()=>{ downloadVMF(); if(V81.radar) downloadRadar();
+  /* v127. Отчёт о подгонке текстур виден только ПОСЛЕ сборки файла — он про
+     экспорт, а не про карту, поэтому и печатается здесь, а не в приёмке. */
+  const u=cur&&cur.__uv; if(!u) return;
+  const el=document.getElementById('uvrep'); if(!el) return;
+  const пер=u.перекос, дол=u.подогнано?Math.round(100*пер/u.подогнано):0;
+  el.innerHTML=`текстура по брашу: подогнано <b>${u.подогнано}</b> граней `+
+    `<span style="color:#7d92a4">(тайл ${u.тайл}u${u.всё?', вместе с полом и стенами':''})</span>`+
+    (пер?` · <span style="color:${дол>45?'#e8a24a':'#7fbf7f'}">с перекосом ${пер}</span>`:'')+
+    `<br><span style="color:#7d92a4">на мировой сетке ${u.сетка} — это пол, стены и грани короче ${Math.round(u.тайл*0.42)}u</span>`; };
 /* ===== v92: тумблеры ===== */
 (function(){ const b=(id,fn)=>{ const el=document.getElementById(id); if(el) el.onchange=()=>{ fn(el.checked); run(); }; };
   b('tFine16', v=>{ V95.fine=v; });
