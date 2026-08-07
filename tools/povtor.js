@@ -42,7 +42,7 @@ const path=require('path');
     const r=JSON.parse(await p.evaluate(`(function(){ useCur(); buildVMF(cur);
       return JSON.stringify({сид:cur.seed, аим:cur.__aim, ков:cur.coverSeed,
                  degen:cur.__degen.slice(0,8), degenN:cur.__degen.length,
-                 palas:cur.__palas, surf:cur.__surf, проруб:(cur.det||{}).проруб, почему:(cur.det||{}).прорубПочему, прМакс:(cur.det||{}).прорубМакс, прПар:(cur.det||{}).прорубПар, ступеней:(cur.det||{}).steps, замок:(cur.det||{}).замокСтоп||0,
+                 palas:cur.__palas, surf:cur.__surf, проруб:(cur.det||{}).проруб, крюкМакс:(cur.det||{}).крюкМакс, крюкХуже2:(cur.det||{}).крюкХуже2, попыток:(cur.__bal||{}).попыток, почему:(cur.det||{}).прорубПочему, прМакс:(cur.det||{}).прорубМакс, прПар:(cur.det||{}).прорубПар, ступеней:(cur.det||{}).steps, замок:(cur.det||{}).замокСтоп||0,
                  блок:cur.__block, недост:cur.__недост, пробка:(cur.det||{}).probka, lmCut:(cur.det||{}).lmCut, укрытий:(cur.cover||[]).length, ловушек:cur.__trap, лестниц:cur.__lad, остров:cur.__island, отрезано:cur.__cut, узк:cur.__uzk,
                  палас:(cur.palaces||[]).map(q=>({x0:q.x0,y0:q.y0,x1:q.x1,y1:q.y1,
                         topZ:+q.topZ.toFixed(2),рампа:(q.rampCells||[]).length}))}); })()`));
@@ -51,6 +51,7 @@ const path=require('path');
       +`  паласов ${r.палас.length}  проруб ${r.проруб}  ступеней ${r.ступеней}  замок ${r.замок}`
       +`  ловушек ${r.ловушек}  остров ${r.остров}  отрезано ${r.отрезано}  лестниц ${r.лестниц}`
       +`  пробок ${r.пробка}/${r.укрытий} lm${r.lmCut}  узко ${r.узк.потеряно}  НАПРЕДЕЛЕ ${r.узк.наПределе} (${r.узк.доляПредел}%)`);
+    console.log('  КРЮК ГЕН', r.крюкМакс, 'хуже2', r.крюкХуже2, '· попыток решателя', r.попыток);
     console.log('  проруб:', JSON.stringify(r.почему), 'макс', r.прМакс, 'пар', r.прПар);
     console.log('  экспорт закрыл пола:', r.блок.доля+'%', '· НЕДОСТУПНО', r.недост.потеряно, `(${r.недост.доля}%)`, JSON.stringify(r.недост.виновники));
     if(r.degenN) console.log('  вырожденные:', r.degen.join(' | '));
