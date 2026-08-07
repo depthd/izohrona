@@ -5729,20 +5729,52 @@ function buildVMF(cur){
       solids.push(box(cx-10,cy-10,lz-6, cx+10,cy+10,lz+6, SM));
       ents2.push([cx+dx*26, cy-dy*26, lz, V71L.scn, "255 238 214", V71L.rScn]); ns++; }
   }
-  /* v65 БАЛКИ: поперечины под крышей тоннеля через 4 клетки. */
+  /* v65 БАЛКИ: поперечины под крышей тоннеля.
+     v130. БАЛКА БЫЛА ЩЕПКОЙ. Сечение и отступ задавались ДОЛЯМИ КЛЕТКИ:
+       bIns = S/12 -> 1u,  bA = S*34/96 -> 6u,  bB = S*62/96 -> 10u,
+     а сама балка накрывала ОДНУ клетку. На выходе обломок 14 x 4 x 20, висящий
+     посреди потолка, — 21 штука на карту по замеру экспорта. На клетке 96u то же
+     выражение давало 80u поперёк, то есть почти всю ширину тоннеля, и выглядело
+     балкой; при переходе на 16u смысл потерялся, а формула осталась. Это уже
+     седьмой случай той же болезни: константа в юнитах, привязанная к размеру клетки.
+     Теперь балка идёт ПОПЕРЁК тоннеля во всю его ширину, а сечение — в юнитах. */
   if(V65.beams){
     const bm={p:DARKTRIM,s:UVS}, BM2={t:bm,w:bm,b:bm};
-    /* v112. Балка бралась как «клетка минус 8 юнитов с каждой стороны». На клетке 96u
-       это 80u, на 16u отступы встречаются посередине и ширина выходит НОЛЬ — 675
-       вырожденных брашей на карту, из-за них компиляция падала на стадии света.
-       Отступ и сечение переведены в доли клетки, шаг вдоль тоннеля — в юниты. */
-    const bIns=Math.max(1,Math.round(S/12)), bA=Math.round(S*34/96), bB=Math.round(S*62/96);
-    const beamStep=Math.max(2, Math.round(4*(96/S)*(96/S)));   // одна балка на те же ~384u пути
-    for(let ci=0;ci<plan.tunComps.length;ci++){ const cells=plan.tunComps[ci], rz=tunRZ[ci];
+    const BSEC=24;                                          // сечение балки вдоль хода, юнитов
+    const beamStep=Math.max(2, Math.round(384*192/(S*S)));  // одна балка на ~384u пути тоннеля
+    const inTun=new Uint8Array(W*H);
+    let nb=0;
+    for(let ci=0; ci<plan.tunComps.length; ci++){ const cells=plan.tunComps[ci], rz=tunRZ[ci];
+      for(const c of cells) inTun[c]=1;
+      /* Список клеток компоненты — порядок ОБХОДА, а не путь вдоль тоннеля. Шаг по
+         индексу поэтому кладёт балки кучей: четыре штуки в одном месте налезали
+         друг на друга, вычитание срезало их до полосок в 4u. Разводим по
+         РАССТОЯНИЮ: ближе 320 юнитов друг к другу балки не ставим. */
+      const ставили=[];
       for(let k=Math.min(beamStep>>1,cells.length>>1);k<cells.length;k+=beamStep){
-        const c=cells[k],lx=c%W,ly=(c/W)|0;
-        solids.push(box(wx(lx)+bIns, wy(ly+1)+bA, rz-26,
-                        wx(lx+1)-bIns, wy(ly+1)+bB, rz-6, BM2)); } }
+        const c=cells[k], lx=c%W, ly=(c/W)|0;
+        { const bx=wx(lx), by=wy(ly);
+          let рядом=false;
+          for(const q of ставили) if(Math.abs(q[0]-bx)<320 && Math.abs(q[1]-by)<320){ рядом=true; break; }
+          if(рядом) continue;
+          ставили.push([bx,by]); }
+        /* Направление тоннеля — вдоль той оси, где сплошной ряд длиннее.
+           Балка кладётся ПОПЕРЁК него, на всю ширину этого ряда: именно так
+           поперечина и читается — брус от стены до стены, а не кубик в воздухе. */
+        let x0=lx,x1=lx; while(x0>0   && inTun[ly*W+x0-1]) x0--;
+                         while(x1<W-1 && inTun[ly*W+x1+1]) x1++;
+        let y0=ly,y1=ly; while(y0>0   && inTun[(y0-1)*W+lx]) y0--;
+                         while(y1<H-1 && inTun[(y1+1)*W+lx]) y1++;
+        const half=BSEC>>1;
+        if(x1-x0 >= y1-y0){                                 // тоннель по X -> балка вдоль Y
+          const cx=wx(lx)+(S>>1);
+          solids.push(box(cx-half, wy(y1+1), rz-26, cx+half, wy(y0), rz-6, BM2));
+        } else {                                            // тоннель по Y -> балка вдоль X
+          const cy=wy(ly)-(S>>1);
+          solids.push(box(wx(x0), cy-half, rz-26, wx(x1+1), cy+half, rz-6, BM2)); }
+        nb++; }
+      for(const c of cells) inTun[c]=0; }
+    cur.__beams=nb;
   }
   if(V64.decor){
     /* v122. ПИЛЯСТРЫ. Задумано: выступ 12u примерно раз в 288u стены, чтобы длинная
