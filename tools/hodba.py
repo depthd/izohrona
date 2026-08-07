@@ -26,16 +26,21 @@ import collections, math, os
 # Диагностический ключ: снять ограничение на подъём. Если крюки при этом
 # исчезают, барикада ВЫСОТНАЯ (обрыв), а не стена. Один замер вместо спора.
 БЕЗ_ВЫСОТ = os.environ.get('БЕЗВЫСОТ') == '1'
+# Второй диагностический ключ: снять требование просвета над головой. У растра
+# генератора потолков нет вовсе, и если крюк при HEAD=1 схлопывается — расходятся
+# не стены, а перекрытия: крыши, палубы, арки.
+БЕЗ_ПОТОЛКА = os.environ.get('БЕЗПОТОЛКА') == '1'
 
 U = 16          # шаг сетки
-HEAD = 72       # рост игрока
+HEAD = 1 if БЕЗ_ПОТОЛКА else 72   # рост игрока
 UP = 59         # выше не подняться: шаг 18u, прыжок около 58u
 DOWN = 400      # вниз спрыгиваем откуда угодно
 STEP = 24       # на сколько опора под краем коробки может быть выше своей клетки
 
 
-def сетка(solid, column):
-    """Возвращает (узлы, adj, X0, Y0, W, H). Узел: (cx, cy, z)."""
+def сетка(solid, column, вернутьIV=False):
+    """Возвращает (узлы, adj, X0, Y0, W, H) или то же плюс IV — занятые
+    интервалы по клеткам, чтобы можно было посмотреть, ЧТО стоит в клетке."""
     X0 = min(s['x0'] for s in solid); X1 = max(s['x1'] for s in solid)
     Y0 = min(s['y0'] for s in solid); Y1 = max(s['y1'] for s in solid)
     W = int((X1 - X0) // U) + 1
@@ -56,15 +61,16 @@ def сетка(solid, column):
                 continue
             c = column(s, x, y)
             if c:
-                r.append(c)
+                r.append((c[0], c[1], i))
         r.sort()
         out = []
-        for b, t in r:
+        for b, t, i in r:
             if out and b <= out[-1][1] + 0.5:
                 if t > out[-1][1]:
-                    out[-1] = (out[-1][0], t)
+                    out[-1][1] = t
+                    out[-1][2].append(i)
             else:
-                out.append([b, t])
+                out.append([b, t, [i]])
         return out
 
     IV = [None] * (W * H)
@@ -76,7 +82,8 @@ def сетка(solid, column):
     def опора(i, предел):
         """Высшая поверхность в клетке не выше предела, и просвет над ней."""
         лучш = None
-        for k, (b, t) in enumerate(IV[i]):
+        for k, iv in enumerate(IV[i]):
+            t = iv[1]
             if t <= предел:
                 пот = IV[i][k + 1][0] if k + 1 < len(IV[i]) else 1e9
                 лучш = (t, пот)
@@ -84,16 +91,16 @@ def сетка(solid, column):
 
     def потолок(i, z):
         """Нижняя граница первого объёма выше z в клетке."""
-        for b, t in IV[i]:
-            if b > z + 0.5:
-                return b
+        for iv in IV[i]:
+            if iv[0] > z + 0.5:
+                return iv[0]
         return 1e9
 
     узлы = {}
     for cy in range(H - 1):
         for cx in range(W - 1):
             блок = [cy * W + cx, cy * W + cx + 1, (cy + 1) * W + cx, (cy + 1) * W + cx + 1]
-            for b0, t0 in IV[блок[0]]:
+            for b0, t0, _ин in IV[блок[0]]:
                 оп = []
                 for j in блок:
                     o = опора(j, t0 + STEP)
@@ -121,6 +128,8 @@ def сетка(solid, column):
                 for z2 in узлы[n]:
                     if БЕЗ_ВЫСОТ or (-DOWN <= z2 - z <= UP):
                         adj[(cx, cy, z)].append((n[0], n[1], z2))
+    if вернутьIV:
+        return узлы, adj, X0, Y0, W, H, IV
     return узлы, adj, X0, Y0, W, H
 
 

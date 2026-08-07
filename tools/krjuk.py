@@ -25,9 +25,74 @@ exec(src, ns)
 parse_solids, column = ns['parse_solids'], ns['column']
 
 
+РАЗРЕЗ = None
+if '--разрез' in sys.argv:
+    i = sys.argv.index('--разрез')
+    РАЗРЕЗ = (sys.argv[i+1], sys.argv[i+2])
+    del sys.argv[i:i+3]
+
+СНАП = '--снап' in sys.argv
+if СНАП:
+    sys.argv = [a for a in sys.argv if a != '--снап']
+    sys.argv.append('--снап')          # разбор читает его сам
+
 БЕЗ_ТЕЛ = '--безтел' in [a.lower() for a in sys.argv]
 if БЕЗ_ТЕЛ:
     sys.argv = [a for a in sys.argv if a.lower() != '--безтел']
+
+
+def разрез(места, точки, узлы, adj, IV, solid, X0, Y0, W, H):
+    """Что физически стоит на прямой между двумя местами и где рвётся путь.
+    Отвечает на вопрос «кто барикадит», не гадая по скриншоту."""
+    A, B = РАЗРЕЗ
+    if A not in точки or B not in точки or точки[A] is None or точки[B] is None:
+        print(f'  разрез: нет такой пары. Есть: {", ".join(места)}')
+        return
+    a, b = точки[A], точки[B]
+    d = hodba.волна(adj, a)
+    дошли = {(c[0], c[1]) for c in d}
+    n = max(abs(b[0]-a[0]), abs(b[1]-a[1]))
+    print(f'\n  РАЗРЕЗ «{A}» -> «{B}», {n} шагов по {U}u '
+          f'(путь {"есть" if b in d else "НЕ НАЙДЕН"}):')
+    проф = []
+    for k in range(n+1):
+        cx = round(a[0] + (b[0]-a[0])*k/n); cy = round(a[1] + (b[1]-a[1])*k/n)
+        есть = (cx, cy) in дошли
+        zs = узлы.get((cx, cy), [])
+        сост = 'идём' if есть else ('стоим' if zs else 'нет узла')
+        проф.append((k, cx, cy, сост, zs))
+    # профиль отметок: где рвётся, там и виновник
+    print('    отметки узлов по шагам (в скобках — состояние):')
+    строка = []
+    for k, cx, cy, сост, zs in проф:
+        м = {'идём': '', 'стоим': '*', 'нет узла': '#'}[сост]
+        строка.append(f'{k}:{",".join(f"{z:.0f}" for z in zs) or "-"}{м}')
+    for i in range(0, len(строка), 8):
+        print('      ' + '  '.join(строка[i:i+8]))
+    print('    * — узел есть, но от старта не достижим · # — узла нет')
+    # Разбор блока 2x2: узел строится по ЧЕТЫРЁМ клеткам, и если он оказался
+    # не там, где пол, надо видеть все четыре, а не центральную.
+    for k, cx, cy, сост, zs in проф:
+        if сост == 'идём':
+            continue
+        if k % 6 and k not in (проф[0][0],):
+            continue
+        print(f'    блок на шаге {k} ({X0+cx*U+U/2:.0f} {Y0+cy*U+U/2:.0f}):')
+        for (dx, dy) in ((0,0),(1,0),(0,1),(1,1)):
+            j = (cy+dy)*W + (cx+dx)
+            iv = IV[j] if 0 <= j < len(IV) else []
+            print(f'      +{dx}+{dy}: ' + (' | '.join(
+                f'{i[0]:.0f}..{i[1]:.0f} {solid[i[2][0]]["mat"].split("/")[-1][:18]}'
+                for i in iv[:4]) or 'пусто'))
+    прошлое = None
+    for k, cx, cy, сост, zs in проф:
+        if сост != прошлое:
+            iv = IV[cy*W + cx] if 0 <= cx < W and 0 <= cy < H else []
+            wx, wy = X0 + cx*U + U/2, Y0 + cy*U + U/2
+            что = ' | '.join(f'{solid[i[2][0]]["mat"].split("/")[-1][:20]} {i[0]:.0f}..{i[1]:.0f}'
+                             for i in iv[:3]) or 'пусто'
+            print(f'    шаг {k:3}  ({wx:.0f} {wy:.0f})  {сост:9}  {что}')
+            прошлое = сост
 
 
 def разбор(path):
@@ -48,9 +113,23 @@ def разбор(path):
         if nm and og:
             места[nm.group(1)] = tuple(float(v) for v in og.group(1).split())
 
-    узлы, adj, X0, Y0, W, H = hodba.сетка(solid, column)
+    узлы, adj, X0, Y0, W, H, IV = hodba.сетка(solid, column, вернутьIV=True)
     имена = list(места)
     точки = {n: hodba.ближайший(узлы, X0, Y0, места[n]) for n in имена}
+    # Диагностика прилипания: если точка места села на отметку далеко от своей,
+    # значит она прилипла к верху стены или к ящику, и всё дальнейшее — мусор.
+    if '--снап' in sys.argv:
+        print(f'\n  прилипание точек мест ({path}):')
+        for n in имена:
+            t = точки[n]
+            if t is None:
+                print(f'    {n:20} УЗЛА НЕТ ВООБЩЕ')
+                continue
+            dz = t[2] - места[n][2]
+            dxy = math.hypot((X0 + t[0]*U + U/2) - места[n][0],
+                             (Y0 + t[1]*U + U/2) - места[n][1])
+            метка = ' <-- ПОДОЗРИТЕЛЬНО' if abs(dz) > 64 or dxy > 100 else ''
+            print(f'    {n:20} dz {dz:+7.0f}u  сдвиг {dxy:5.0f}u{метка}')
     пары, кэш = [], {}
     for i, a in enumerate(имена):
         if точки[a] is None:
@@ -65,6 +144,8 @@ def разбор(path):
                 кэш[a] = hodba.волна(adj, точки[a])
             d = кэш[a].get(точки[b])
             пары.append((a, b, пр, None if d is None else d * U))
+    if РАЗРЕЗ:
+        разрез(места, точки, узлы, adj, IV, solid, X0, Y0, W, H)
     return места, пары, len(узлы)
 
 
