@@ -251,7 +251,7 @@
           <label class="tg hid" title="Палас: дроп-площадка у плента. Подъём ТОЛЬКО по рампе, спрыгивание через открытый край на сайт, обратно не залезть (обрыв выше прыжка). Баланс это ЧЕСТНО считает — в дейкстру добавлено правило прыжка (подъём >59u непроходим). На карте — жёлтое плато, белая линия = дроп-край. Меняет геометрию -> перегенерация.">Дроп-площадки (плато) <input type="checkbox" id="tPalace"></label>
           <label class="tg hid" title="Каждый вход между зонами получает перемычку: от 128u (дверь) или 152u (арка на 2 клетки) до потолка. Щель полной высоты превращается в стену с дверным проёмом — входы читаются. Только VMF+карта, баланс не трогает. На карте — белые чёрточки.">Дверные проёмы <input type="checkbox" id="tDoors" checked></label>
           <label class="tg hid" title="ЭКСП. Грань стены перестаёт совпадать с границей клетки 96u: перегородка ужимается до 16-48u, а отвоёванная полоса отдаётся полу. Отступ дрожит по сторонам, поэтому край перестаёт быть идеально прямым. Замер по 7 реальным картам: плотность периметра 0.0111, у генератора без этого 0.0069. Только VMF, логику/баланс/нав не трогает. Брашей становится больше.">Тонкие стены (эксп.) <input type="checkbox" id="tFine"></label>
-          <label class="tg hid" title="v127. Скейл текстуры считается ПОД КАЖДУЮ ГРАНЬ так, чтобы вдоль неё уложилось целое число повторов, а шов сел ровно на ребро браша. Ящик 96u получает текстуру ровно по своему размеру, а не обрубок мировой сетки. Работает на телах, укрытиях и предметах мест. Только .vmf, перегенерация не нужна.">Текстура по размеру браша (v127) <input type="checkbox" id="tUVfit" checked></label>
+          <label class="tg hid" title="v127. Скейл текстуры считается ПОД КАЖДУЮ ГРАНЬ так, чтобы вдоль неё уложилось целое число повторов, а шов сел ровно на ребро браша. Ящик 96u получает текстуру ровно по своему размеру, а не обрубок мировой сетки. Работает на телах, укрытиях и предметах мест. Только .vmf, перегенерация не нужна.">Текстура по размеру браша (v127, эксп.) <input type="checkbox" id="tUVfit"></label>
           <label class="tg hid" title="v127. Подгонять текстуру и у ПОЛА со СТЕНАМИ, а не только у тел. Осторожно: пол и стены нарезаны жадным мешером на плиты произвольного размера, и своя подгонка у каждой плиты разрывает рисунок на каждом стыке. Включай, если материал бесшовный и стыки не видны.">…и у пола со стенами <input type="checkbox" id="tUVall"></label>
           <label class="tg" title="Показывать структуры на 2D-карте: тоннели (коричневая заливка), здания (пунктирный контур), двери (белые чёрточки).">Структуры на карте <input type="checkbox" id="tStruct" checked></label>
           <label class="tg" title="v58. Раскрасить 2D-карту по ЗОНАМ (9 областей, как 9 именованных зон dust2). Это то же разбиение, по которому в .vmf раздаются материалы и editor-цвета брашей.">Зоны (разбиение) <input type="checkbox" id="tZones"></label>
@@ -455,7 +455,13 @@ const V79 = { pal:true, smooth:true, minRun:1, accent:true, steps:true, stepMax:
    all  — подгонять и пол со стенами. По умолчанию нет: они нарезаны жадным
           мешером на плиты произвольного размера, и своя подгонка у каждой плиты
           разорвала бы рисунок на каждом стыке. */
-const V127 = { fit:true, unit:32, want:96, snap:1.35, all:false };
+/* v127.2. ВЫКЛЮЧЕНО ПО УМОЛЧАНИЮ. В игре подгонка выглядит хуже исходного:
+   ящик получает свою текстуру растянутой втрое против натуральной, и рядом
+   стоящие тела перестают выглядеть одинаково. Математика верна (uvref.js
+   воспроизводит ручные ящики из Hammer до цифры), но задача была не в ней.
+   Код и обе ручки оставлены: включается тумблером «Текстура по размеру браша».
+   При fit=false экспорт пишет ровно те же оси и скейлы, что до всей работы. */
+const V127 = { fit:false, unit:32, want:96, snap:1.35, all:false };
 const V75 = { swallow:true };   // удалять браши, целиком спрятанные внутри других
 const V72 = { clipLid:true, clipH:400, clipT:256, variety:true, routeGuard:true, routeMax:1.20 };
 const V61 = {
@@ -4532,7 +4538,13 @@ function buildVMF(cur){
        Вычитание режет ящик на куски; если каждому куску подогнать текстуру по его
        собственному габариту, на месте разреза рисунок прыгнет. А оси и смещения
        заданы в мировых координатах, поэтому кусок с ними ложится в общий узор сам. */
-    REG.push({x0,y0,z0,x1,y1,z1,m,col:ECOL,uv:uvFor(x0,y0,z0,x1,y1,z1,m,fitN)});
+    const __rec={x0,y0,z0,x1,y1,z1,m,col:ECOL,uv:uvFor(x0,y0,z0,x1,y1,z1,m,fitN)};
+    /* отладка: кто именно выпустил коробку. Включается извне, чтобы не платить
+       за построение стека на каждой из тридцати тысяч коробок обычного экспорта. */
+    if(typeof window!=='undefined' && window.__TAGBOX){
+      const st=((new Error()).stack||'').split('\n');
+      __rec.at=(st[3]||st[2]||'').trim().replace(/^.*izohrona_v120\.html:/,'стр ').slice(0,20); }
+    REG.push(__rec);
     return TOK(REG.length-1);
   }
   /* A минус B для осевых коробок: до шести кусков, точно */
@@ -4722,6 +4734,20 @@ function buildVMF(cur){
   // ПОЛ v34: плоские террасы -> коробки по уровням (чёткие обрезы + широкие 18u-ступени лестниц).
   // Клинья ТОЛЬКО на рампах паласа/острова (перепад за клетку >18u — коробкой была бы непроходимая ступень),
   // и на лестницах, если включён тумблер «пандусы» (ramps).
+  /* ============ v128. НАСТОЯЩАЯ ПОВЕРХНОСТЬ ПОЛА ============
+     Пандусы кладутся КЛИНЬЯМИ по концевым отметкам полосы, а всё остальное —
+     плоскими коробками по zfield. На клине это два РАЗНЫХ числа: у Т-спавна
+     zfield говорил 24, а верх клина в той же точке был 168, и отряд оказывался
+     замурован в пандусе на 140 юнитов ниже его поверхности. Тем же промахом
+     висели в воздухе ящики и предметы: низ ставился на qz(zf), а под ним склон.
+     Замер по экспорту (tools/vise.py): спавнов в теле или без пола 8 из 16,
+     тел без опоры 59.
+     Лечится не подпорками, а одним общим ответом на вопрос «какая тут высота
+     пола НА САМОМ ДЕЛЕ». SURF заполняется тем же кодом, который печатает пол:
+     на клине — линейной интерполяцией по его концам, на плоскости — qz(zf),
+     на плато паласа — его отметкой. RAMPC помечает клетки, где пол наклонный.
+     Дальше спавны и тела спрашивают SURF, а не zfield. */
+  const RAMPC=new Uint8Array(W*H), SURF=new Float32Array(W*H); SURF.fill(NaN);
   if(cur.floorPieces && cur.floorPieces.length){
     /* ====== ПОЛ РАВЕН zfield ПО ПОСТРОЕНИЮ ======
        Раньше высота бралась из zA куска. Но куски и zfield разрешают перекрытия
@@ -4742,11 +4768,22 @@ function buildVMF(cur){
       const X0=wx(p.x0), X1=wx(p.x1+1), Y0=wy(p.y1+1), Y1=wy(p.y0);
       if(X1-X0<1 || Y1-Y0<1) continue;
       const zi=zAt(((p.y0+p.y1)>>1)*W+((p.x0+p.x1)>>1)); ECOL=ZE[zi];   // v58: пандус наследует зону
+      /* Верх клина линеен: у wedgeX ta стоит на X0 и tb на X1, у wedgeY ta на Y0
+         и tb на Y1. Значит поверхность в центре клетки берётся ровно так же. */
       if(p.ax==='X'){ const zL=p.rev?p.zB:p.zA, zR=p.rev?p.zA:p.zB;
-        solids.push(wedgeX(X0,Y0,baseZ, X1,Y1, qz(zL), qz(zR), ZF[zi])); }
+        const ta=qz(zL), tb=qz(zR);
+        solids.push(wedgeX(X0,Y0,baseZ, X1,Y1, ta, tb, ZF[zi]));
+        for(let y=Math.max(0,p.y0);y<=Math.min(H-1,p.y1);y++)
+          for(let x=Math.max(0,p.x0);x<=Math.min(W-1,p.x1);x++)
+            SURF[y*W+x]=ta+(tb-ta)*((wx(x)+hc-X0)/Math.max(1,X1-X0)); }
       else { const zN=p.rev?p.zA:p.zB, zS=p.rev?p.zB:p.zA;
-        solids.push(wedgeY(X0,Y0,baseZ, X1,Y1, qz(zN), qz(zS), ZF[zi])); }
+        const ta=qz(zN), tb=qz(zS);
+        solids.push(wedgeY(X0,Y0,baseZ, X1,Y1, ta, tb, ZF[zi]));
+        for(let y=Math.max(0,p.y0);y<=Math.min(H-1,p.y1);y++)
+          for(let x=Math.max(0,p.x0);x<=Math.min(W-1,p.x1);x++)
+            SURF[y*W+x]=ta+(tb-ta)*((wy(y+1)+hc-Y0)/Math.max(1,Y1-Y0)); }
     } ECOL="0 180 220";
+    for(let i=0;i<W*H;i++) if(rampCell[i]) RAMPC[i]=1;
     /* v58: ключ жадного мешера = уровень + ЗОНА + флаг плента.
        Раньше ключом был только уровень, поэтому одна плита переходила из зоны в зону
        и текстурной границы не было в принципе. Теперь шов браша совпадает с границей области. */
@@ -4774,16 +4811,46 @@ function buildVMF(cur){
     for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const i=y*W+x; if(!wc[i]) continue; const zi=zf[i];
       const zWn=(x>0&&g[i-1])?zf[i-1]:zi, zEn=(x<W-1&&g[i+1])?zf[i+1]:zi;
       const zNn=(y>0&&g[i-W])?zf[i-W]:zi, zSn=(y<H-1&&g[i+W])?zf[i+W]:zi;
-      if(Math.abs(zEn-zWn)>=Math.abs(zNn-zSn))
-        solids.push(wedgeX(wx(x),wy(y+1),baseZ, wx(x+1),wy(y), qz((zWn+zi)/2), qz((zi+zEn)/2), FLOORMAT));
-      else
-        solids.push(wedgeY(wx(x),wy(y+1),baseZ, wx(x+1),wy(y), qz((zSn+zi)/2), qz((zi+zNn)/2), FLOORMAT)); }
+      RAMPC[i]=1;
+      if(Math.abs(zEn-zWn)>=Math.abs(zNn-zSn)){
+        const ta=qz((zWn+zi)/2), tb=qz((zi+zEn)/2);
+        solids.push(wedgeX(wx(x),wy(y+1),baseZ, wx(x+1),wy(y), ta, tb, FLOORMAT));
+        SURF[i]=(ta+tb)/2;
+      } else {
+        const ta=qz((zSn+zi)/2), tb=qz((zi+zNn)/2);
+        solids.push(wedgeY(wx(x),wy(y+1),baseZ, wx(x+1),wy(y), ta, tb, FLOORMAT));
+        SURF[i]=(ta+tb)/2; } }
     const levels={}; for(let i=0;i<W*H;i++) if(g[i]&&!pal[i]&&!wc[i]){ const lv=qz(zf[i]); (levels[lv]=levels[lv]||new Uint8Array(W*H))[i]=1; }
     for(const lv in levels){ const top=parseInt(lv); for(const [x,y,w,h] of greedy(levels[lv]))
       solids.push(box(wx(x),wy(y+h),baseZ, wx(x+w),wy(y),top, FLOORMAT)); } }
   // плато паласов: плоские коробки от базы до topZ, обрыв остаётся резким (дроп-край)
-  if(cur.palaces) for(const p of cur.palaces)
+  if(cur.palaces) for(const p of cur.palaces){
     solids.push(box(wx(p.x0),wy(p.y1+1),baseZ, wx(p.x1+1),wy(p.y0),qz(p.topZ), FLOORMAT));
+    const tz=qz(p.topZ);
+    for(let y=Math.max(0,p.y0);y<=Math.min(H-1,p.y1);y++)
+      for(let x=Math.max(0,p.x0);x<=Math.min(W-1,p.x1);x++) SURF[y*W+x]=tz; }
+  /* всё, что не клин и не плато, напечатано плоской коробкой строго по zfield */
+  for(let i=0;i<W*H;i++) if(g[i] && !(SURF[i]===SURF[i])) SURF[i]=qz(zf[i]||0);
+  /* Настоящая отметка пола под прямоугольником клеток. min — потому что предмет
+     обязан ОПИРАТЬСЯ: на уступе он врежется в верхнюю ступень, но не повиснет
+     над нижней, а висящий в воздухе ящик видно сразу, утопленный — почти нет. */
+  const surfMin=(x0,y0,x1,y1)=>{ let m=Infinity;
+    for(let y=Math.max(0,y0);y<=Math.min(H-1,y1);y++)
+      for(let x=Math.max(0,x0);x<=Math.min(W-1,x1);x++){
+        const i=y*W+x; if(g[i] && SURF[i]<m) m=SURF[i]; }
+    return m===Infinity?null:Math.round(m); };
+  const rampAny=(x0,y0,x1,y1)=>{
+    for(let y=Math.max(0,y0);y<=Math.min(H-1,y1);y++)
+      for(let x=Math.max(0,x0);x<=Math.min(W-1,x1);x++) if(RAMPC[y*W+x]) return true;
+    return false; };
+  /* Занятость телами: спавн не должен оказаться внутри ящика. Именно так вышло
+     у КТ — точка на -128 попала в ящик -144..-112 всеми девятью углами. */
+  const OCC=new Uint8Array(W*H);
+  const занять=(x0,y0,w,h)=>{ for(let oy=0;oy<h;oy++)for(let ox=0;ox<w;ox++){
+    const x=x0+ox, y=y0+oy; if(x>=0&&y>=0&&x<W&&y<H) OCC[y*W+x]=1; } };
+  if(cur.cover) for(const c of cur.cover){ const hh=(c.hgt==='full')?999:(c.hgt||40);
+    if(hh>18) занять(c.x,c.y,c.w||1,c.h||1); }
+  if(cur.lmarks) for(const L of cur.lmarks) занять(L.x,L.y,L.w,L.h);
 
   /* ====== ЗАПЛАТКА ДЫР ======
      Стены строятся как wm[i]=!g[i], пол — из независимого списка floorPieces.
@@ -5331,7 +5398,12 @@ function buildVMF(cur){
     for(let y=bR.y0;y<bR.y1;y++)for(let x=bR.x0;x<bR.x1;x++){ const i=y*W+x; if(rz<rzCell[i]) rzCell[i]=rz; } }
 
   // укрытия по типам: стены (112u / до потолка) и ящики (40/64u); -16 садит низ в пол при клиньях
-  if(cur.cover) for(const c of cur.cover){ const i=c.y*W+c.x; const ft=qz(zf[i]||0);
+  if(cur.cover) for(const c of cur.cover){ const i=c.y*W+c.x;
+    /* v128. Было qz(zf) по УГЛОВОЙ клетке тела. На клине это не та высота, а на
+       уступе низ садился по одной клетке из четырёх — отсюда 59 тел без опоры
+       в замере. Теперь опора берётся по всему следу и по НАСТОЯЩЕЙ поверхности. */
+    const ft=surfMin(c.x,c.y,c.x+(c.w||1)-1,c.y+(c.h||1)-1);
+    if(ft===null) continue;
     /* v70: 'full' раньше значило «до потолка», а потолок был низкий (+448). После подъёма
        неба это стало башней в 2000u с текстурой ящика. Теперь это перегородка ростом со стену. */
     let top = c.hgt==='full' ? (V70.sky ? ft+384 : CEIL) : ft+(c.hgt||40);
@@ -5362,8 +5434,11 @@ function buildVMF(cur){
        это загоняло её внутрь плиты: у обрыва коробка и плита занимают один объём и
        дерутся за текстуру — то самое ребрение на скриншоте. Теперь низ ВРОВЕНЬ с полом,
        и утапливается только там, где под коробкой пандус или лестница. */
-    const onSlope=(cur.rampMask&&cur.rampMask[i])||(cur.stairMask&&cur.stairMask[i]);
-    const bot=onSlope?ft-16:ft;
+    /* На склоне низ утапливается на перепад по следу, иначе тело стоит на самой
+       низкой точке и с высокой стороны под ним видна щель. */
+    const onSlope=rampAny(c.x,c.y,c.x+cw0-1,c.y+ch0-1)
+      ||(cur.rampMask&&cur.rampMask[i])||(cur.stairMask&&cur.stairMask[i]);
+    const bot=onSlope?ft-48:ft;
     /* v127. Тело — ПРЕДМЕТ, а не кусок сплошной поверхности: текстура ящика обязана
        кончаться на его же ребре. 'a' = столько целых повторов, сколько влезает. */
     if(c.rot) solids.push(rboxZ(rX0,rY0,bot,rX1,rY1,top,c.rot,cmat,'a'));
@@ -5384,13 +5459,14 @@ function buildVMF(cur){
       const ci=Math.min(W*H-1,Math.max(0,(L.cy|0)*W+(L.cx|0)));
       const zi=zAt(ci); ECOL=ZE[zi];
       const body=ZC[zi], trim=ACCM;                      // корпус — акцент зоны, обвязка тёмная
-      /* пол под предметом бывает ступенчатым: берём САМУЮ ВЫСОКУЮ точку следа,
-         иначе угол предмета зависает над обрывом */
-      let ft=-1e9;
-      for(let oy=0;oy<L.h;oy++)for(let ox=0;ox<L.w;ox++){
-        const x=L.x+ox, y=L.y+oy; if(x<0||y<0||x>=W||y>=H) continue;
-        const v=qz(zf[y*W+x]||0); if(v>ft) ft=v; }
-      if(ft<-1e8) continue;
+      /* v128. Было: САМАЯ ВЫСОКАЯ точка следа по zfield — «чтобы угол не зависал
+         над обрывом». На деле это ровно обратное: предмет вставал на верхнюю
+         ступень и висел над нижней, а на пандусе zfield вообще не та высота.
+         Берём МИНИМУМ по НАСТОЯЩЕЙ поверхности: предмет может врезаться в уступ,
+         но не повиснет — щель под предметом видно сразу, врезку почти нет. */
+      let ft=surfMin(L.x,L.y,L.x+L.w-1,L.y+L.h-1);
+      if(ft===null) continue;
+      if(rampAny(L.x,L.y,L.x+L.w-1,L.y+L.h-1)) ft-=48;
       const X0=wx(L.x), X1=wx(L.x+L.w), Y0=wy(L.y+L.h), Y1=wy(L.y);
       const cxm=(X0+X1)/2, cym=(Y0+Y1)/2;
       switch(L.k){
@@ -5769,11 +5845,17 @@ function buildVMF(cur){
       const x=pt[0]+ox, y=pt[1]+oy;
       if(x<2||y<2||x>=W-2||y>=H-2) continue;
       const i=y*W+x; if(!g[i]) continue;
-      const z0=qz(zf[i]||0);
+      /* v128. Три новых условия, каждое по факту с экспорта:
+         1) не на пандусе. Клин печатается по концам полосы, а не по клетке, и на
+            Т-спавне расходился с zfield на 140 юнитов — отряд стоял внутри камня;
+         2) не под телом. У КТ точка на -128 попала внутрь ящика -144..-112;
+         3) отметка берётся из SURF — того, что реально напечатано, а не из zfield. */
+      if(RAMPC[i] || OCC[i]) continue;
+      const z0=Math.round(SURF[i]);
       let ровно=true;
       for(let dy=-1;dy<=1&&ровно;dy++)for(let dx=-1;dx<=1;dx++){
         const j=(y+dy)*W+(x+dx);
-        if(!g[j] || qz(zf[j]||0)!==z0){ ровно=false; break; } }
+        if(!g[j] || RAMPC[j] || OCC[j] || Math.round(SURF[j])!==z0){ ровно=false; break; } }
       if(!ровно) continue;
       /* до стены не меньше 48u: считаем по кольцу радиуса 3 клетки при S=16 */
       const RR=Math.max(1,Math.round(48/S)); let чисто=true;
@@ -5977,9 +6059,9 @@ function buildVMF(cur){
             рисунок:V127.want, натура:V127.unit, всё:!!V127.all};
   /* выгрузка для tools/uvchk.js: включается только извне, чтобы обычный экспорт
      не тащил за собой копию всего списка коробок */
-  if(typeof window!=='undefined' && window.__UVDUMP)
+  if(typeof window!=='undefined' && (window.__UVDUMP||window.__TAGBOX))
     window.__REGDUMP=REG.map(b=>({x0:b.x0,y0:b.y0,z0:b.z0,x1:b.x1,y1:b.y1,z1:b.z1,
-      uv:b.uv, split:(b.__parts||[]).length>1}));
+      uv:b.uv, at:b.at, split:(b.__parts||[]).length>1}));
   return __txt.replace(/\n{3,}/g,'\n');
 }
 function downloadVMF(){ if(!cur){return;} useCur(); const txt=buildVMF(cur);
