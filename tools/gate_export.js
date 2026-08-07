@@ -17,9 +17,15 @@ const fs=require('fs'), path=require('path');
   await p.waitForFunction('typeof cur!=="undefined" && cur && cur.g',null,{timeout:180000,polling:400});
   const итог=[];
   for(let k=0;k<N;k++){
-    if(k){ const пр=await p.evaluate('cur.seed'); await p.click('#gen');
+    /* Карту со ЗАГРУЗКИ страницы не берём: её цель баланса зависит от того, чем
+       был инициализирован снос, и повторить её тройкой сид:цель:ковёр нельзя.
+       Карта, которую нельзя повторить, бесполезна для разбора дефекта. */
+    { const пр=await p.evaluate('cur.seed'); await p.click('#gen');
       await p.waitForFunction(`cur && cur.seed!==${пр}`,null,{timeout:150000,polling:400}); }
     const t0=Date.now();
+    /* __TAGBOX включает запись строки стека на каждой коробке: без неё
+       «недоступно» есть, а виновника нет. Платим временем сборки. */
+    await p.evaluate('window.__TAGBOX=1');
     const txt=await p.evaluate('(function(){ useCur(); return buildVMF(cur); })()');
     const файл=`${куда}/m${k}.vmf`;
     fs.writeFileSync(файл,txt);
@@ -66,7 +72,8 @@ const fs=require('fs'), path=require('path');
       спавновT:cur.__spT, спавновC:cur.__spC,
       мест:(cur.places&&cur.places.count)||0, укрытий:(cur.cover||[]).length,
       предметов:(cur.lmarks||[]).length, балок:cur.__beams, csg:cur.__csg,
-      замокСтоп:(cur.det||{}).замокСтоп||0, проруб:(cur.det||{}).проруб||0 })`);
+      замокСтоп:(cur.det||{}).замокСтоп||0, проруб:(cur.det||{}).проруб||0,
+      недост:cur.__недост, остров:cur.__island, отрезано:cur.__cut, пилястр:cur.__pil })`);
     итог.push(Object.assign(JSON.parse(st), {файл, мс:Date.now()-t0, крюкГен,
       каллаутов:(txt.match(/env_cs_place/g)||[]).length,
       цветUndefined:(txt.match(/"color" "undefined"/g)||[]).length,
