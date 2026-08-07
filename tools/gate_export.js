@@ -73,7 +73,7 @@ const fs=require('fs'), path=require('path');
       мест:(cur.places&&cur.places.count)||0, укрытий:(cur.cover||[]).length,
       предметов:(cur.lmarks||[]).length, балок:cur.__beams, csg:cur.__csg,
       замокСтоп:(cur.det||{}).замокСтоп||0, проруб:(cur.det||{}).проруб||0,
-      недост:cur.__недост, крюкМакс:(cur.det||{}).крюкМакс, крюкХуже2:(cur.det||{}).крюкХуже2, крюкНетПути:(cur.det||{}).крюкНетПути, остров:cur.__island, отрезано:cur.__cut, пилястр:cur.__pil })`);
+      недост:cur.__недост, крпеч:cur.__крюкПеч, крюкМакс:(cur.det||{}).крюкМакс, крюкХуже2:(cur.det||{}).крюкХуже2, крюкНетПути:(cur.det||{}).крюкНетПути, остров:cur.__island, отрезано:cur.__cut, пилястр:cur.__pil })`);
     итог.push(Object.assign(JSON.parse(st), {файл, мс:Date.now()-t0, крюкГен,
       каллаутов:(txt.match(/env_cs_place/g)||[]).length,
       цветUndefined:(txt.match(/"color" "undefined"/g)||[]).length,

@@ -4316,16 +4316,77 @@ function detRefine(src){
        посчитан ДО ярусов и прорубa и с тех пор не пересчитывался, свежий — после.
        На одной карте свежий давал 2.03, PLC_R — 9.05, и приёмка по .vmf
        подтвердила 11.17 на той же паре. Мерить надо то, что видит игрок. */
-    { const L=(PLC_R&&PLC_R.list)||[]; const т=L.map(p=>ближУзел(p.x,p.y,6));
+    /* ============ v136.2. ЯКОРЬ МЕСТА СЧИТАЕТСЯ ЗДЕСЬ И ОДИН РАЗ ============
+       Точка, которой место представлено в замерах, обязана быть той же, что
+       уходит в .vmf как origin у env_cs_place. Иначе генератор меряет пары между
+       одними точками, приёмка между другими, и спорить о цифрах бессмысленно:
+       на одной карте у них даже наборы пар не совпадали.
+       Якорь — клетка СВОЕГО места, свободная от тела, ближайшая к середине рамки.
+       Свободная — потому что у места есть предмет, и ставится он по центру:
+       каллаут иначе оказывается ВНУТРИ штабеля ящиков высотой 200u, а приёмка
+       привязывается к его крышке, на которую нельзя залезть. */
+    { const занТел=new Uint8Array(N);
+      const пометь=(x,y,w,h)=>{ for(let oy=0;oy<(h||1);oy++)for(let ox=0;ox<(w||1);ox++){
+        const a=x+ox, b=y+oy; if(inb(a,b)) занТел[ix(a,b)]=1; } };
+      for(const c of (cov||[])){ const hh=(c.hgt==='full')?999:(c.hgt||40);
+        if(hh>18) пометь(c.x,c.y,c.w,c.h); }
+      for(const L2 of (LMKS||[])) пометь(L2.x,L2.y,L2.w,L2.h);
+      for(const p of ((PLC_R&&PLC_R.list)||[])){
+        let ax=p.x, ay=p.y, ad=1e18;
+        const cx0=(p.minx+p.maxx)/2, cy0=(p.miny+p.maxy)/2;
+        for(let y=p.miny;y<=p.maxy;y++)for(let x=p.minx;x<=p.maxx;x++){
+          if(!inb(x,y)) continue; const i=ix(x,y);
+          if(!gf[i] || (PLC_R.pid && PLC_R.pid[i]!==p.id) || занТел[i]) continue;
+          const d=(x-cx0)*(x-cx0)+(y-cy0)*(y-cy0);
+          if(d<ad){ ad=d; ax=x; ay=y; } }
+        p.ax=ax; p.ay=ay; } }
+    /* ============ v136.2. КРЮК СЧИТАЕТСЯ С ТЕЛАМИ ============
+       Растр про ящики не знает, и крюк по нему выходил 1.84 там, где приёмка по
+       .vmf на той же карте, с теми же якорями, давала 5.74: ящик закрывал
+       короткий проход между двумя соседними местами, а обход у обоих от спавна
+       оставался прежней длины — поэтому и мера «недоступно» этого не видела.
+       Считаем крюк по маске С ТЕЛАМИ и берём худшее из двух. Модель тела та же,
+       что в чистке укрытий: выше 40u — стена, ниже — переступается. */
+    { const узелТ=new Uint8Array(N);
+      const занВыс=new Uint8Array(N);
+      const пометьВ=(x,y,w,h)=>{ for(let oy=0;oy<(h||1);oy++)for(let ox=0;ox<(w||1);ox++){
+        const a=x+ox, b=y+oy; if(inb(a,b)) занВыс[ix(a,b)]=1; } };
+      for(const c of (cov||[])){ const hh=(c.hgt==='full')?999:(c.hgt||40);
+        if(hh>40) пометьВ(c.x,c.y,c.w,c.h); }
+      for(const L2 of (LMKS||[])) пометьВ(L2.x,L2.y,L2.w,L2.h);
+      for(let y=0;y<Hf-1;y++)for(let x=0;x<Wf-1;x++){ const a=y*Wf+x;
+        if(!узел[a]) continue;
+        if(занВыс[a]||занВыс[a+1]||занВыс[a+Wf]||занВыс[a+Wf+1]) continue;
+        узелТ[a]=1; }
+      const _td=new Int32Array(N), _tq=new Int32Array(N);
+      const волнаТ=(старт)=>{ _td.fill(-1); let h=0,t=0; _td[старт]=0; _tq[t++]=старт;
+        while(h<t){ const j=_tq[h++], x=j%Wf, y=(j/Wf)|0, nd=_td[j]+1;
+          for(const [dx,dy] of D8){ const nx=x+dx, ny=y+dy;
+            if(nx<0||ny<0||nx>=Wf-1||ny>=Hf-1) continue;
+            const k=ny*Wf+nx; if(!узелТ[k]||_td[k]>=0) continue;
+            if(zу[k]-zу[j]>UPZ) continue;
+            _td[k]=nd; _tq[t++]=k; } }
+        return _td; };
+      const близТ=(cx,cy,r)=>{ let best=-1,bd=1e9;
+        for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
+          const x=cx+dx, y=cy+dy; if(x<0||y<0||x>=Wf-1||y>=Hf-1) continue;
+          const j=y*Wf+x; if(!узелТ[j]) continue;
+          const q=dx*dx+dy*dy; if(q<bd){bd=q;best=j;} }
+        return best; };
+      const L=(PLC_R&&PLC_R.list)||[];
       let мк=0, хуже=0, пар=0, нет=0;
-      for(let i=0;i<L.length;i++){ if(т[i]<0) continue; let d2=null;
-        for(let j=i+1;j<L.length;j++){ if(т[j]<0) continue;
-          const пр=Math.hypot(L[i].x-L[j].x, L[i].y-L[j].y);
-          if(пр>PR_БЛИЗКО||пр<PR_МИН) continue;
-          if(!d2) d2=волна(т[i]).slice();
-          const dd=d2[т[j]]; пар++;
-          if(dd<0){ нет++; хуже++; continue; }
-          const k=dd/пр; if(k>мк) мк=k; if(k>2) хуже++; } }
+      for(const [узм,бл,вл] of [[узел,ближУзел,волна],[узелТ,близТ,волнаТ]]){
+        const т=L.map(p=>бл(p.ax,p.ay,6));
+        for(let i=0;i<L.length;i++){ if(т[i]<0) continue; let d2=null;
+          for(let j=i+1;j<L.length;j++){ if(т[j]<0) continue;
+            const пр=Math.hypot(L[i].ax-L[j].ax, L[i].ay-L[j].ay);
+            if(пр>PR_БЛИЗКО||пр<PR_МИН) continue;
+            if(!d2) d2=вл(т[i]).slice();
+            const dd=d2[т[j]];
+            if(узм===узел) пар++;
+            if(dd<0){ if(узм===узел){ нет++; хуже++; } continue; }
+            const k=dd/пр; if(k>мк) мк=k;
+            if(k>2 && узм===узел) хуже++; } } }
       stat.крюкМакс=+мк.toFixed(2); stat.крюкХуже2=хуже;
       stat.крюкПар=пар; stat.крюкНетПути=нет; }
   }
@@ -6115,12 +6176,40 @@ function buildVMF(cur){
       const km={p:matOf(zi,'c'),s:UVS}, KM={t:km,w:km,b:km}, JH=192, JT=24; ECOL=ZE[zi];
       if(V63.arch){
         const AT=32, DHa=(d.w===1?128:d.w===2?152:168);
-        if(d.axis==='Y'){ const A=wx(d.x), B=wx(d.x+d.w), lo=Math.min(A,B), hi=Math.max(A,B);
-          const cl=Math.min(160,Math.max(80,(hi-lo)-64)), it=Math.max(0,((hi-lo)-cl)/2), Yc=wy(d.y+1)+hc;
+        if(без('косяки')) continue;                 // контрфакт, см. tools/oba.py
+        /* ============ v136.2. КОСЯК МЕРЯЕТ НАСТОЯЩИЙ ПРОЁМ ============
+           Косяк брал ширину из ПЛАНА (d.w клеток) и отступал внутрь по 32u с
+           каждого конца. Но слой деталей к этому времени уже сузил проём до 112u,
+           и сузил СО СЛУЧАЙНЫМ СМЕЩЕНИЕМ внутри исходного пролёта. Концы плана
+           после этого — где угодно, в том числе посреди уцелевшего прохода, и
+           косяк вставал поперёк него.
+           Контрфакт (сид 1650179089, БЕЗ=косяки): крюк по .vmf 5.74 -> 1.90,
+           пар хуже x2 пять -> ноль, растр и печать сошлись (1.85 против 1.90).
+           Тот же класс, что пилястра: декорация не спрашивала растр.
+           Теперь пролёт ищется ПО ПОЛУ: непрерывный ряд клеток с g вокруг
+           середины двери. Косяк ставится, только если после него остаётся не
+           меньше семи клеток (112u) — ровно то, во что метится слой деталей. */
+        const ПРОСВЕТ=112;
+        if(d.axis==='Y'){ const yy=d.y;
+          let a=d.x, b=d.x;
+          if(!g[yy*W+d.x]){ let f=-1;
+            for(let k=0;k<d.w;k++) if(g[yy*W+d.x+k]){ f=d.x+k; break; }
+            if(f<0) continue; a=b=f; }
+          while(a>0 && g[yy*W+a-1]) a--;
+          while(b<W-1 && g[yy*W+b+1]) b++;
+          const lo=wx(a), hi=wx(b+1);
+          const it=Math.max(0,Math.min(AT,((hi-lo)-ПРОСВЕТ)/2)), Yc=wy(d.y+1)+hc;
           if(it>0){ solids.push(box(lo,Yc-AT/2,dft, lo+it,Yc+AT/2, dft+DHa, KM));
                     solids.push(box(hi-it,Yc-AT/2,dft, hi,Yc+AT/2, dft+DHa, KM)); } }
-        else { const A=wy(d.y+d.w), B=wy(d.y), lo=Math.min(A,B), hi=Math.max(A,B);
-          const cl=Math.min(160,Math.max(80,(hi-lo)-64)), it=Math.max(0,((hi-lo)-cl)/2), Xc=wx(d.x)+hc;
+        else { const xx=d.x;
+          let a=d.y, b=d.y;
+          if(!g[d.y*W+xx]){ let f=-1;
+            for(let k=0;k<d.w;k++) if(g[(d.y+k)*W+xx]){ f=d.y+k; break; }
+            if(f<0) continue; a=b=f; }
+          while(a>0 && g[(a-1)*W+xx]) a--;
+          while(b<H-1 && g[(b+1)*W+xx]) b++;
+          const lo=wy(b+1), hi=wy(a);
+          const it=Math.max(0,Math.min(AT,((hi-lo)-ПРОСВЕТ)/2)), Xc=wx(d.x)+hc;
           if(it>0){ solids.push(box(Xc-AT/2,lo,dft, Xc+AT/2,lo+it, dft+DHa, KM));
                     solids.push(box(Xc-AT/2,hi-it,dft, Xc+AT/2,hi, dft+DHa, KM)); } }
         continue; }
@@ -6502,7 +6591,22 @@ function buildVMF(cur){
       seenNm.add(nm);
       const X0=wx(p.minx), X1=wx(p.maxx+1), Y0=wy(p.maxy+1), Y1=wy(p.miny);
       if(X1-X0<32||Y1-Y0<32) continue;
-      const zc=qz(zf[Math.min(W*H-1,p.y*W+p.x)]||0);
+      /* ============ v136.2. ТОЧКА КАЛЛАУТА СТОИТ НА ПОЛУ ============
+         Была середина габаритной рамки. Место — фигура неправильная, и середина
+         рамки попадает то в стену, то, что хуже, внутрь собственного предмета:
+         у места и есть предмет, и ставится он по центру. На двух картах гейта
+         каллаут оказался ВНУТРИ штабеля ящиков высотой 200u; приёмка привязывала
+         место к крышке штабеля и честно писала «пути нет» — на неё залезть
+         нельзя, спрыгнуть можно.
+         Ищем клетку СВОЕГО места, свободную от тела и пандуса, ближайшую к
+         середине рамки. Рамка-кисть остаётся прежней: она и должна накрывать всё
+         место целиком. */
+      /* Якорь посчитан в слое деталей (p.ax,p.ay) — там же, где по нему считается
+         крюк. Здесь его только берут: две меры обязаны стоять в одной точке. */
+      const лx=(p.ax!==undefined?p.ax:p.x), лy=(p.ay!==undefined?p.ay:p.y);
+      const li=Math.min(W*H-1,Math.max(0,лy*W+лx));
+      const zc=Math.round(SURF[li]===SURF[li] ? SURF[li] : qz(zf[li]||0));
+      const оx=wx(лx)+(S>>1), оy=wy(лy)-(S>>1);
       /* Кисть строится тем же box(), что и всё остальное в файле. Свои шесть
          плоскостей я развернул руками и чуть не оставил так: обмотка граней
          в VMF задаётся порядком трёх точек, ошибиться в ней легко, а Хаммер
@@ -6511,7 +6615,7 @@ function buildVMF(cur){
       const brush=box(X0,Y0,zc, X1,Y1,zc+128, "TOOLS/TOOLSTRIGGER");
       if(!brush) continue;
       ents.push(ent("env_cs_place",
-        { place_name:nm, origin:`${(X0+X1)>>1} ${(Y0+Y1)>>1} ${zc+32}` }, brush));
+        { place_name:nm, origin:`${оx} ${оy} ${zc+32}` }, brush));
       nPl++; }
     cur.__places=nPl;
   }
@@ -6627,31 +6731,46 @@ function buildVMF(cur){
         if(!(g[i]&&g[i+1]&&g[i+W]&&g[i+W+1])) continue;
         узР[i]=1; zУ[i]=Math.max(SURF[i],SURF[i+1],SURF[i+W],SURF[i+W+1]);
         if(!(блок[i]||блок[i+1]||блок[i+W]||блок[i+W+1])) узП[i]=1; }
-      const разлив=(маска)=>{ const v=new Uint8Array(W*H); const st=cur.px&&cur.px.T;
-        if(!st) return v;
+      /* Старт ищется в радиусе до 24 клеток, а не 6. При меньшем радиусе на
+         карте, где спавн T стоит у самой стены и ближайший свободный узел
+         печати дальше, разлив по печати не начинался вовсе — и мера показывала
+         86% недоступного пола вместо одиннадцати клеток. */
+      const разлив=(маска)=>{ const d=new Int32Array(W*H).fill(-1);
+        const st=cur.px&&cur.px.T; if(!st) return d;
         let s0=-1;
-        for(let r=0;r<=6&&s0<0;r++)for(let oy=-r;oy<=r&&s0<0;oy++)for(let ox=-r;ox<=r;ox++){
+        for(let r=0;r<=24&&s0<0;r++)for(let oy=-r;oy<=r&&s0<0;oy++)for(let ox=-r;ox<=r;ox++){
           const x=st.x+ox, y=st.y+oy;
           if(x<0||y<0||x>=W-1||y>=H-1) continue;
           if(маска[y*W+x]){ s0=y*W+x; break; } }
-        if(s0<0) return v;
-        const q=[s0]; v[s0]=1;
-        for(let h=0;h<q.length;h++){ const i=q[h], x=i%W, y=(i/W)|0, zi=zУ[i];
-          for(const d of D8п){ const nx=x+d[0], ny=y+d[1];
+        if(s0<0) return d;
+        const q=[s0]; d[s0]=0;
+        for(let h=0;h<q.length;h++){ const i=q[h], x=i%W, y=(i/W)|0, zi=zУ[i], nd=d[i]+1;
+          for(const dd of D8п){ const nx=x+dd[0], ny=y+dd[1];
             if(nx<0||ny<0||nx>=W-1||ny>=H-1) continue;
-            const j=ny*W+nx; if(!маска[j]||v[j]) continue;
+            const j=ny*W+nx; if(!маска[j]||d[j]>=0) continue;
             if(zУ[j]-zi>ПР) continue;
-            v[j]=1; q.push(j); } }
-        return v; };
-      const вР=разлив(узР), вП=разлив(узП);
+            d[j]=nd; q.push(j); } }
+        return d; };
+      const дистР=разлив(узР), дистП=разлив(узП);
+      const вР=дистР, вП=дистП;
       /* Клетка ПОД ящиком недоступна по определению — она занята, и это не
          дефект. Дефект — клетка, которая осталась годным местом для игрока
          (узел в печати есть) и при этом до неё больше не дойти. Ровно то же
          различение, что в чистке укрытий (v120): иначе меряется площадь пола,
          а не проходимость. */
       let дР=0, потеряно=0; const потМ=new Uint8Array(W*H);
-      for(let i=0;i<W*H;i++){ if(!вР[i]) continue; дР++;
-        if(вП[i]||!узП[i]) continue; потеряно++; потМ[i]=1; }
+      for(let i=0;i<W*H;i++){ if(вР[i]<0) continue; дР++;
+        if(вП[i]>=0||!узП[i]) continue; потеряно++; потМ[i]=1; }
+      /* ============ КРЮК ПО ВСЕМУ ПОЛУ ============
+         «Недоступно» ловит только полный обрыв связи. Ящик, который не отрезал
+         кусок, а удлинил дорогу вчетверо, тут не виден — а именно он даёт крюк
+         между каллаутами. Меряем то же самое по КАЖДОЙ клетке: во сколько раз
+         путь по печати длиннее пути по растру от одной и той же точки. Пар
+         каллаутов два десятка, клеток тридцать тысяч — число куда устойчивее. */
+      let кривых=0, крМакс=0;
+      for(let i=0;i<W*H;i++){ if(вР[i]<8||вП[i]<0) continue;
+        const k=вП[i]/вР[i]; if(k>крМакс) крМакс=k;
+        if(вП[i] > вР[i]*2+12) кривых++; }
       /* виновник ищется НА ГРАНИЦЕ потерянного: кто стоит между ним и остальной
          картой. Сама потерянная клетка чиста — потому она и потеряна, а не занята. */
       const винП={};
@@ -6659,10 +6778,71 @@ function buildVMF(cur){
         const x=i%W, y=(i/W)|0;
         for(const d of D8п){ const nx=x+d[0], ny=y+d[1];
           if(nx<0||ny<0||nx>=W-1||ny>=H-1) continue;
-          const j=ny*W+nx; if(потМ[j]||вП[j]) continue;
+          const j=ny*W+nx; if(потМ[j]||вП[j]>=0) continue;
           for(const o of [0,1,W,W+1]) if(блок[j+o]&&вин2[j+o]){
             винП[вин2[j+o]]=(винП[вин2[j+o]]||0)+1; break; } } }
-      cur.__недост={потеряно, достижимо:дР,
+      /* ============ v136.2. СВЕРКА ПАР ВНУТРИ ПРОДУКТА ============
+         Крюк по растру и крюк по .vmf на одной карте расходились впятеро, и
+         каждый разбор требовал выгрузки, разбора файла и получаса. Здесь та же
+         сверка пара-в-пару, но по данным, которые уже посчитаны: две сетки узлов
+         (растр и печать), один список мест, один якорь. Печатается худшая пара и
+         кто её закрыл — дальше идти уже некуда, виновник назван. */
+      { const P=(cur.places&&cur.places.list)||[];
+        const бл=(м,cx,cy)=>{ let b=-1,bd=1e9;
+          for(let dy=-6;dy<=6;dy++)for(let dx=-6;dx<=6;dx++){
+            const x=cx+dx,y=cy+dy; if(x<0||y<0||x>=W-1||y>=H-1) continue;
+            const j=y*W+x; if(!м[j]) continue; const q=dx*dx+dy*dy;
+            if(q<bd){bd=q;b=j;} } return b; };
+        const вл=(м,s0)=>{ const d=new Int32Array(W*H).fill(-1);
+          const q=[s0]; d[s0]=0;
+          for(let h=0;h<q.length;h++){ const i=q[h], x=i%W, y=(i/W)|0, zi=zУ[i], nd=d[i]+1;
+            for(const dd of D8п){ const nx=x+dd[0], ny=y+dd[1];
+              if(nx<0||ny<0||nx>=W-1||ny>=H-1) continue;
+              const j=ny*W+nx; if(!м[j]||d[j]>=0||zУ[j]-zi>ПР) continue;
+              d[j]=nd; q.push(j); } }
+          return d; };
+        const тР=P.map(p=>бл(узР,(p.ax!==undefined?p.ax:p.x),(p.ay!==undefined?p.ay:p.y)));
+        const тП=P.map(p=>бл(узП,(p.ax!==undefined?p.ax:p.x),(p.ay!==undefined?p.ay:p.y)));
+        let худ=null, хужеП=0, парП=0, нетП=0, мкП=0;
+        for(let i=0;i<P.length;i++){ if(тР[i]<0||тП[i]<0) continue;
+          let dр=null, dп=null;
+          for(let j=i+1;j<P.length;j++){ if(тР[j]<0||тП[j]<0) continue;
+            const ax=(P[i].ax!==undefined?P[i].ax:P[i].x), ay=(P[i].ay!==undefined?P[i].ay:P[i].y);
+            const bx=(P[j].ax!==undefined?P[j].ax:P[j].x), by=(P[j].ay!==undefined?P[j].ay:P[j].y);
+            const пр=Math.hypot(ax-bx, ay-by);
+            if(пр*S>1800||пр*S<200) continue;
+            if(!dр){ dр=вл(узР,тР[i]); dп=вл(узП,тП[i]); }
+            парП++;
+            const kр=(dр[тР[j]]<0)?1e9:dр[тР[j]]/пр;
+            const kп=(dп[тП[j]]<0)?1e9:dп[тП[j]]/пр;
+            if(kп>1e8){ нетП++; хужеП++; continue; }
+            if(kп>мкП) мкП=kп;
+            if(kп>2) хужеП++;
+            const раз=kп-(kр>1e8?0:kр);
+            if(!худ||раз>худ.раз) худ={раз:+раз.toFixed(2), пара:(P[i].им||'?')+'->'+(P[j].им||'?'),
+                                       растр:+Math.min(kр,99).toFixed(2), печать:+kп.toFixed(2),
+                                       i, j}; } }
+        /* Кто закрыл короткую дорогу. Идём КРАТЧАЙШИМ ПУТЁМ ПО РАСТРУ от одного
+           места к другому и смотрим, какие его клетки печать закрыла. Это и есть
+           ответ на «где ты забаррикадировал проход» — строкой кода, а не пальцем
+           по скриншоту. */
+        if(худ && худ.раз>0.5){
+          const d0=вл(узР,тР[худ.i]); let c=тР[худ.j]; const вин={}; let закр=0;
+          for(let шаг=0; шаг<20000 && c>=0 && d0[c]>0; шаг++){
+            const x=c%W, y=(c/W)|0; let сл=-1;
+            for(const dd of D8п){ const nx=x+dd[0], ny=y+dd[1];
+              if(nx<0||ny<0||nx>=W-1||ny>=H-1) continue;
+              const j2=ny*W+nx; if(d0[j2]===d0[c]-1){ сл=j2; break; } }
+            if(!узП[c]){ закр++;
+              for(const o of [0,1,W,W+1]) if(блок[c+o]&&вин2[c+o]){
+                вин[вин2[c+o]]=(вин[вин2[c+o]]||0)+1; break; } }
+            c=сл; }
+          худ.закрытоНаПути=закр;
+          худ.виновники=Object.entries(вин).sort((a,b)=>b[1]-a[1]).slice(0,3); }
+        cur.__крюкПеч={максимум:+мкП.toFixed(2), хуже2:хужеП, пар:парП, путиНет:нетП,
+                       расхождение:худ}; }
+      cur.__недост={потеряно, достижимо:дР, кривых, крюкПола:+крМакс.toFixed(2),
+                    доляКривых:+(100*кривых/Math.max(1,дР)).toFixed(1),
                     доля:+(100*потеряно/Math.max(1,дР)).toFixed(1),
                     виновники:Object.entries(винП).sort((a,b)=>b[1]-a[1]).slice(0,5)}; } }
   /* v132-замер: насколько напечатанная поверхность расходится с растром.
