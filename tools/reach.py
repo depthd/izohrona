@@ -44,6 +44,19 @@ txt = open(path, encoding='utf-8', errors='replace').read()
 world = txt.split('\nentity\n')[0]
 solid = [s for s in parse_solids(world) if not s['tool']]
 
+# --- контрфакт: выкинуть браши, целиком лежащие в заданной коробке ---
+# Без этого «виновник» остаётся догадкой по совпадению. Убираем подозреваемого
+# и меряем крюк заново: если он схлопнулся — виновник он, если нет — не он.
+УБРАТЬ = None
+if '--убрать' in sys.argv:
+    k = sys.argv.index('--убрать')
+    УБРАТЬ = [float(v) for v in sys.argv[k+1:k+5]]
+    del sys.argv[k:k+5]
+    было = len(solid)
+    solid = [s for s in solid if not (УБРАТЬ[0]-1 <= s['x0'] and s['x1'] <= УБРАТЬ[2]+1
+                                      and УБРАТЬ[1]-1 <= s['y0'] and s['y1'] <= УБРАТЬ[3]+1)]
+    print(f'КОНТРФАКТ: выкинуто брашей {было-len(solid)} из коробки {УБРАТЬ}')
+
 места = {}
 for m in re.finditer(r'^entity\n\{(.*?)\n\}', txt, re.M | re.S):
     b = m.group(1)
@@ -141,6 +154,13 @@ for (cx, cy), zs in узлы.items():
                     adj[(cx, cy, z)].append((n[0], n[1], z2))
 
 
+# обратные рёбра нужны, чтобы восстановить сам путь, а не только его длину
+adj_обр = collections.defaultdict(list)
+for c, ns_ in adj.items():
+    for n in ns_:
+        adj_обр[n].append(c)
+
+
 def клетка(p):
     return (int((p[0] - X0) // U), int((p[1] - Y0) // U))
 
@@ -214,6 +234,36 @@ if len(sys.argv) > 3:
         if not свободно or not если_дошли:
             прервано.append((k, cx, cy, wx, wy, st, занято, если_дошли))
     print(f'  клеток на прямой без прохода или недостижимых: {len(прервано)} из {n+1}')
+    # --- выгрузка для картинки: сама сетка, путь и прямая ---
+    if '--картинка' in sys.argv:
+        import json
+        путьцепь = []
+        if есть:
+            # восстановление пути обратным ходом по расстояниям
+            cur_ = b
+            while cur_ != a:
+                d0 = дA[cur_]
+                для_ = [n for n in adj_обр.get((cur_[0], cur_[1], cur_[2]), ())
+                        if дA.get(n, 1 << 30) == d0 - 1]
+                if not для_:
+                    break
+                путьцепь.append((cur_[0], cur_[1]))
+                cur_ = для_[0]
+            путьцепь.append((a[0], a[1]))
+        карта = []
+        дошли_кл = {(c[0], c[1]) for c in дA}
+        for cy2 in range(H):
+            row = []
+            for cx2 in range(W):
+                k2 = (cx2, cy2)
+                row.append('2' if k2 in дошли_кл else ('1' if k2 in узлы else '0'))
+            карта.append(''.join(row))
+        json.dump({'W': W, 'H': H, 'X0': X0, 'Y0': Y0, 'U': U, 'карта': карта,
+                   'места': {n: [p[0], p[1]] for n, p in места.items()},
+                   'путь': путьцепь, 'A': A, 'B': B,
+                   'a': [a[0], a[1]], 'b': [b[0], b[1]]},
+                  open('/tmp/reach.json', 'w'))
+        print('  выгружено в /tmp/reach.json')
     for (k, cx, cy, wx, wy, st, занято, дош) in прервано[:20]:
         что = занято if занято else [(z, i) for (z, i) in
               [(iv[1], iv[2]) for iv in интервалы(wx, wy)]]
