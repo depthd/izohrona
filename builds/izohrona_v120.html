@@ -1430,6 +1430,12 @@ function generateOneCore(seed,cfg){
 }
 
 function generate(cfg){ applyMode();   // v93: режим задаёт клетку и сетку, откуда бы ни звали
+  /* v136. Повтор карты по сиду. Гейт находит дефект на одной карте из двадцати;
+     без этого крючка проверять правку приходится вслепую — прогонять два десятка
+     новых карт и надеяться, что дефект попадётся снова. С ним воспроизводится
+     ровно та карта: window.__SEED=659323758. Только для приборов. */
+  if(typeof window!=='undefined' && window.__SEED){
+    const r=generateOne(window.__SEED>>>0,cfg); return r?refineFields(r):null; }
   for(let a=0;a<(MODE==='shapes'?40:20);a++){ const seed=(Math.random()*4294967296)>>>0; const r=generateOne(seed,cfg);
     if(r&&r.m&&Math.abs(r.m.mA-cfg.M)<=cfg.tol&&Math.abs(r.m.mB-cfg.M)<=cfg.tol&&Math.abs(r.m.midDiff)<=cfg.tolMid) return refineFields(r); }
   return null;
@@ -3532,10 +3538,21 @@ function detRefine(src){
      и все они про Middle.
      Возвращаем отметки после ярусов. Наружный конец рампы берётся ПОСЛЕ пасa,
      то есть подстраивается под ту высоту, которую ярусы дали окрестности. */
+  /* v136. Возврата мало: за ярусами идут ещё два паса, которые пишут в zff —
+     ступени на обрывах (stepfix опускает клетку до «сосед плюс прыжок») и
+     проруб (кладёт пол по прямой). Оба ничего не знают про плато, и любая их
+     правка внутри плато снова разводит растр с печатью: экспорт печатает плато
+     ОДНОЙ плоской коробкой по topZ, безусловно. Гейт ловил это как ровно
+     одинаковые «пол против растра 14» и «плато паласа 14» — те же клетки.
+     Поэтому отметка не просто возвращается, а ЗАПИРАЕТСЯ: ЗАМОК помнит, где
+     высота продиктована печатью, ЗАМОКZ — какая именно. Последующие пасы
+     обязаны её уважать. */
+  const ЗАМОК=new Uint8Array(N), ЗАМОКZ=new Float32Array(N);
+  const запереть=(j,z)=>{ ЗАМОК[j]=1; ЗАМОКZ[j]=z; if(gf[j]) zff[j]=z; };
   if(src.palaces) for(const q of src.palaces){
     for(let y=Math.max(0,q.y0*K); y<=Math.min(Hf-1,q.y1*K+K-1); y++)
-      for(let x=Math.max(0,q.x0*K); x<=Math.min(Wf-1,q.x1*K+K-1); x++){
-        const j=ix(x,y); if(gf[j]) zff[j]=q.topZ; }
+      for(let x=Math.max(0,q.x0*K); x<=Math.min(Wf-1,q.x1*K+K-1); x++)
+        запереть(ix(x,y), q.topZ);
     const rc=q.rampCells||[]; if(!rc.length) continue;
     let RL=0; for(const c of rc) if(c[2]>RL) RL=c[2];
     /* высота у подножия: что ярусы оставили на самой дальней клетке рампы */
@@ -3548,7 +3565,11 @@ function detRefine(src){
       const z=q.topZ+(низ-q.topZ)*(st/(RL+1));
       for(let oy=0;oy<K;oy++)for(let ox=0;ox<K;ox++){
         const x=cx*K+ox, y=cy*K+oy; if(!inb(x,y)) continue;
-        const j=ix(x,y); if(gf[j]) zff[j]=z; } }
+        const j=ix(x,y);
+        /* внутри самого плато рампы нет: там печатается плоская коробка по topZ,
+           и профиль поверх неё был бы расхождением, а не подъёмом */
+        if(ЗАМОК[j] || !gf[j]) continue;
+        zff[j]=z; } }
   }
 
   const LMKS=[];
@@ -3848,6 +3869,21 @@ function detRefine(src){
       for(let y=0;y<Hf-1;y++)for(let x=0;x<Wf-1;x++){ const i=ix(x,y);
         if(m[i]&&m[i+1]&&m[i+Wf]&&m[i+Wf+1]) o[i]=1; }
       return o; };
+    /* ============ v136. РАЗЛИВ СЧИТАЕТ ВЫСОТУ ============
+       Здесь была дыра, через которую уходила почти вся разница между растром и
+       игрой. Разлив ходил по клеткам БЕЗ ОГЛЯДКИ НА ВЫСОТУ: ящик признавался
+       пробкой, только если после него до места нельзя дойти ВООБЩЕ, хоть через
+       обрыв в двести юнитов. Ящик, закрывший единственный пологий вход, честно
+       проходил проверку — обход-то «есть», просто по нему не подняться.
+       Замер (tools/oba.py, растр и печать одной меркой, сид 3551506459):
+         с телами   3254 клетки проходимы в растре и непроходимы в печати (9.4%),
+                    крупнейшее пятно 1421 клетка — плент A целиком;
+         без тел    15 клеток (0.0%).
+       То есть тела давали 99.5% всего расхождения, а чистка их не видела.
+       Теперь разлив — та же модель, что у приёмки: блок 2x2, отметка = максимум
+       по блоку, подъём не выше ПРЫЖОК, спуск свободный. */
+    const ПРЫЖОК=59/72;                    // 59 юнитов: шаг 18u плюс прыжок
+    const zБл=i=>Math.max(zff[i],zff[i+1],zff[i+Wf],zff[i+Wf+1]);
     const flood=(m)=>{ const v=new Uint8Array(N), st=[];
       let s0=-1;
       for(let r=0;r<=3&&s0<0;r++)
@@ -3856,9 +3892,11 @@ function detRefine(src){
           if(inb(x,y)&&m[ix(x,y)]) s0=ix(x,y); }
       if(s0<0) return v;
       v[s0]=1; st.push(s0);
-      while(st.length){ const j=st.pop(), x=j%Wf, y=(j/Wf)|0;
+      while(st.length){ const j=st.pop(), x=j%Wf, y=(j/Wf)|0, zj=zБл(j);
         for(const [dx,dy] of D8){ const nx=x+dx, ny=y+dy; if(!inb(nx,ny)) continue;
-          const k2=ix(nx,ny); if(m[k2]&&!v[k2]){ v[k2]=1; st.push(k2); } } }
+          const k2=ix(nx,ny); if(!m[k2]||v[k2]) continue;
+          if(zБл(k2)-zj>ПРЫЖОК) continue;
+          v[k2]=1; st.push(k2); } }
       return v; };
     /* ============ v120. ЧТО ЗНАЧИТ «УКРЫТИЕ ЗАКРЫЛО ПРОХОД» ============
        Здесь была подмена, из-за которой чистка снимала по 60 тел из 120.
@@ -4015,6 +4053,7 @@ function detRefine(src){
       let fixed=0;
       for(let y=0;y<Hf;y++)for(let x=0;x<Wf;x++){
         const i2=ix(x,y); if(!gf[i2]||v[i2]) continue;
+        if(ЗАМОК[i2]){ stat.замокСтоп=(stat.замокСтоп||0)+1; continue; }  // v136: плато печатается плоским
         let best=-1e9;
         for(const [dx,dy] of D8c){ const nx=x+dx, ny=y+dy; if(!inb(nx,ny)) continue;
           const k2=ix(nx,ny); if(gf[k2]&&v[k2]&&zff[k2]>best) best=zff[k2]; }
@@ -4240,7 +4279,9 @@ function detRefine(src){
           if(x<2||y<2||x>=Wf-2||y>=Hf-2) continue;
           const j=ix(x,y);
           if(занято[j]){ врезались=true; break; }
-          if(!gf[j]){ откат.push([j,zff[j]]); gf[j]=1; zff[j]=zt; закрыто++; }
+          /* v136: внутри плато высота продиктована печатью, коридор ложится по ней */
+          if(!gf[j]){ откат.push([j,zff[j]]); gf[j]=1; закрыто++;
+            if(ЗАМОК[j]){ zff[j]=ЗАМОКZ[j]; stat.замокСтоп=(stat.замокСтоп||0)+1; } else zff[j]=zt; }
         } }
       const вернуть=()=>{ for(const [j,z] of откат){ gf[j]=0; zff[j]=z; } пересчёт(); };
       if(врезались||!закрыто){ if(врезались) почему.здание++; else почему.нечего++;
@@ -4526,13 +4567,22 @@ function generateBalanced(cfg){
   const want=cfg.M;
   const pk=PROFILE||'—';
   let corr=(DRIFTBY[pk]!==undefined?DRIFTBY[pk]:0), best=null, bestErr=1e9, log=[];
+  /* v136. ПОВТОР КАРТЫ ПО СИДУ. Одного сида мало: решатель баланса подсовывает
+     генератору не cfg.M, а «цель» aim, а она зависит от сноса corr, накопленного
+     за прошлые карты в этой же вкладке. Тот же сид при другой aim даёт другую
+     карту — проверка правки на «плохом сиде» молча смотрела не на ту карту.
+     Поэтому карта запоминает свою aim (cur.__aim), а приборы задают пару. */
+  const ПОВТОР=(typeof window!=='undefined' && window.__SEED)
+    ?{сид:window.__SEED>>>0, аим:window.__AIM, ков:window.__COVSEED}:null;
   for(let att=0; att<BAL.tries; att++){
-    const aim=Math.max(2.0, Math.min(6.5, want-corr));
+    const aim=(ПОВТОР && ПОВТОР.аим!==undefined) ? ПОВТОР.аим
+              : Math.max(2.0, Math.min(6.5, want-corr));
     const c2=Object.assign({}, cfg, {M:aim});
     applyMode();
     const r=generate(c2);
     if(!r) continue;
-    r.coverSeed=(Math.random()*4294967296)>>>0;
+    r.__aim=aim;
+    r.coverSeed=(ПОВТОР && ПОВТОР.ков!==undefined)?ПОВТОР.ков:(Math.random()*4294967296)>>>0;
     r.cover=coverAtCell(r.g,r.px,r.coverSeed);
     try{ r.plan=planStructures(r,TUNP); }catch(e){ r.plan={tun:new Uint8Array(W*H),tunComps:[],builds:[],doors:[]}; }
     clearDoorways(r);
@@ -4543,7 +4593,8 @@ function generateBalanced(cfg){
     log.push({попытка:att+1, цельРешателю:+aim.toFixed(2),
               вышло:[+mf.mA.toFixed(2), +mf.mB.toFixed(2)], промах:+err.toFixed(2)});
     if(err<bestErr){ bestErr=err; best=out; }
-    if(err<=BAL.tol) break;
+    if(out.__aim===undefined) out.__aim=aim;
+    if(err<=BAL.tol || ПОВТОР) break;
     /* Демпфирование 0.7 бережёт от раскачки, когда поправка уже примерно верна.
        Но на ПЕРВОМ знакомстве с профилем поправки нет вовсе, и 0.7 означает, что
        вторая попытка закрывает только семь десятых промаха, а третья доедает
@@ -4946,6 +4997,9 @@ function buildVMF(cur){
         for(let yy=y;yy<y+h;yy++)for(let xx=x;xx<x+w;xx++)used[yy*W+xx]=1; R.push([x,y,w,h]); } }
     return R; }
   const solids=[]; const DEGEN=[]; cur.__degen=DEGEN; const BOXREG=true;
+  /* v136: выключатель отдельного эмиттера для контрфакта, см. tools/oba.py */
+  const без=имя=>(typeof window!=='undefined' && typeof window.__БЕЗ==='string'
+                  && window.__БЕЗ.split(',').indexOf(имя)>=0);
   /* v58: МАТЕРИАЛ ЗАВИСИТ ОТ ЗОНЫ, а не один на карту.
      Верх плиты — пол зоны, боковины — тримм (тёмный, чтобы перепад высоты читался как обрез).
      Укрытие — контрастный акцент: игрок обязан с одного взгляда понимать, за чем прячется. */
@@ -5508,6 +5562,64 @@ function buildVMF(cur){
     const trap=new Uint8Array(W*H); let nt=0;
     for(let i=0;i<W*H;i++) if(g[i]&&F[i]&&!Bk[i]){ trap[i]=1; nt++; }
     cur.__trap=nt;
+    /* ============ v136. ОСТРОВ — ЗЕРКАЛО ЛОВУШКИ ============
+       Ловушка — «зашёл и не вылез» (F и не Bk). Всё это время не мерилось
+       обратное: «вылезти можно, зайти нельзя» (Bk и не F) — площадка выше на
+       столько, что подняться нельзя, а спрыгнуть можно. Для замера крюка это
+       ХУЖЕ ловушки: место на острове недостижимо ни от кого, и приёмка честно
+       пишет «пути нет».
+       Так на одной из карт гейта плент A вместе с A Short и Pillar оказался на
+       плато 296u без единого подъёма: 1746 ходибельных клеток, три каллаута,
+       войти только падением сверху. Растр генератора этого не видел вовсе —
+       у него не было такой меры, а его собственный крюк идёт волной ОТ места,
+       то есть с острова вниз дорога находится и пара считается связанной.
+       Лестницы до сих пор ставились только в ловушки; теперь и на острова. */
+    const остров=new Uint8Array(W*H); let no=0, nc=0;
+    for(let i=0;i<W*H;i++) if(g[i]){
+      if(Bk[i]&&!F[i]){ остров[i]=1; no++; }
+      else if(!Bk[i]&&!F[i]) nc++; }
+    cur.__island=no; cur.__cut=nc;
+    /* ============ v136. ШИРИНА ИГРОКА В СВЯЗНОСТИ ============
+       Волна выше ходит ПО КЛЕТКАМ. Игрок шириной 32u занимает блок 2x2, и
+       коридор в одну клетку (16u) для него стены, а для волны — дорога.
+       Замер ниже считает разницу двух волн из одной точки: по клеткам и по
+       блокам 2x2. Всё, что достижимо первой и недостижимо второй, — проход,
+       который есть в растре и которого нет в игре. */
+    const D8у=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+    const узлО=new Uint8Array(W*H);
+    for(let y=0;y<H-1;y++)for(let x=0;x<W-1;x++){ const i=y*W+x;
+      if(g[i]&&g[i+1]&&g[i+W]&&g[i+W+1]) узлО[i]=1; }
+    const zУ=i=>Math.max(qz(zf[i]),qz(zf[i+1]),qz(zf[i+W]),qz(zf[i+W+1]));
+    const волнаУ=(лимит)=>{ const S=new Uint8Array(W*H); const st=cur.px&&cur.px.T; if(!st) return S;
+      let s0=-1;
+      for(let r=0;r<=4&&s0<0;r++)for(let oy=-r;oy<=r&&s0<0;oy++)for(let ox=-r;ox<=r;ox++){
+        const x=st.x+ox,y=st.y+oy; if(x<0||y<0||x>=W-1||y>=H-1) continue;
+        if(узлО[y*W+x]){ s0=y*W+x; break; } }
+      if(s0<0) return S;
+      const q=[s0]; S[s0]=1;
+      for(let h=0;h<q.length;h++){ const i=q[h],x=i%W,y=(i/W)|0, zi=zУ(i);
+        for(const d of D8у){ const nx=x+d[0],ny=y+d[1];
+          if(nx<0||ny<0||nx>=W-1||ny>=H-1) continue;
+          const j=ny*W+nx; if(!узлО[j]||S[j]) continue;
+          if(zУ(j)-zi<=лимит){ S[j]=1; q.push(j); } } }
+      return S; };
+    { const U2=волнаУ(CL); let узк=0, всегоУ=0;
+      for(let i=0;i<W*H;i++){ if(!узлО[i]) continue; всегоУ++;
+        if(!U2[i] && F[i]) узк++; }
+      /* ============ v136. ПРЕДЕЛ ПОДЪЁМА 64 ПРОТИВ 59 ============
+         CL=64 живёт в этом файле с v81 и ни разу не проверялся. Игрок в CS
+         поднимается шагом на 18u и прыжком примерно на 54..58u; 64 он не берёт.
+         Ступени же квантованы по 16u, поэтому подступенок бывает ровно 64 —
+         в растре он проходим, в игре нет, и целый кусок карты (плент A вместе
+         с A Short) оказывается доступен только сверху вниз. Приёмка честно
+         пишет «пути нет», генератор честно пишет «крюк x1.1», и оба правы
+         каждый в своей мере — расходится сама модель.
+         Считаем цену: сколько узлов держится ТОЛЬКО на подъёмах 60..64u. */
+      const U59=волнаУ(59); let край=0;
+      for(let i=0;i<W*H;i++) if(узлО[i] && U2[i] && !U59[i]) край++;
+      cur.__uzk={потеряно:узк, узлов:всегоУ, наПределе:край,
+                 доля:+(100*узк/Math.max(1,всегоУ)).toFixed(1),
+                 доляПредел:+(100*край/Math.max(1,всегоУ)).toFixed(1)}; }
     const covH=new Int16Array(W*H);
     if(cur.cover) for(const c of cur.cover){ const hh=(c.hgt==='full')?999:(c.hgt||40);
       for(let oy=0;oy<(c.h||1);oy++)for(let ox=0;ox<(c.w||1);ox++){
@@ -5517,7 +5629,9 @@ function buildVMF(cur){
       for(const d of [[1,0],[-1,0],[0,1],[0,-1]]){ const nx=x+d[0],ny=y+d[1],j=ny*W+nx;
         if(!g[j]) continue; const dz=qz(zf[j])-z0;
         if(dz<=64) continue;                                 // до 64u игрок залезает сам
-        if(!trap[i]) continue;                               // ставим только там, где не выбраться
+        /* v136: снизу ловушка (не вылезти) ИЛИ сверху остров (не зайти) — оба
+           случая лечит один и тот же подъём в этом самом месте */
+        if(!trap[i] && !остров[j]) continue;
         /* v84: раньше проверялись все тела в радиусе 2 — любой ящик 144u ронял условие.
            Смотрим только вплотную к обрыву (радиус 1) и только с НИЗКОЙ стороны: залезть
            можно лишь с того, что стоит рядом с самим уступом. */
@@ -5545,12 +5659,20 @@ function buildVMF(cur){
       const st=Math.max(2,Math.floor((zhi-zlo)/32));
       const sm={p:MZ.aztec('plywood_plain'),s:UVS}, SM2={t:sm,w:sm,b:sm};
       const RD=12, RT=8, LTOP=zhi-8;
+      /* v136. Ширина лестницы задавалась отступами внутрь клетки: Y0+28..Y1-28 и
+         X0+16..X1-16. При клетке 96u это давало перекладину 40u и косоур 64u, при
+         клетке 16u — коробку ОТРИЦАТЕЛЬНОЙ ширины (-40 и -16), то есть три-четыре
+         вырожденных браша на карту и лестницу, которой нет. Тот же класс ошибки,
+         что и с арками в v113: константа в юнитах, привязанная к старой клетке.
+         Ширина лестницы — величина сама по себе (48u, чуть шире игрока), и мерить
+         её надо от середины клетки, а не отступами от краёв. */
+      const ЛПОЛ=24, cxm=(X0+X1)>>1, cym=(Y0+Y1)>>1;
       for(let k=1;k<=st;k++){ const zz=zlo+(zhi-zlo)*k/(st+1);
         if(zz+RT>LTOP) break;
-        if(dx){ const bx=(dx>0)?X1-RD:X0; solids.push(box(bx,Y0+28,zz, bx+RD,Y1-28,zz+RT, SM2)); }
-        else  { const by=(dy>0)?Y0:Y1-RD; solids.push(box(X0+28,by,zz, X1-28,by+RD,zz+RT, SM2)); } }
-      if(dx){ const bx=(dx>0)?X1-16:X0; solids.push(box(bx,Y0+16,zlo, bx+16,Y1-16,LTOP, LAD)); }
-      else  { const by=(dy>0)?Y0:Y1-16; solids.push(box(X0+16,by,zlo, X1-16,by+16,LTOP, LAD)); }
+        if(dx){ const bx=(dx>0)?X1-RD:X0; solids.push(box(bx,cym-ЛПОЛ,zz, bx+RD,cym+ЛПОЛ,zz+RT, SM2)); }
+        else  { const by=(dy>0)?Y0:Y1-RD; solids.push(box(cxm-ЛПОЛ,by,zz, cxm+ЛПОЛ,by+RD,zz+RT, SM2)); } }
+      if(dx){ const bx=(dx>0)?X1-16:X0; solids.push(box(bx,cym-ЛПОЛ,zlo, bx+16,cym+ЛПОЛ,LTOP, LAD)); }
+      else  { const by=(dy>0)?Y0:Y1-16; solids.push(box(cxm-ЛПОЛ,by,zlo, cxm+ЛПОЛ,by+16,LTOP, LAD)); }
       used.push([x,y]); nl++; }
     cur.__lad=nl; }
   if(V70.sky&&V72.clipLid){
@@ -6012,7 +6134,11 @@ function buildVMF(cur){
       for(const c of cells) inTun[c]=0; }
     cur.__beams=nb;
   }
-  if(V64.decor){
+  /* v136. Контрфакт по одному эмиттеру: window.__БЕЗ='пилястры' выключает его,
+     не трогая остальное. Правило «причина не называется без контрфакта» требует
+     убрать подозреваемого и померить заново, а без такого крючка это правка
+     файла руками — то есть замер, который не повторишь. */
+  if(V64.decor && !без('пилястры')){
     /* v122. ПИЛЯСТРЫ. Задумано: выступ 12u примерно раз в 288u стены, чтобы длинная
        глухая плоскость перестала быть бесконечной и давала точку отсчёта при беге.
        Написано было `%3` — «через три КЛЕТКИ». На клетке 96u это и есть 288u,
@@ -6033,23 +6159,64 @@ function buildVMF(cur){
        исправления шага соседних просто нет. Возвращаем 80u, теперь по центру
        клетки, а не от её края — иначе на мелкой клетке пилястра съезжает вбок. */
     const PL=40;                                   // полудлина: пилястра 80u вдоль стены
-    let np=0;
+    /* ============ v136. ПИЛЯСТРА НЕ СТАВИТСЯ В УЗКОЕ МЕСТО ============
+       Выступ 12u декоративный, но в растре он накрывает ЦЕНТР соседней клетки, и
+       для любого замера проходимости эта клетка становится стеной высотой 176u.
+       Дальше работает модель игрока 32x32: пропадает не одна клетка, а полоса
+       блоков вдоль неё. В коридоре из трёх клеток (48u) после пилястры остаётся
+       одна — и прохода нет.
+       Замер (tools/oba.py, сид 3551506459, растр и печать одной меркой):
+         как было           3254 клетки проходимы в растре и непроходимы в печати,
+                            крупнейшее пятно 1421 клетка — плент A ЦЕЛИКОМ отрезан;
+         без пилястр        1801 клетка, пятно с плентом исчезло совсем.
+       То есть один декоративный выступ отрезал сайт. Это и есть та самая
+       «забаррикадированная дорога», на которую человек показывал пальцем.
+       Условие: перед пилястрой должно остаться не меньше ЗАПАС клеток пола
+       подряд, считая от стены. Четыре клетки — это 64u, минус выступ 12u
+       остаётся 52u при ширине игрока 32u. Где уже — стена остаётся гладкой. */
+    const ЗАПАС=4;
+    const простор=(x,y,dx,dy)=>{ let k=0;
+      for(;k<ЗАПАС;k++){ const nx=x+dx*(k+1), ny=y+dy*(k+1);
+        if(nx<0||ny<0||nx>=W||ny>=H||!g[ny*W+nx]) break; }
+      return k>=ЗАПАС; };
+    /* Вторая половина той же беды: пилястра ДЛИНОЙ 80u стоит по центру клетки и
+       тянется на ±40u ВДОЛЬ стены, не спрашивая, есть ли там стена. У короткого
+       простенка — например у косяка проёма — она вылезает концом прямо в проём и
+       кладёт поперёк него плиту 12x80x176. Меряем настоящий пробег стены в обе
+       стороны и по нему укорачиваем. */
+    const пробег=(x,y,dx,dy)=>{ const ax=dx?0:1, ay=dx?1:0;   // ось вдоль стены
+      let м=99;
+      for(const s of [-1,1]){ let k=0;
+        while(k<3){ const nx=x+ax*s*(k+1), ny=y+ay*s*(k+1);
+          if(nx<0||ny<0||nx>=W||ny>=H||g[ny*W+nx]) break;      // кончилась стена
+          const fx=nx+dx, fy=ny+dy;                            // и перед ней пол
+          if(fx<0||fy<0||fx>=W||fy>=H||!g[fy*W+fx]) break;
+          k++; }
+        if(k<м) м=k; }
+      return Math.min(PL, м*S+(S>>1)); };
+    let np=0, тесно=0;
     for(let y=2;y<H-2;y++)for(let x=2;x<W-2;x++){
       if(g[y*W+x]) continue;                       // сама клетка — стена
       if(((x*7+y*13)%PSTEP)!==0) continue;         // раз в 288u, детерминированно
       const ft=qz(zf[y*W+x]||0);
-      if(g[(y)*W+x+1]){ const X=wx(x+1), Yc=wy(y+1)+hc;
-        solids.push(box(X,Yc-PL,ft, X+PT,Yc+PL,ft+PH, DM)); np++; }
-      else if(g[(y)*W+x-1]){ const X=wx(x), Yc=wy(y+1)+hc;
-        solids.push(box(X-PT,Yc-PL,ft, X,Yc+PL,ft+PH, DM)); np++; }
+      let dx=0, dy=0;
+      if(g[(y)*W+x+1]) dx=1; else if(g[(y)*W+x-1]) dx=-1;
+      else if(g[(y+1)*W+x]) dy=1; else if(g[(y-1)*W+x]) dy=-1;
+      else continue;
+      if(!простор(x,y,dx,dy)){ тесно++; continue; }
+      const pl=пробег(x,y,dx,dy);
+      if(dx>0){ const X=wx(x+1), Yc=wy(y+1)+hc;
+        solids.push(box(X,Yc-pl,ft, X+PT,Yc+pl,ft+PH, DM)); np++; }
+      else if(dx<0){ const X=wx(x), Yc=wy(y+1)+hc;
+        solids.push(box(X-PT,Yc-pl,ft, X,Yc+pl,ft+PH, DM)); np++; }
       /* wy() убывает с ростом y: сосед y+1 лежит НИЖЕ по мировому Y, значит выступать надо
          в минус. Было наоборот — пилястра пряталась в браше стены и давала ребристость. */
-      else if(g[(y+1)*W+x]){ const Xc=wx(x)+hc, Y=wy(y+1);
-        solids.push(box(Xc-PL,Y-PT,ft, Xc+PL,Y,ft+PH, DM)); np++; }
-      else if(g[(y-1)*W+x]){ const Xc=wx(x)+hc, Y=wy(y);
-        solids.push(box(Xc-PL,Y,ft, Xc+PL,Y+PT,ft+PH, DM)); np++; }
+      else if(dy>0){ const Xc=wx(x)+hc, Y=wy(y+1);
+        solids.push(box(Xc-pl,Y-PT,ft, Xc+pl,Y,ft+PH, DM)); np++; }
+      else { const Xc=wx(x)+hc, Y=wy(y);
+        solids.push(box(Xc-pl,Y,ft, Xc+pl,Y+PT,ft+PH, DM)); np++; }
       if(np>60) break; }
-    cur.__pil=np;
+    cur.__pil=np; cur.__pilТесно=тесно;
   }
   // (буфер бра объявлен выше)
   // ДВЕРНЫЕ ПРОЁМЫ (по плану): каждый вход между зонами — перемычка от 128u (дверь) / 152u (арка x2) до потолка.
@@ -6382,19 +6549,23 @@ function buildVMF(cur){
        другой, растр и экспорт снова расходятся — но уже не по всей карте, а
        пятном, и пятно это ровно плато. Считаем отдельно и БЕЗ фильтра по g:
        плато может быть не отмечено полом. */
-    { let пн=0, пмх=0, пвсего=0;
+    { let пн=0, пмх=0, пвсего=0; const пр=[];
       if(cur.palaces) for(const q of cur.palaces)
         for(let y=Math.max(0,q.y0);y<=Math.min(H-1,q.y1);y++)
           for(let x=Math.max(0,q.x0);x<=Math.min(W-1,q.x1);x++){
             const i=y*W+x; пвсего++;
             const d=Math.abs(qz(q.topZ)-qz(zf[i]||0));
-            if(d>1){ пн++; if(d>пмх)пмх=d; } }
+            if(d>1){ пн++; if(d>пмх)пмх=d;
+              if(пр.length<12) пр.push({x,y,плато:qz(q.topZ),растр:qz(zf[i]||0),
+                                        пол:g[i]?1:0,печать:Math.round(SURF[i])}); } }
       cur.__palas={клеток:пвсего, расходятся:пн, максимум:Math.round(пмх),
-                   плато:(cur.palaces||[]).length}; }
+                   плато:(cur.palaces||[]).length, примеры:пр}; }
+    const прс=[];
     for(let i=0;i<W*H;i++){ if(!g[i]) continue;
-      const d=Math.abs(SURF[i]-qz(zf[i]||0)); if(d>1){ n++; if(d>mx)mx=d; }
+      const d=Math.abs(SURF[i]-qz(zf[i]||0)); if(d>1){ n++; if(d>mx)mx=d;
+        if(прс.length<12) прс.push({x:i%W,y:(i/W)|0,печать:Math.round(SURF[i]),растр:qz(zf[i]||0)}); }
       if(d>59) над59++; if(d>24) над24++; }
-    cur.__surf={расходятся:n, максимум:Math.round(mx), больше24:над24, больше59:над59,
+    cur.__surf={расходятся:n, максимум:Math.round(mx), больше24:над24, больше59:над59, примеры:прс,
                 всегоПола:(()=>{let k=0;for(let i=0;i<W*H;i++) if(g[i])k++; return k;})()}; }
   cur.__uv={подогнано:UVFIT.fit, сетка:UVFIT.grid, перекос:UVFIT.stretch,
             рисунок:V127.want, натура:V127.unit, всё:!!V127.all};

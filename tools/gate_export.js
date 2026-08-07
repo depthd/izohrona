@@ -62,10 +62,11 @@ const fs=require('fs'), path=require('path');
               все:кр.map(k=>[+k[0].toFixed(2), k[1]])};
     })()`);
     const st=await p.evaluate(`JSON.stringify({
-      сид:cur.seed, surf:cur.__surf, block:cur.__block, palas:cur.__palas, degen:(cur.__degen||[]).length,
+      сид:cur.seed, аим:cur.__aim, ков:cur.coverSeed, surf:cur.__surf, block:cur.__block, palas:cur.__palas, degen:(cur.__degen||[]).length,
       спавновT:cur.__spT, спавновC:cur.__spC,
       мест:(cur.places&&cur.places.count)||0, укрытий:(cur.cover||[]).length,
-      предметов:(cur.lmarks||[]).length, балок:cur.__beams, csg:cur.__csg })`);
+      предметов:(cur.lmarks||[]).length, балок:cur.__beams, csg:cur.__csg,
+      замокСтоп:(cur.det||{}).замокСтоп||0, проруб:(cur.det||{}).проруб||0 })`);
     итог.push(Object.assign(JSON.parse(st), {файл, мс:Date.now()-t0, крюкГен,
       каллаутов:(txt.match(/env_cs_place/g)||[]).length,
       цветUndefined:(txt.match(/"color" "undefined"/g)||[]).length,
