@@ -3517,6 +3517,40 @@ function detRefine(src){
     stat.tier=сдв; stat.marsh=маршей;
   }
 
+  /* ============ v135. ПЛАТО ПАЛАСА ВОЗВРАЩАЕТСЯ ПОСЛЕ ЯРУСОВ ============
+     Плато задаётся высотой ещё в крупном плане (`zfield = topZ`), а рампа наверх
+     получает линейный профиль. Слой деталей про паласы не знает вовсе: пас
+     ярусов раздаёт высоту ПО МЕСТАМ и затирает и плато, и рампу.
+     Экспорт при этом печатает плато по topZ из cur.palaces. Итог — та же
+     болезнь, что была с пандусами, только пятном: замер cur.__palas показал
+     492..540 клеток расхождения на 48 юнитов. Последствия обе:
+       дейкстра считает подъём на плато свободным, а в игре там ступень 88u;
+       рампы наверх в растре нет, значит в экспорте её тоже нет, и плато
+       доступно только через дроп-край, то есть в одну сторону.
+     Именно так «мид» оказывался отрезанным: сверка пара-в-пару (tools/sverka.py)
+     дала группу пар, где растр говорит x0.79..0.97, а экспорт — пути нет вовсе,
+     и все они про Middle.
+     Возвращаем отметки после ярусов. Наружный конец рампы берётся ПОСЛЕ пасa,
+     то есть подстраивается под ту высоту, которую ярусы дали окрестности. */
+  if(src.palaces) for(const q of src.palaces){
+    for(let y=Math.max(0,q.y0*K); y<=Math.min(Hf-1,q.y1*K+K-1); y++)
+      for(let x=Math.max(0,q.x0*K); x<=Math.min(Wf-1,q.x1*K+K-1); x++){
+        const j=ix(x,y); if(gf[j]) zff[j]=q.topZ; }
+    const rc=q.rampCells||[]; if(!rc.length) continue;
+    let RL=0; for(const c of rc) if(c[2]>RL) RL=c[2];
+    /* высота у подножия: что ярусы оставили на самой дальней клетке рампы */
+    let низ=null;
+    for(const [cx,cy,st] of rc){ if(st!==RL) continue;
+      const j=ix(Math.min(Wf-1,cx*K), Math.min(Hf-1,cy*K));
+      if(gf[j]){ низ=zff[j]; break; } }
+    if(низ===null) низ=q.topZ;
+    for(const [cx,cy,st] of rc){
+      const z=q.topZ+(низ-q.topZ)*(st/(RL+1));
+      for(let oy=0;oy<K;oy++)for(let ox=0;ox<K;ox++){
+        const x=cx*K+ox, y=cy*K+oy; if(!inb(x,y)) continue;
+        const j=ix(x,y); if(gf[j]) zff[j]=z; } }
+  }
+
   const LMKS=[];
   if(DET.lmark){
     const busy=new Uint8Array(N);
@@ -6344,6 +6378,19 @@ function buildVMF(cur){
      Растр — это карта, по которой генератор считает связность, тайминги и баланс.
      Если игрок ходит по другой, все расчёты не про эту карту. */
   { let n=0, mx=0, над59=0, над24=0;
+    /* Плато паласа задаёт SURF своей отметкой поверх zfield. Если zfield там
+       другой, растр и экспорт снова расходятся — но уже не по всей карте, а
+       пятном, и пятно это ровно плато. Считаем отдельно и БЕЗ фильтра по g:
+       плато может быть не отмечено полом. */
+    { let пн=0, пмх=0, пвсего=0;
+      if(cur.palaces) for(const q of cur.palaces)
+        for(let y=Math.max(0,q.y0);y<=Math.min(H-1,q.y1);y++)
+          for(let x=Math.max(0,q.x0);x<=Math.min(W-1,q.x1);x++){
+            const i=y*W+x; пвсего++;
+            const d=Math.abs(qz(q.topZ)-qz(zf[i]||0));
+            if(d>1){ пн++; if(d>пмх)пмх=d; } }
+      cur.__palas={клеток:пвсего, расходятся:пн, максимум:Math.round(пмх),
+                   плато:(cur.palaces||[]).length}; }
     for(let i=0;i<W*H;i++){ if(!g[i]) continue;
       const d=Math.abs(SURF[i]-qz(zf[i]||0)); if(d>1){ n++; if(d>mx)mx=d; }
       if(d>59) над59++; if(d>24) над24++; }

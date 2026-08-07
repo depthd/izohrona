@@ -58,10 +58,11 @@ const fs=require('fs'), path=require('path');
       кр.sort((a,b)=>b[0]-a[0]);
       return {пар:кр.length, хуже2:кр.filter(k=>k[0]>2).length,
               максимум:кр.length?+кр[0][0].toFixed(2):0, путиНет:нет,
-              худшая:кр.length?кр[0][1]:''};
+              худшая:кр.length?кр[0][1]:'',
+              все:кр.map(k=>[+k[0].toFixed(2), k[1]])};
     })()`);
     const st=await p.evaluate(`JSON.stringify({
-      сид:cur.seed, surf:cur.__surf, block:cur.__block, degen:(cur.__degen||[]).length,
+      сид:cur.seed, surf:cur.__surf, block:cur.__block, palas:cur.__palas, degen:(cur.__degen||[]).length,
       спавновT:cur.__spT, спавновC:cur.__spC,
       мест:(cur.places&&cur.places.count)||0, укрытий:(cur.cover||[]).length,
       предметов:(cur.lmarks||[]).length, балок:cur.__beams, csg:cur.__csg })`);
