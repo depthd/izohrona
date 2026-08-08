@@ -43,7 +43,7 @@ const path=require('path');
       return JSON.stringify({сид:cur.seed, аим:cur.__aim, ков:cur.coverSeed,
                  degen:cur.__degen.slice(0,8), degenN:cur.__degen.length,
                  palas:cur.__palas, surf:cur.__surf, проруб:(cur.det||{}).проруб, крюкМакс:(cur.det||{}).крюкМакс, крюкПар:(cur.det||{}).крюкПар, крюкНет:(cur.det||{}).крюкНетПути, мест:(cur.places&&cur.places.list||[]).length, безЯкоря:(cur.places&&cur.places.list||[]).filter(q=>q.ax===undefined).length, крюкХуже2:(cur.det||{}).крюкХуже2, попыток:(cur.__bal||{}).попыток, почему:(cur.det||{}).прорубПочему, прМакс:(cur.det||{}).прорубМакс, прПар:(cur.det||{}).прорубПар, ступеней:(cur.det||{}).steps, замок:(cur.det||{}).замокСтоп||0,
-                 блок:cur.__block, крпеч:cur.__крюкПеч, недост:cur.__недост, пробка:(cur.det||{}).probka, lmCut:(cur.det||{}).lmCut, укрытий:(cur.cover||[]).length, ловушек:cur.__trap, лестниц:cur.__lad, остров:cur.__island, отрезано:cur.__cut, узк:cur.__uzk,
+                 блок:cur.__block, стыки:(cur.det||{}).стыки, дыр:(cur.det||{}).дыр, стен:(cur.det||{}).стен, zskip:(cur.det||{}).zskip, крпеч:cur.__крюкПеч, недост:cur.__недост, пробка:(cur.det||{}).probka, lmCut:(cur.det||{}).lmCut, укрытий:(cur.cover||[]).length, ловушек:cur.__trap, лестниц:cur.__lad, остров:cur.__island, отрезано:cur.__cut, узк:cur.__uzk,
                  палас:(cur.palaces||[]).map(q=>({x0:q.x0,y0:q.y0,x1:q.x1,y1:q.y1,
                         topZ:+q.topZ.toFixed(2),рампа:(q.rampCells||[]).length}))}); })()`));
     console.log(`${r.сид}:${r.аим}:${r.ков}  пола ${r.surf.всегоПола}  вырожд ${r.degenN}`
@@ -51,6 +51,9 @@ const path=require('path');
       +`  паласов ${r.палас.length}  проруб ${r.проруб}  ступеней ${r.ступеней}  замок ${r.замок}`
       +`  ловушек ${r.ловушек}  остров ${r.остров}  отрезано ${r.отрезано}  лестниц ${r.лестниц}`
       +`  пробок ${r.пробка}/${r.укрытий} lm${r.lmCut}  узко ${r.узк.потеряно}  НАПРЕДЕЛЕ ${r.узк.наПределе} (${r.узк.доляПредел}%)`);
+    {const c=r.стыки||[]; const ст=c.filter(x=>x[1]==='стена'), от=c.filter(x=>x[1]==='открыт');
+      const дл=a=>a.length?`${Math.min(...a.map(x=>x[0]))*16}..${Math.max(...a.map(x=>x[0]))*16}u`:'—';
+      console.log(`  СТЫКИ ЗОН ${c.length}: стеной ${ст.length} (${дл(ст)}), открыто ${от.length} (${дл(от)})  ·  стен ${r.стен}, дыр ${r.дыр}`);}
     console.log('  КРЮК ГЕН', r.крюкМакс, 'хуже2', r.крюкХуже2, 'пар', r.крюкПар, 'нетпути', r.крюкНет, '· мест', r.мест, 'без якоря', r.безЯкоря, '· попыток', r.попыток);
     console.log('  проруб:', JSON.stringify(r.почему), 'макс', r.прМакс, 'пар', r.прПар);
     console.log('  КРЮК ПЕЧАТИ', r.крпеч.максимум, 'хуже2', r.крпеч.хуже2, 'нетпути', r.крпеч.путиНет, '· худшее расхождение', JSON.stringify(r.крпеч.расхождение));

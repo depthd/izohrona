@@ -146,6 +146,22 @@ for путь in sys.argv[1:]:
             бл = sorted(места, key=lambda nm:(места[nm][0]-wx)**2+(места[nm][1]-wy)**2)[:2]
             print(f'        горло {len(ком)} клеток у ({wx:.0f} {wy:.0f})  рядом: {", ".join(бл)}')
     # ---- разрезы между ключевыми местами ----
+    # ============ ИСТОК — ОБЛАСТЬ, А НЕ ТОЧКА ============
+    # У клетки в сетке 8 соседей, и если исток — одна вершина, поток физически
+    # не может превысить 8. «Мид -> плент 8 дорог = 128u» было ровно этим: не
+    # свойством карты, а степенью вершины. Третий раз за сессию прибор измерял
+    # сам себя. Исток берётся кругом радиуса R вокруг якоря места.
+    R = 8
+    def областьМеста(nm, r=R):
+        if nm not in места:
+            return None
+        a = hodba.ближайший(узлы, X0, Y0, места[nm])
+        if not a:
+            return None
+        out = [c for c in дост
+               if abs(c[0] - a[0]) <= r and abs(c[1] - a[1]) <= r]
+        return out or [a]
+
     def узелМеста(nm):
         return hodba.ближайший(узлы, X0, Y0, места[nm]) if nm in места else None
     пары = []
@@ -173,9 +189,12 @@ for путь in sys.argv[1:]:
             wx,wy=X0+sum(xs)/len(xs)*U, Y0+sum(ys)/len(ys)*U
             бл=sorted(места,key=lambda nm:(места[nm][0]-wx)**2+(места[nm][1]-wy)**2)[:2]
             print(f'        {метка} горло {len(ком)} клеток ({len(ком)*U}u) у ({wx:.0f} {wy:.0f})  рядом: {", ".join(бл)}')
-    if мид:
+    мидО=None
+    for nm in ('Middle','МИД','Mid'):
+        if nm in места: мидО=областьМеста(nm); break
+    if мидО:
         for имя,цель in sorted(сайты.items()):
-            k,кл=разрез(adj,[мид],цель)
+            k,кл=разрез(adj,мидО,цель)
             print(f'  МИД -> {имя:12s}  дорог {k}  ≈ {k*U}u')
             горла(кл,'')
     if len(сайты)==2:
@@ -187,14 +206,16 @@ for путь in sys.argv[1:]:
     import os as _os
     for пара in (_os.environ.get('ПАРА','').split(',') if _os.environ.get('ПАРА') else []):
         a,_,b=пара.partition('>')
-        ua,ub=узелМеста(a.strip()),узелМеста(b.strip())
+        ua,ub=областьМеста(a.strip()),областьМеста(b.strip())
         if not ua or not ub:
             print(f'  {пара}: нет такого места. Есть: {", ".join(sorted(места))}'); continue
-        k,кл=разрез(adj,[ua],[ub])
+        k,кл=разрез(adj,ua,ub)
         print(f'  {a.strip()} -> {b.strip()}  дорог {k}  ≈ {k*U}u')
         горла(кл,'')
-    ктспавн=[hodba.ближайший(узлы,X0,Y0,p) for p in сп.get('counterterrorist',[])][:1]
-    ктспавн=[q for q in ктспавн if q]
+    ктспавн=[]
+    for p0 in сп.get('counterterrorist',[])[:1]:
+        a=hodba.ближайший(узлы,X0,Y0,p0)
+        if a: ктспавн=[c for c in дост if abs(c[0]-a[0])<=R and abs(c[1]-a[1])<=R] or [a]
     if ктспавн:
         for имя,цель in sorted(сайты.items()):
             k,_=разрез(adj,ктспавн,цель)
