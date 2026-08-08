@@ -182,6 +182,17 @@ for путь in sys.argv[1:]:
         (иA,цA),(иB,цB)=sorted(сайты.items())
         k,_=разрез(adj,list(цA),цB)
         print(f'  {иA} -> {иB}  (ротация) дорог {k}  ≈ {k*U}u')
+    # ПАРА=A>B[,C>D] — разрез между конкретными каллаутами, когда человек
+    # показал пальцем на место
+    import os as _os
+    for пара in (_os.environ.get('ПАРА','').split(',') if _os.environ.get('ПАРА') else []):
+        a,_,b=пара.partition('>')
+        ua,ub=узелМеста(a.strip()),узелМеста(b.strip())
+        if not ua or not ub:
+            print(f'  {пара}: нет такого места. Есть: {", ".join(sorted(места))}'); continue
+        k,кл=разрез(adj,[ua],[ub])
+        print(f'  {a.strip()} -> {b.strip()}  дорог {k}  ≈ {k*U}u')
+        горла(кл,'')
     ктспавн=[hodba.ближайший(узлы,X0,Y0,p) for p in сп.get('counterterrorist',[])][:1]
     ктспавн=[q for q in ктспавн if q]
     if ктспавн:
