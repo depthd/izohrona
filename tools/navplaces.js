@@ -8,7 +8,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
 
-const BUILD = process.argv[2] || 'builds/izohrona_v120.html';
+const BUILD = process.argv[2] || 'builds/izohrona_v137.html';
 const opt = { minR: +(process.argv[3] || 96), mergeK: +(process.argv[4] || 0.72),
               minArea: +(process.argv[5] || 96000) };
 

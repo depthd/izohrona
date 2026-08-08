@@ -2,7 +2,7 @@
    растре, до и после слоя деталей. Нужен один вопрос: барикада рождается в
    крупном плане или её ставит слой деталей?
 
-     node tools/krjukgen.js builds/izohrona_v120.html [карт]
+     node tools/krjukgen.js builds/izohrona_v137.html [карт]
 */
 const { chromium } = require('playwright');
 const fs=require('fs'), path=require('path');

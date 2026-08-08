@@ -1,7 +1,7 @@
 /* computePlaces вырезается из сборки и гоняется в голом node — так видно, где висит.
    node tools/plcnode.js <билд.html> [карта] */
 const fs = require('fs');
-const BUILD = process.argv[2] || 'builds/izohrona_v120.html';
+const BUILD = process.argv[2] || 'builds/izohrona_v137.html';
 const ONLY = process.argv[3] || '';
 const html = fs.readFileSync(BUILD, 'utf8');
 const a = html.indexOf('const PLC=');

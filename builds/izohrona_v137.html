@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v119 · ИЗОХРОНА — генератор карт three-lane</title>
+<title>v137 · ИЗОХРОНА — генератор карт three-lane</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -142,7 +142,7 @@
   <header class="top">
     <div class="brand">
       <div class="eyebrow">four-square · three-lane · баланс по построению</div>
-      <h1>ИЗОХРОНА</h1>
+      <h1>ИЗОХРОНА <span style="font:11px ui-monospace,monospace;color:#7d92a4;letter-spacing:.5px;vertical-align:super">v137</span></h1>
       <p class="lede">Генератор соревновательных карт для CS2. Одна кнопка — готовая карта с балансом, укрытиями и экспортом в Hammer.
         <details class="about"><summary>подробнее</summary>
         Каркас Dust2, баланс держится в 3D. Вертикаль в масштабе игрока (рост=72u): рельеф везде, резче на ключевых — мид утоплен, подходы приподняты, сайты — приподнятые плато с плоской точкой закладки. План решается на клетке 96u, а растр, который видят укрытия, дейкстра, замер и экспорт, — 16u: стены получают толщину 32–64u, входы сужаются до 112u, пустые залы делятся перегородками, укрытия стоят в настоящих габаритах. Кнопка .vmf — выгрузка в Hammer сразу VIS-чистой, с рельефом.</details></p>
@@ -415,6 +415,10 @@ const V102L = { falloff:"0.55", stepTun:512, stepZone:640, wallFind:288, perZone
    Заменяет точечные клипы над крышами: одно правило, ничего не забыто, визуально невидим.
    routeMax — насколько маршруту разрешено удлиниться из-за тел. Больше — снимаем виновных. */
 const V83 = { site:true };
+/* Версия печатается в заголовке вкладки, в углу панели и В САМ .vmf
+   (ключ "comment" у worldspawn). Иначе по присланному файлу нельзя сказать,
+   каким билдом он собран, и разбор начинается со спора об этом. */
+const ВЕРСИЯ = "izohrona v137";
 const V81 = { radar:true, ladder:true, ladderMax:6, ladderDrop:112 };   // v87: столько, сколько ловушек   // v84: порог по факту перепадов
 const V79 = { pal:true, smooth:true, minRun:1, accent:true, steps:true, stepMax:96 };
 /* ====== v127: ТЕКСТУРА ПО РАЗМЕРУ БРАША ======
@@ -4954,7 +4958,7 @@ function buildVMF(cur){
        за построение стека на каждой из тридцати тысяч коробок обычного экспорта. */
     if(typeof window!=='undefined' && window.__TAGBOX){
       const st=((new Error()).stack||'').split('\n');
-      __rec.at=(st[3]||st[2]||'').trim().replace(/^.*izohrona_v120\.html:/,'стр ').slice(0,20); }
+      __rec.at=(st[3]||st[2]||'').trim().replace(/^.*izohrona_v\d+\.html:/,'стр ').slice(0,20); }
     REG.push(__rec);
     return TOK(REG.length-1);
   }
@@ -6677,7 +6681,7 @@ function buildVMF(cur){
      всё, что выпущено раньше, потом жетоны в тексте заменяются на получившиеся
      куски. Пустой список означает, что коробка была целиком внутри чужого объёма. */
   const __parts=resolveREG();
-  let __txt = `versioninfo\n{\n\t"editorversion" "400"\n\t"editorbuild" "8000"\n\t"mapversion" "1"\n\t"formatversion" "100"\n\t"prefab" "0"\n}\nvisgroups\n{\n}\nviewsettings\n{\n\t"bSnapToGrid" "1"\n\t"bShowGrid" "1"\n\t"nGridSpacing" "64"\n}\nworld\n{\n\t"id" "${wid}"\n\t"mapversion" "1"\n\t"classname" "worldspawn"\n\t"skyname" "sky_dust"\n${solids.filter(Boolean).join("\n")}\n}\n${ents.join("\n")}\ncameras\n{\n\t"activecamera" "-1"\n}\ncordons\n{\n\t"active" "0"\n}\n`;
+  let __txt = `versioninfo\n{\n\t"editorversion" "400"\n\t"editorbuild" "8000"\n\t"mapversion" "1"\n\t"formatversion" "100"\n\t"prefab" "0"\n}\nvisgroups\n{\n}\nviewsettings\n{\n\t"bSnapToGrid" "1"\n\t"bShowGrid" "1"\n\t"nGridSpacing" "64"\n}\nworld\n{\n\t"id" "${wid}"\n\t"mapversion" "1"\n\t"classname" "worldspawn"\n\t"skyname" "sky_dust"\n\t"comment" "${ВЕРСИЯ} · ${cur.seed}:${cur.__aim}:${cur.coverSeed}"\n${solids.filter(Boolean).join("\n")}\n}\n${ents.join("\n")}\ncameras\n{\n\t"activecamera" "-1"\n}\ncordons\n{\n\t"active" "0"\n}\n`;
   let __kept=0, __dropped=0, __split=0;
   __txt = __txt.replace(/\u0000B(\d+)\u0000/g, function(_,n){
     const ps=__parts[+n]||[];
