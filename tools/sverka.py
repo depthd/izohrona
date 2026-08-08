@@ -26,7 +26,7 @@ for карта in gen['карты']:
     путь = карта['файл']
     ген = {имя: k for k, имя in (карта['крюкГен'] or {}).get('все', [])}
     txt = open(путь, encoding='utf-8', errors='replace').read()
-    solid = [s for s in parse_solids(txt.split('\nentity\n')[0]) if not s['tool']]
+    solid = [s for s in parse_solids(txt.split('\nentity\n')[0]) if not s['нетело']]
     места = {}
     for m in re.finditer(r'^entity\n\{(.*?)\n\}', txt, re.M | re.S):
         b = m.group(1)

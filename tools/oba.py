@@ -80,7 +80,7 @@ print(f'  растр: узлов {всегоР}, достижимо от T {len(
 
 # ---- то же по печати ----
 txt = open(f'{папка}/r.vmf', encoding='utf-8', errors='replace').read()
-solid = [s for s in parse_solids(txt.split('\nentity\n')[0]) if not s['tool']]
+solid = [s for s in parse_solids(txt.split('\nentity\n')[0]) if not s['нетело']]
 # БЕЗТЕЛ=1 — контрфакт: пол и стены печатаются ОТ БАЗЫ, тела ставятся НА пол.
 import os
 if os.environ.get('БЕЗТЕЛ') == '1':

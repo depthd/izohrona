@@ -97,7 +97,7 @@ def разрез(места, точки, узлы, adj, IV, solid, X0, Y0, W, H)
 
 def разбор(path):
     txt = open(path, encoding='utf-8', errors='replace').read()
-    solid = [s for s in parse_solids(txt.split('\nentity\n')[0]) if not s['tool']]
+    solid = [s for s in parse_solids(txt.split('\nentity\n')[0]) if not s['нетело']]
     if БЕЗ_ТЕЛ:
         # Пол и стены печатаются ОТ БАЗЫ, тела ставятся НА пол. Отсечение по низу
         # оставляет только каркас — так видно, кто барикадит: растр или тела.

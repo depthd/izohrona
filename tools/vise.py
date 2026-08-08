@@ -25,6 +25,23 @@ RE_MAT = re.compile(r'"material" "([^"]+)"')
 RE_ENT = re.compile(r'^entity\n\{(.*?)\n\}', re.M | re.S)
 
 
+# ============ КАКОЙ TOOLS-МАТЕРИАЛ ПРОХОДИМ НАСКВОЗЬ ============
+# Все приборы проходимости отбрасывали ЛЮБОЙ браш с материалом TOOLS/ — то есть
+# и PLAYER CLIP тоже. А это 896 брашей из 4314 на присланной карте: пятая часть
+# геометрии, в которую игрок упирается, а приёмка её не видела. Отсюда «гейт
+# зелёный» при наглухо закрытом проходе на B.
+СКВОЗНЫЕ = ('TOOLSTRIGGER', 'TOOLSHINT', 'TOOLSSKIP', 'TOOLSAREAPORTAL',
+            'TOOLSFOG', 'TOOLSBLOCKLIGHT', 'TOOLSNPCCLIP', 'TOOLSBLOCKBULLETS',
+            'TOOLSOCCLUDER', 'TOOLSNODRAWPORTALABLE')
+
+
+def НЕ_ТЕЛО(mat):
+    m = mat.upper().rsplit('/', 1)[-1]
+    if not mat.upper().startswith('TOOLS'):
+        return False
+    return m in СКВОЗНЫЕ
+
+
 def parse_solids(txt):
     out = []
     for chunk in txt.split('\tsolid\n')[1:]:
@@ -57,6 +74,11 @@ def parse_solids(txt):
                     'x0': min(X), 'x1': max(X), 'y0': min(Y), 'y1': max(Y),
                     'z0': min(Z), 'z1': max(Z),
                     'tool': mat.upper().startswith('TOOLS'),
+                    # Игрок упирается НЕ только в видимые браши. PLAYERCLIP,
+                    # CLIP, NODRAW, SKYBOX — сплошные для него, и в замер
+                    # проходимости обязаны входить. Не сплошные — только
+                    # триггеры, хинты и служебные объёмы.
+                    'нетело': НЕ_ТЕЛО(mat),
                     'slope': any(abs(n[2]) > 1e-6 and abs(n[2]) < 1-1e-6
                                  for n, _ in planes)})
     return out

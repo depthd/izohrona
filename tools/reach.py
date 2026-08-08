@@ -42,7 +42,7 @@ parse_solids, column = ns['parse_solids'], ns['column']
 path = sys.argv[1]
 txt = open(path, encoding='utf-8', errors='replace').read()
 world = txt.split('\nentity\n')[0]
-solid = [s for s in parse_solids(world) if not s['tool']]
+solid = [s for s in parse_solids(world) if not s['нетело']]
 
 # --- контрфакт: выкинуть браши, целиком лежащие в заданной коробке ---
 # Без этого «виновник» остаётся догадкой по совпадению. Убираем подозреваемого

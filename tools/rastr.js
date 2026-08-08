@@ -17,6 +17,10 @@ const fs=require('fs'), path=require('path');
   p.on('pageerror',e=>console.error('ОШИБКА СТРАНИЦЫ:',String(e.message).slice(0,200)));
   await p.goto('file://'+path.resolve(сборка),{timeout:180000});
   await p.waitForFunction('typeof cur!=="undefined" && cur && cur.g',null,{timeout:180000,polling:400});
+  /* DETOFF=part,narrow — выключить пасы слоя деталей до генерации. Контрфакт по
+     пасу: какой из них съедает ширину проходов. */
+  if(process.env['DETOFF']) await p.evaluate(
+    `for(const k of ${JSON.stringify(process.env['DETOFF'].split(','))}) DET[k]=false;`);
   if(тройка){ const [с,а,кв]=тройка.split(':');
     await p.evaluate(`window.__SEED=${Number(с)}; window.__AIM=${а?Number(а):'undefined'};`
                     +` window.__COVSEED=${кв?Number(кв):'undefined'};`);
