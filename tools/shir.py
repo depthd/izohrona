@@ -22,6 +22,11 @@ parse_solids, column = ns['parse_solids'], ns['column']
 for путь in sys.argv[1:]:
     txt = open(путь, encoding='utf-8', errors='replace').read()
     solid = [s for s in parse_solids(txt.split('\nentity\n')[0]) if not s['нетело']]
+    import os
+    if os.environ.get('БЕЗТЕЛ') == '1':
+        база = min(s['z0'] for s in solid)
+        solid = [s for s in solid if s['z0'] < база + 8]
+        print('  (контрфакт: тела убраны)')
     места = {}
     for m in re.finditer(r'^entity\n\{(.*?)\n\}', txt, re.M | re.S):
         b = m.group(1)
@@ -143,3 +148,64 @@ for путь in sys.argv[1:]:
         бл = sorted(места, key=lambda nm: (места[nm][0] - wx) ** 2 + (места[nm][1] - wy) ** 2)[:2]
         print(f'    {len(ком):5d} клеток  центр ({wx:.0f} {wy:.0f})'
               f'  минимум {min(шир[c] for c in ком):.0f}u  рядом: {", ".join(бл)}')
+
+# ============ САМОЕ УЗКОЕ МЕСТО НА МАРШРУТЕ ============
+# Доля узких клеток на карте ничего не говорит: их может быть 0.1%, и все они
+# ровно на тех перекрёстках, через которые ходят. Игрок видит МИНИМУМ вдоль
+# своего пути, а не среднее по полу. Считаем для каждой пары соседних мест
+# кратчайший путь и самую узкую точку на нём.
+    import heapq
+    пары = []
+    имена = [n for n in места]
+    кэшП = {}
+    for i, a in enumerate(имена):
+        ta = hodba.ближайший(узлы, X0, Y0, места[a])
+        if not ta or (ta[0], ta[1]) not in [(c[0], c[1]) for c in [ta]]:
+            pass
+        if not ta:
+            continue
+        for b in имена[i + 1:]:
+            tb = hodba.ближайший(узлы, X0, Y0, места[b])
+            if not tb:
+                continue
+            пр = math.dist(места[a][:2], места[b][:2])
+            if пр > 1800 or пр < 200:
+                continue
+            if a not in кэшП:
+                кэшП[a] = hodba.волна(adj, ta)
+            if tb not in кэшП[a]:
+                continue
+            # восстановление пути по расстояниям
+            d = кэшП[a]
+            c, путь = tb, [tb]
+            while d.get(c, 0) > 0:
+                сл = None
+                for n2 in adj.get(c, ()):
+                    if d.get(n2, 1 << 30) == d[c] - 1:
+                        сл = n2
+                        break
+                if сл is None:
+                    for n2 in [k for k in d if d[k] == d[c] - 1
+                               and abs(k[0] - c[0]) <= 1 and abs(k[1] - c[1]) <= 1]:
+                        сл = n2
+                        break
+                if сл is None:
+                    break
+                c = сл
+                путь.append(c)
+            ш = [шир.get(p[1] * W + p[0], 1e9) for p in путь]
+            ш = [v for v in ш if v < 1e8]
+            if ш:
+                пары.append((min(ш), a, b, len(путь) * U))
+    if пары:
+        пары.sort()
+        зн2 = [p[0] for p in пары]
+        n2 = len(зн2)
+        q2 = lambda p: зн2[int(p * (n2 - 1))]
+        print(f'  ГОРЛО НА МАРШРУТЕ между соседними местами, пар {n2}:')
+        print(f'    медиана {q2(.5):.0f}u · четверть пар уже {q2(.25):.0f}u · худшая {зн2[0]:.0f}u')
+        for порог in (48, 64, 96, 128):
+            k = sum(1 for v in зн2 if v < порог)
+            print(f'    маршрутов с горлом уже {порог}u: {k} из {n2} ({100*k/n2:.0f}%)')
+        for м, a, b, L in пары[:6]:
+            print(f'      {м:5.0f}u  {a} -> {b}   (путь {L}u)')

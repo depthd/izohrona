@@ -6876,7 +6876,74 @@ function buildVMF(cur){
           худ.закрытоНаПути=закр;
           худ.виновники=Object.entries(вин).sort((a,b)=>b[1]-a[1]).slice(0,3); }
         cur.__крюкПеч={максимум:+мкП.toFixed(2), хуже2:хужеП, пар:парП, путиНет:нетП,
-                       расхождение:худ}; }
+                       расхождение:худ};
+        /* ============ v139. ГОРЛО НА МАРШРУТЕ ============
+           «Доля узких клеток» ничего не говорит: их бывает 0.1%, и все они ровно
+           на тех перекрёстках, где ходят. Игрок видит МИНИМУМ вдоль своего пути.
+           Считаем ширину свободного места в каждой клетке (круг, вписанный между
+           стенами), потом для каждой пары соседних мест ищем МАКСИМИННЫЙ путь:
+           тот, чьё самое узкое место шире всех. Это и есть ответ на вопрос
+           «насколько узко в самом узком месте по дороге отсюда туда».
+           Порог 96u не выдуман: он записан ещё в v120.3 — «проём уже 96u это
+           щель, а не проход». Тогда я поменял только порог ИЗМЕРЕНИЯ мест, а
+           код, который щели производит, не тронул. Теперь их видно. */
+        const ДТ=new Int32Array(W*H).fill(1e9);
+        for(let i=0;i<W*H;i++) if(!узП[i]) ДТ[i]=0;
+        for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const i=y*W+x; if(!ДТ[i]) continue;
+          let b=1e9;
+          if(x>0) b=Math.min(b,ДТ[i-1]+2); if(y>0) b=Math.min(b,ДТ[i-W]+2);
+          if(x>0&&y>0) b=Math.min(b,ДТ[i-W-1]+3);
+          if(x<W-1&&y>0) b=Math.min(b,ДТ[i-W+1]+3);
+          if(b<ДТ[i]) ДТ[i]=b; }
+        for(let y=H-1;y>=0;y--)for(let x=W-1;x>=0;x--){ const i=y*W+x; if(!ДТ[i]) continue;
+          let b=ДТ[i];
+          if(x<W-1) b=Math.min(b,ДТ[i+1]+2); if(y<H-1) b=Math.min(b,ДТ[i+W]+2);
+          if(x<W-1&&y<H-1) b=Math.min(b,ДТ[i+W+1]+3);
+          if(x>0&&y<H-1) b=Math.min(b,ДТ[i+W-1]+3);
+          ДТ[i]=b; }
+        /* ширина = диаметр самого крупного свободного круга, накрывающего клетку */
+        const ШИР=new Int32Array(W*H);
+        for(let i=0;i<W*H;i++){ if(!узП[i]) continue;
+          const r=ДТ[i]/2; if(r<0.5) continue;
+          const R=r|0, cx=i%W, cy=(i/W)|0, d=Math.round(2*r*S);
+          for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++){
+            if(dx*dx+dy*dy>r*r) continue;
+            const x=cx+dx, y=cy+dy; if(x<0||y<0||x>=W||y>=H) continue;
+            const j=y*W+x; if(узП[j] && d>ШИР[j]) ШИР[j]=d; } }
+        /* максиминный путь: пороги по убыванию, флуд только по широким клеткам */
+        const ПОРОГИ=[256,224,192,160,128,112,96,80,64,48,32,16];
+        const тП2=P.map(p=>бл(узП,(p.ax!==undefined?p.ax:p.x),(p.ay!==undefined?p.ay:p.y)));
+        const близко=[];
+        for(let i=0;i<P.length;i++){ if(тП2[i]<0) continue;
+          for(let j=i+1;j<P.length;j++){ if(тП2[j]<0) continue;
+            const ax=(P[i].ax!==undefined?P[i].ax:P[i].x), ay=(P[i].ay!==undefined?P[i].ay:P[i].y);
+            const bx=(P[j].ax!==undefined?P[j].ax:P[j].x), by=(P[j].ay!==undefined?P[j].ay:P[j].y);
+            const пр=Math.hypot(ax-bx,ay-by)*S;
+            if(пр>1800||пр<200) continue;
+            близко.push([i,j]); } }
+        const горло=new Map();
+        for(const пор of ПОРОГИ){
+          const надо=близко.filter(([i,j])=>!горло.has(i+'|'+j));
+          if(!надо.length) break;
+          const исх=new Set(надо.map(([i])=>i));
+          for(const i of исх){
+            const s0=тП2[i]; if(ШИР[s0]<пор) continue;
+            const v=new Uint8Array(W*H); const q=[s0]; v[s0]=1;
+            for(let h=0;h<q.length;h++){ const c=q[h], x=c%W, y=(c/W)|0;
+              for(const d of D8п){ const nx=x+d[0], ny=y+d[1];
+                if(nx<0||ny<0||nx>=W-1||ny>=H-1) continue;
+                const k=ny*W+nx; if(v[k]||!узП[k]||ШИР[k]<пор) continue;
+                if(zУ[k]-zУ[c]>ПР) continue;
+                v[k]=1; q.push(k); } }
+            for(const [a,b2] of надо) if(a===i && v[тП2[b2]]) горло.set(a+'|'+b2, пор); } }
+        const зн=[]; const плохие=[];
+        for(const [i,j] of близко){ const w=горло.get(i+'|'+j)||0; зн.push(w);
+          if(w<96) плохие.push([w,(P[i].им||'?')+'->'+(P[j].им||'?')]); }
+        зн.sort((a,b)=>a-b); плохие.sort((a,b)=>a[0]-b[0]);
+        cur.__горло={пар:зн.length, медиана:зн.length?зн[зн.length>>1]:0,
+                     худшее:зн.length?зн[0]:0,
+                     уже96:зн.filter(w=>w<96).length, уже128:зн.filter(w=>w<128).length,
+                     список:плохие.slice(0,6)}; }
       cur.__недост={потеряно, достижимо:дР, кривых, крюкПола:+крМакс.toFixed(2),
                     доляКривых:+(100*кривых/Math.max(1,дР)).toFixed(1),
                     доля:+(100*потеряно/Math.max(1,дР)).toFixed(1),
