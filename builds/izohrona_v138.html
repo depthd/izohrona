@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v137 · ИЗОХРОНА — генератор карт three-lane</title>
+<title>v138 · ИЗОХРОНА — генератор карт three-lane</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -142,7 +142,7 @@
   <header class="top">
     <div class="brand">
       <div class="eyebrow">four-square · three-lane · баланс по построению</div>
-      <h1>ИЗОХРОНА <span style="font:11px ui-monospace,monospace;color:#7d92a4;letter-spacing:.5px;vertical-align:super">v137</span></h1>
+      <h1>ИЗОХРОНА <span style="font:11px ui-monospace,monospace;color:#7d92a4;letter-spacing:.5px;vertical-align:super">v138</span></h1>
       <p class="lede">Генератор соревновательных карт для CS2. Одна кнопка — готовая карта с балансом, укрытиями и экспортом в Hammer.
         <details class="about"><summary>подробнее</summary>
         Каркас Dust2, баланс держится в 3D. Вертикаль в масштабе игрока (рост=72u): рельеф везде, резче на ключевых — мид утоплен, подходы приподняты, сайты — приподнятые плато с плоской точкой закладки. План решается на клетке 96u, а растр, который видят укрытия, дейкстра, замер и экспорт, — 16u: стены получают толщину 32–64u, входы сужаются до 112u, пустые залы делятся перегородками, укрытия стоят в настоящих габаритах. Кнопка .vmf — выгрузка в Hammer сразу VIS-чистой, с рельефом.</details></p>
@@ -418,7 +418,7 @@ const V83 = { site:true };
 /* Версия печатается в заголовке вкладки, в углу панели и В САМ .vmf
    (ключ "comment" у worldspawn). Иначе по присланному файлу нельзя сказать,
    каким билдом он собран, и разбор начинается со спора об этом. */
-const ВЕРСИЯ = "izohrona v137";
+const ВЕРСИЯ = "izohrona v138";
 const V81 = { radar:true, ladder:true, ladderMax:6, ladderDrop:112 };   // v87: столько, сколько ловушек   // v84: порог по факту перепадов
 const V79 = { pal:true, smooth:true, minRun:1, accent:true, steps:true, stepMax:96 };
 /* ====== v127: ТЕКСТУРА ПО РАЗМЕРУ БРАША ======

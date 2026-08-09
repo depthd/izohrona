@@ -2,7 +2,7 @@
    Каждая карта выгружается ДВАЖДЫ — с подгонкой и без — чтобы сравнивать
    один и тот же экспорт, а не две разные карты.
 
-     node tools/uvrun.js builds/izohrona_v137.html [сколько] [want] [unit]
+     node tools/uvrun.js builds/izohrona_v138.html [сколько] [want] [unit]
 */
 const { chromium } = require('playwright');
 const fs=require('fs'), path=require('path');

@@ -4,7 +4,7 @@
 на выходе `.vmf` для Hammer. Цель: нажал кнопку — получил готовую сбалансированную
 карту уровня Source.
 
-Продукт: `builds/izohrona_v137.html`. Ветка: `claude/grid-16-rewrite-u6gwat`.
+Продукт: `builds/izohrona_v138.html`. Ветка: `claude/grid-16-rewrite-u6gwat`.
 
 ---
 
@@ -188,7 +188,7 @@
 Тройка печатается прибором и лежит в `gen.json` гейта. Крючки в продукте:
 `window.__SEED`, `window.__AIM`, `window.__COVSEED`.
 
-    node tools/povtor.js builds/izohrona_v137.html --сид 659323758:3.37:2428020358
+    node tools/povtor.js builds/izohrona_v138.html --сид 659323758:3.37:2428020358
 
 ---
 

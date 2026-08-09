@@ -10,7 +10,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
 
-const BUILD = process.argv[2] || 'builds/izohrona_v137.html';
+const BUILD = process.argv[2] || 'builds/izohrona_v138.html';
 const N = +(process.argv[3] || 3);
 
 const PROBE = `(function(){
