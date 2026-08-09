@@ -24,9 +24,13 @@ for путь in sys.argv[1:]:
     solid = [s for s in parse_solids(txt.split('\nentity\n')[0]) if not s['нетело']]
     import os
     if os.environ.get('БЕЗТЕЛ') == '1':
-        база = min(s['z0'] for s in solid)
-        solid = [s for s in solid if s['z0'] < база + 8]
-        print('  (контрфакт: тела убраны)')
+        # Тела — это то, что стоит НА полу. Пол и стены печатаются от дна мира.
+        # Дно считается по видимым брашам: если брать минимум по всем, дном
+        # становится небо (оно ниже всех), и фильтр выбрасывает ВСЁ, кроме неба.
+        # Так и вышло — контрфакт оставлял один браш и врал, что щелей нет.
+        база = min(s['z0'] for s in solid if not s['tool'])
+        solid = [s for s in solid if s['tool'] or s['z0'] < база + 8]
+        print('  (контрфакт: тела убраны, осталось %d брашей)' % len(solid))
     места = {}
     for m in re.finditer(r'^entity\n\{(.*?)\n\}', txt, re.M | re.S):
         b = m.group(1)

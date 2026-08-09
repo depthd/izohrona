@@ -84,9 +84,11 @@ solid = [s for s in parse_solids(txt.split('\nentity\n')[0]) if not s['нете�
 # БЕЗТЕЛ=1 — контрфакт: пол и стены печатаются ОТ БАЗЫ, тела ставятся НА пол.
 import os
 if os.environ.get('БЕЗТЕЛ') == '1':
-    база = min(s['z0'] for s in solid)
-    solid = [s for s in solid if s['z0'] < база + 8]
-    print('  (контрфакт: тела убраны)')
+    # Дно мира считается по ВИДИМЫМ брашам: минимум по всем даёт небо, и фильтр
+    # тогда оставляет один браш вместо пола со стенами.
+    база = min(s['z0'] for s in solid if not s['tool'])
+    solid = [s for s in solid if s['tool'] or s['z0'] < база + 8]
+    print('  (контрфакт: тела убраны, осталось %d брашей)' % len(solid))
 узлы, adj, X0, Y0, WE, HE, IV = hodba.сетка(solid, column, вернутьIV=True)
 
 # мир: клетка растра (x,y) → координаты (x*S .. x*S+S, (H-y-1)*S .. (H-y)*S)
