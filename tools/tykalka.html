@@ -1,0 +1,362 @@
+<meta charset="utf-8">
+<title>Тыкалка — размечать дефекты на карте</title>
+<!--
+  ТЫКАЛКА. Человек открывает .vmf, видит план сверху и тыкает в места, где
+  что-то не так. Получается файл с метками, который он присылает мне.
+
+  Зачем. До сих пор цепочка была такая: он делает скриншот, пишет «вот тут
+  проход закрыт», я гадаю по картинке, перевожу пиксели в координаты руками и
+  меряю не то. Пять раундов подряд я мерил, ПРОХОДИМ ЛИ существующий проход, а
+  он показывал места, где прохода НЕТ ВООБЩЕ. Разные вопросы, и его я не задал
+  ни разу.
+
+  Работает и на чужих картах: перетащи dust2.vmf и разметь, как должно быть —
+  это единственный способ откалибровать пороги по настоящей карте, а не по моим
+  выдумкам.
+
+  Всё в одном файле, интернет не нужен. Открыть двойным щелчком.
+-->
+<style>
+ :root{ --фон:#0b0f14; --панель:#121a22; --текст:#dce6ee; --тускло:#7d92a4;
+        --рамка:#22303c; }
+ *{box-sizing:border-box}
+ body{margin:0;background:var(--фон);color:var(--текст);
+      font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;overflow:hidden}
+ #всё{display:flex;height:100vh}
+ #левая{width:290px;flex:none;background:var(--панель);border-right:1px solid var(--рамка);
+        padding:14px;overflow:auto}
+ #холстбокс{flex:1;position:relative;overflow:hidden}
+ canvas{position:absolute;left:0;top:0;cursor:crosshair}
+ h1{font-size:15px;margin:0 0 4px}
+ .под{color:var(--тускло);font-size:11px;margin:0 0 14px}
+ .кнопка{display:block;width:100%;margin:6px 0;padding:9px 10px;background:#1b2732;
+         color:var(--текст);border:1px solid var(--рамка);border-radius:6px;
+         cursor:pointer;text-align:left;font:inherit}
+ .кнопка:hover{background:#24323f}
+ .кнопка.вкл{border-color:#5aa9e6;background:#1d2b3a}
+ .цвет{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:8px}
+ .блок{margin:16px 0 8px;color:var(--тускло);font-size:11px;text-transform:uppercase;
+       letter-spacing:.6px}
+ #дроп{border:2px dashed var(--рамка);border-radius:8px;padding:22px 12px;text-align:center;
+       color:var(--тускло);cursor:pointer}
+ #дроп.над{border-color:#5aa9e6;color:var(--текст)}
+ #метки{margin-top:8px;font-size:11px;max-height:230px;overflow:auto}
+ .метка{padding:4px 6px;border-bottom:1px solid var(--рамка);display:flex;gap:6px;
+        align-items:center}
+ .метка button{margin-left:auto;background:none;border:0;color:var(--тускло);cursor:pointer;
+               font:inherit}
+ #статус{position:absolute;right:10px;bottom:10px;background:rgba(11,15,20,.9);
+         border:1px solid var(--рамка);border-radius:6px;padding:6px 10px;color:var(--тускло)}
+ input[type=text]{width:100%;background:#0e151c;color:var(--текст);border:1px solid var(--рамка);
+                  border-radius:5px;padding:7px;font:inherit;margin-top:6px}
+</style>
+
+<div id="всё">
+ <div id="левая">
+  <h1>Тыкалка</h1>
+  <p class="под">План карты сверху. Тыкай в места, где что-то не так —
+     получится файл с метками. Работает и на чужих картах.</p>
+
+  <div id="дроп">перетащи сюда <b>.vmf</b><br><span style="font-size:11px">или щёлкни</span></div>
+  <input type="file" id="файл" accept=".vmf" hidden>
+
+  <div class="блок">чем метить</div>
+  <button class="кнопка вкл" data-вид="нетпрохода"><i class="цвет" style="background:#ffd21e"></i>тут должен быть проход</button>
+  <button class="кнопка" data-вид="щель"><i class="цвет" style="background:#e03a3a"></i>щель, протискиваюсь боком</button>
+  <button class="кнопка" data-вид="тупик"><i class="цвет" style="background:#a35cd6"></i>тупик, идти некуда</button>
+  <button class="кнопка" data-вид="хорошо"><i class="цвет" style="background:#4ec07a"></i>вот так хорошо</button>
+  <input type="text" id="заметка" placeholder="подпись к следующей метке (не обязательно)">
+
+  <div class="блок">метки</div>
+  <div id="метки"></div>
+  <button class="кнопка" id="сохранить">сохранить метки в файл</button>
+  <button class="кнопка" id="снимок">сохранить картинку</button>
+  <button class="кнопка" id="очистить">убрать все метки</button>
+
+  <div class="блок">как смотреть</div>
+  <p class="под">колесо — приблизить, тащить правой — двигать,<br>
+     щелчок — поставить метку, щелчок по метке в списке — найти её.</p>
+ </div>
+
+ <div id="холстбокс">
+   <canvas id="холст"></canvas>
+   <div id="статус">карта не загружена</div>
+ </div>
+</div>
+
+<script>
+"use strict";
+/* ============ РАЗБОР .vmf ============
+   Нужны только браши мира: их плоскости и материал. Плоскость в VMF задана
+   тремя точками по часовой стрелке снаружи; внешняя нормаль = (p1-p2)x(p3-p2).
+   Тот же разбор, что в tools/vise.py — чтобы человек и я видели одно и то же. */
+const СКВОЗНЫЕ = ['TOOLSTRIGGER','TOOLSHINT','TOOLSSKIP','TOOLSAREAPORTAL','TOOLSFOG',
+                  'TOOLSBLOCKLIGHT','TOOLSNPCCLIP','TOOLSBLOCKBULLETS','TOOLSOCCLUDER'];
+/* PLAYER CLIP и NODRAW игрока держат, значит в замер входят. Небо — это скорлупа
+   вокруг карты, стоять на ней негде: если её считать полом, весь мир снаружи
+   становится «ходибельным» и картинка тонет в сером. */
+const НЕ_ТЕЛО = m => { const u=m.toUpperCase(); if(!u.startsWith('TOOLS')) return false;
+  const k=u.split('/').pop(); return СКВОЗНЫЕ.includes(k) || k==='TOOLSSKYBOX'; };
+
+const RE_PL=/"plane" "\(([-\d.e ]+)\) \(([-\d.e ]+)\) \(([-\d.e ]+)\)"/g;
+
+function разбор(txt){
+  const мир = txt.split('\nentity\n')[0];
+  const куски = мир.split('\tsolid\n'); куски.shift();
+  const тела=[];
+  for(const ч of куски){
+    const мм = ч.match(/"material" "([^"]+)"/);
+    const мат = мм ? мм[1] : '?';
+    if(НЕ_ТЕЛО(мат)) continue;
+    RE_PL.lastIndex=0; let m, пл=[], X=[],Y=[],Z=[];
+    while((m=RE_PL.exec(ч))){
+      const т=[];
+      for(let k=1;k<=3;k++){ const a=m[k].split(' ').map(Number); if(a.length!==3){т.length=0;break;} т.push(a); }
+      if(т.length!==3) continue;
+      const [p1,p2,p3]=т;
+      const ux=p1[0]-p2[0],uy=p1[1]-p2[1],uz=p1[2]-p2[2];
+      const vx=p3[0]-p2[0],vy=p3[1]-p2[1],vz=p3[2]-p2[2];
+      let n=[uy*vz-uz*vy, uz*vx-ux*vz, ux*vy-uy*vx];
+      const L=Math.hypot(n[0],n[1],n[2]); if(L<1e-9) continue;
+      n=[n[0]/L,n[1]/L,n[2]/L];
+      пл.push([n[0],n[1],n[2], n[0]*p1[0]+n[1]*p1[1]+n[2]*p1[2]]);
+      for(const p of т){ X.push(p[0]); Y.push(p[1]); Z.push(p[2]); } }
+    if(!пл.length) continue;
+    тела.push({пл, x0:Math.min(...X),x1:Math.max(...X),
+                   y0:Math.min(...Y),y1:Math.max(...Y),
+                   z0:Math.min(...Z),z1:Math.max(...Z)}); }
+  /* спавны и каллауты — чтобы человек узнал карту */
+  const мет=[];
+  const RE_E=/^entity\n\{([\s\S]*?)\n\}/gm; let e;
+  while((e=RE_E.exec(txt))){
+    const b=e[1];
+    const og=b.match(/"origin" "([-\d.e ]+)"/); if(!og) continue;
+    const o=og[1].split(' ').map(Number);
+    const nm=b.match(/"place_name" "([^"]*)"/);
+    if(b.includes('"env_cs_place"') && nm) мет.push({им:nm[1], x:o[0], y:o[1]});
+    else if(b.includes('"info_player_terrorist"')) мет.push({им:'T', x:o[0], y:o[1], спавн:1});
+    else if(b.includes('"info_player_counterterrorist"')) мет.push({им:'CT', x:o[0], y:o[1], спавн:1}); }
+  return {тела, мет};
+}
+
+/* столб: занятый интервал по Z в точке (x,y). Клин — это пять граней, и его
+   габаритный ящик врёт, поэтому режем по полуплоскостям. */
+function столб(т,x,y){
+  let верх=1e18, низ=-1e18;
+  for(const p of т.пл){
+    const r = p[3] - p[0]*x - p[1]*y;
+    if(Math.abs(p[2])<1e-9){ if(r<-0.01) return null; continue; }
+    const z=r/p[2];
+    if(p[2]>0){ if(z<верх) верх=z; } else { if(z>низ) низ=z; } }
+  if(верх<=низ+1e-6||верх>1e17||низ<-1e17) return null;
+  return [низ,верх];
+}
+
+const U=16, РОСТ=72;
+let КАРТА=null;
+
+function сетка(тела, доложить){
+  const X0=Math.min(...тела.map(т=>т.x0)), X1=Math.max(...тела.map(т=>т.x1));
+  const Y0=Math.min(...тела.map(т=>т.y0)), Y1=Math.max(...тела.map(т=>т.y1));
+  const W=Math.ceil((X1-X0)/U)+1, H=Math.ceil((Y1-Y0)/U)+1;
+  const G=256, сетк=new Map();
+  тела.forEach((т,i)=>{
+    for(let gx=Math.floor(т.x0/G);gx<=Math.floor(т.x1/G);gx++)
+      for(let gy=Math.floor(т.y0/G);gy<=Math.floor(т.y1/G);gy++){
+        const k=gx+','+gy; let L=сетк.get(k); if(!L){L=[];сетк.set(k,L);} L.push(i); } });
+  const пол=new Float32Array(W*H).fill(NaN);
+  for(let cy=0;cy<H;cy++){
+    if(доложить && (cy&31)===0) доложить(cy/H);
+    const y=Y0+cy*U+U/2;
+    for(let cx=0;cx<W;cx++){
+      const x=X0+cx*U+U/2;
+      const L=сетк.get(Math.floor(x/G)+','+Math.floor(y/G)); if(!L) continue;
+      const ив=[];
+      for(const i of L){ const т=тела[i];
+        if(!(т.x0-1<=x&&x<=т.x1+1&&т.y0-1<=y&&y<=т.y1+1)) continue;
+        const c=столб(т,x,y); if(c) ив.push(c); }
+      if(!ив.length) continue;
+      ив.sort((a,b)=>a[0]-b[0]);
+      /* слитные объёмы склеиваем, потом ищем САМУЮ НИЖНЮЮ поверхность, над
+         которой помещается игрок: это и есть пол, по которому ходят */
+      const сл=[]; for(const c of ив){
+        if(сл.length && c[0]<=сл[сл.length-1][1]+0.5){ if(c[1]>сл[сл.length-1][1]) сл[сл.length-1][1]=c[1]; }
+        else сл.push([c[0],c[1]]); }
+      for(let k=0;k<сл.length;k++){
+        const t=сл[k][1], пот=(k+1<сл.length)?сл[k+1][0]:1e9;
+        if(пот-t>=РОСТ){ пол[cy*W+cx]=t; break; } } } }
+  return {X0,Y0,W,H,пол};
+}
+
+/* Крыши и перекрытия — тоже «поверхность, над которой помещается игрок», и если
+   рисовать всё подряд, карта тонет в сером: сверху лежат плиты крыш и крышка
+   player clip, снаружи от карты они висят над пустотой. Оставляем только то,
+   куда игрок ДОХОДИТ от спавна. Заодно это ровно тот пол, о котором имеет смысл
+   говорить: остальное он не увидит никогда. */
+const ПРЫЖОК=59;
+function дойти(g, старт){
+  const {W,H,пол}=g;
+  const дост=new Uint8Array(W*H);
+  let s0=-1;
+  for(let r=0;r<40&&s0<0;r++)
+    for(let oy=-r;oy<=r&&s0<0;oy++)for(let ox=-r;ox<=r;ox++){
+      const x=старт[0]+ox, y=старт[1]+oy;
+      if(x<0||y<0||x>=W||y>=H) continue;
+      const v=пол[y*W+x]; if(v===v){ s0=y*W+x; break; } }
+  if(s0<0) return дост;
+  const q=new Int32Array(W*H); let h=0,t=0; q[t++]=s0; дост[s0]=1;
+  const D8=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+  while(h<t){ const i=q[h++], x=i%W, y=(i/W)|0, z=пол[i];
+    for(const d of D8){ const nx=x+d[0], ny=y+d[1];
+      if(nx<0||ny<0||nx>=W||ny>=H) continue;
+      const j=ny*W+nx; if(дост[j]) continue;
+      const v=пол[j]; if(v!==v) continue;
+      if(v-z>ПРЫЖОК) continue;                 // выше прыжка не залезть
+      дост[j]=1; q[t++]=j; } }
+  return дост;
+}
+
+/* ============ ОТРИСОВКА ============ */
+const холст=document.getElementById('холст'), ктх=холст.getContext('2d');
+let вид={м:1, dx:0, dy:0};
+let метки=[], вид_метки='нетпрохода';
+const ЦВЕТ={нетпрохода:'#ffd21e', щель:'#e03a3a', тупик:'#a35cd6', хорошо:'#4ec07a'};
+const ИМЯ={нетпрохода:'нет прохода', щель:'щель', тупик:'тупик', хорошо:'хорошо'};
+
+function размер(){
+  const б=document.getElementById('холстбокс');
+  холст.width=б.clientWidth; холст.height=б.clientHeight; рисовать();
+}
+addEventListener('resize',размер);
+
+function рисовать(){
+  ктх.fillStyle='#0b0f14'; ктх.fillRect(0,0,холст.width,холст.height);
+  if(!КАРТА) return;
+  const {X0,Y0,W,H,пол}=КАРТА;
+  let zmin=1e9,zmax=-1e9;
+  for(let i=0;i<пол.length;i++){ const v=пол[i]; if(v===v){ if(v<zmin)zmin=v; if(v>zmax)zmax=v; } }
+  const s=вид.м;
+  for(let cy=0;cy<H;cy++)for(let cx=0;cx<W;cx++){
+    const v=пол[cy*W+cx]; if(v!==v) continue;
+    const t=(v-zmin)/Math.max(1,zmax-zmin);
+    const л=Math.round(38+t*95);
+    ктх.fillStyle=`rgb(${л},${л+8},${л+16})`;
+    const px=вид.dx+cx*s, py=вид.dy+(H-1-cy)*s;
+    if(px<-s||py<-s||px>холст.width||py>холст.height) continue;
+    ктх.fillRect(px,py,Math.ceil(s),Math.ceil(s)); }
+  /* подписи мест */
+  ктх.font='11px ui-monospace,monospace';
+  for(const m of (КАРТА.мет||[])){
+    const px=вид.dx+(m.x-X0)/U*s, py=вид.dy+(H-1-(m.y-Y0)/U)*s;
+    if(px<-40||py<-20||px>холст.width+40||py>холст.height+20) continue;
+    ктх.fillStyle=m.спавн?'#ffb347':'#eaeef2';
+    ктх.beginPath(); ктх.arc(px,py,3,0,7); ктх.fill();
+    ктх.fillText(m.им,px+6,py+4); }
+  /* метки человека */
+  for(const [i,м] of метки.entries()){
+    const px=вид.dx+(м.x-X0)/U*s, py=вид.dy+(H-1-(м.y-Y0)/U)*s;
+    ктх.strokeStyle=ЦВЕТ[м.вид]; ктх.lineWidth=2;
+    ктх.beginPath(); ктх.arc(px,py,9,0,7); ктх.stroke();
+    ктх.beginPath(); ктх.moveTo(px-13,py); ктх.lineTo(px-4,py);
+    ктх.moveTo(px+4,py); ктх.lineTo(px+13,py);
+    ктх.moveTo(px,py-13); ктх.lineTo(px,py-4);
+    ктх.moveTo(px,py+4); ктх.lineTo(px,py+13); ктх.stroke();
+    ктх.fillStyle=ЦВЕТ[м.вид]; ктх.fillText(String(i+1),px+12,py-8); }
+}
+
+/* ============ ВВОД ============ */
+холст.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const k=e.deltaY<0?1.2:1/1.2, до=вид.м; вид.м=Math.max(0.4,Math.min(14,вид.м*k));
+  const r=холст.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+  вид.dx=mx-(mx-вид.dx)*(вид.м/до); вид.dy=my-(my-вид.dy)*(вид.м/до);
+  рисовать();
+},{passive:false});
+let тащим=null;
+холст.addEventListener('mousedown',e=>{ if(e.button===2||e.shiftKey) тащим=[e.clientX,e.clientY,вид.dx,вид.dy]; });
+addEventListener('mousemove',e=>{ if(!тащим) return;
+  вид.dx=тащим[2]+e.clientX-тащим[0]; вид.dy=тащим[3]+e.clientY-тащим[1]; рисовать(); });
+addEventListener('mouseup',()=>тащим=null);
+холст.addEventListener('contextmenu',e=>e.preventDefault());
+холст.addEventListener('click',e=>{
+  if(!КАРТА||e.shiftKey) return;
+  const r=холст.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+  const cx=(mx-вид.dx)/вид.м, cy=(КАРТА.H-1)-(my-вид.dy)/вид.м;
+  const x=Math.round(КАРТА.X0+cx*U), y=Math.round(КАРТА.Y0+cy*U);
+  const зам=document.getElementById('заметка');
+  метки.push({вид:вид_метки, x, y, что:зам.value.trim()});
+  зам.value=''; список(); рисовать();
+});
+
+for(const б of document.querySelectorAll('[data-вид]'))
+  б.onclick=()=>{ document.querySelectorAll('[data-вид]').forEach(q=>q.classList.remove('вкл'));
+                  б.classList.add('вкл'); вид_метки=б.dataset.вид; };
+
+function список(){
+  const у=document.getElementById('метки');
+  у.innerHTML = метки.length ? '' : '<span style="color:var(--тускло)">пока пусто</span>';
+  метки.forEach((м,i)=>{
+    const d=document.createElement('div'); d.className='метка';
+    d.innerHTML=`<i class="цвет" style="background:${ЦВЕТ[м.вид]}"></i>`
+      +`<span>${i+1}. ${ИМЯ[м.вид]}${м.что?' — '+м.что:''}</span>`
+      +`<button title="убрать">×</button>`;
+    d.querySelector('button').onclick=ev=>{ ev.stopPropagation(); метки.splice(i,1); список(); рисовать(); };
+    d.onclick=()=>{ вид.dx=холст.width/2-(м.x-КАРТА.X0)/U*вид.м;
+                    вид.dy=холст.height/2-((КАРТА.H-1)-(м.y-КАРТА.Y0)/U)*вид.м; рисовать(); };
+    у.appendChild(d); });
+}
+
+/* ============ ЗАГРУЗКА ФАЙЛА ============ */
+const дроп=document.getElementById('дроп'), поле=document.getElementById('файл');
+дроп.onclick=()=>поле.click();
+поле.onchange=()=>поле.files[0]&&взять(поле.files[0]);
+for(const с of ['dragenter','dragover']) дроп.addEventListener(с,e=>{e.preventDefault();дроп.classList.add('над');});
+for(const с of ['dragleave','drop']) дроп.addEventListener(с,e=>{e.preventDefault();дроп.classList.remove('над');});
+дроп.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f) взять(f); });
+addEventListener('dragover',e=>e.preventDefault());
+addEventListener('drop',e=>{ e.preventDefault(); const f=e.dataTransfer.files[0]; if(f) взять(f); });
+
+const статус=document.getElementById('статус');
+function взять(f){
+  статус.textContent='читаю '+f.name+'…';
+  const r=new FileReader();
+  r.onload=()=>{ setTimeout(()=>{
+    статус.textContent='разбираю браши…';
+    setTimeout(()=>{
+      const {тела,мет}=разбор(r.result);
+      if(!тела.length){ статус.textContent='в файле нет брашей мира'; return; }
+      статус.textContent='строю план… 0%';
+      setTimeout(()=>{
+        const g=сетка(тела, д=>{ статус.textContent='строю план… '+Math.round(д*100)+'%'; });
+        const т=мет.find(m=>m.им==='T')||мет.find(m=>m.им==='CT')||мет[0];
+        if(т){ const дост=дойти(g,[Math.round((т.x-g.X0)/U),Math.round((т.y-g.Y0)/U)]);
+               for(let i=0;i<g.пол.length;i++) if(!дост[i]) g.пол[i]=NaN; }
+        КАРТА=Object.assign(g,{мет, имя:f.name});
+        let n=0, mnx=1e9,mny=1e9,mxx=-1e9,mxy=-1e9;
+        for(let i=0;i<g.пол.length;i++) if(g.пол[i]===g.пол[i]){ n++;
+          const x=i%g.W, y=(i/g.W)|0;
+          if(x<mnx)mnx=x; if(x>mxx)mxx=x; if(y<mny)mny=y; if(y>mxy)mxy=y; }
+        if(!n){ статус.textContent='от спавна никуда не дойти — нечего показывать'; return; }
+        /* подгоняем под ТО, ЧТО ВИДНО, а не под всю сетку */
+        вид.м=Math.min((холст.width-40)/(mxx-mnx+1),(холст.height-40)/(mxy-mny+1));
+        вид.dx=20-mnx*вид.м; вид.dy=20-(g.H-1-mxy)*вид.м;
+        статус.textContent=f.name+' · клеток пола '+n+' · брашей '+тела.length;
+        рисовать();
+      },20); },20); },20); };
+  r.readAsText(f);
+}
+
+document.getElementById('сохранить').onclick=()=>{
+  if(!метки.length){ alert('сначала натыкай меток'); return; }
+  const д={карта:КАРТА?КАРТА.имя:'?', когда:new Date().toISOString().slice(0,16),
+           метки:метки.map(м=>({вид:м.вид, x:м.x, y:м.y, что:м.что}))};
+  скачать(new Blob([JSON.stringify(д,null,1)],{type:'application/json'}),
+          'метки_'+(КАРТА?КАРТА.имя.replace(/\.vmf$/,''):'карта')+'.json');
+};
+document.getElementById('снимок').onclick=()=>холст.toBlob(b=>скачать(b,'карта.png'));
+document.getElementById('очистить').onclick=()=>{ метки=[]; список(); рисовать(); };
+function скачать(b,имя){ const a=document.createElement('a');
+  a.href=URL.createObjectURL(b); a.download=имя; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),900); }
+
+размер(); список();
+</script>
