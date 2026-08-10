@@ -145,7 +145,8 @@ for ком in гр[:12]:
     xs = [c[0] for c in ком]
     ys = [c[1] for c in ком]
     wx, wy = X0 + sum(xs) / len(xs) * U, Y0 + sum(ys) / len(ys) * U
-    бл = sorted(места, key=lambda n: (места[n][0] - wx) ** 2 + (места[n][1] - wy) ** 2)[:2]
+    # у старых сборок каллаутов ещё не было — тогда просто без имён
+    бл = sorted(места, key=lambda n: (места[n][0] - wx) ** 2 + (места[n][1] - wy) ** 2)[:2] or ['?']
     о = max(цена[c] for c in ком)
     print(f'    обход {("больше "+str(200*U)) if о>200 else о*U}u  ({wx:.0f} {wy:.0f})'
           f'  клеток {len(ком):3d}   между: {", ".join(бл)}')
