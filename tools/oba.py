@@ -9,7 +9,7 @@
 подъём не выше UP, спуск свободный. Для растра опора берётся из zfield, для
 печати — из брашей (tools/hodba.py).
 
-    node tools/rastr.js builds/izohrona_v138.html /tmp/oba [сид:цель:ковёр]
+    node tools/rastr.js builds/izohrona_v139.html /tmp/oba [сид:цель:ковёр]
     python3 tools/oba.py /tmp/oba
 """
 import collections, json, re, sys

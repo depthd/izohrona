@@ -7,7 +7,7 @@
    node tools/doors.js <билд.html> [сколько карт] */
 const { chromium } = require('playwright');
 const fs=require('fs'), path=require('path');
-const BUILD=process.argv[2]||'builds/izohrona_v138.html', N=+(process.argv[3]||3);
+const BUILD=process.argv[2]||'builds/izohrona_v139.html', N=+(process.argv[3]||3);
 const PROBE=`(function(){
   useCur();
   const g=cur.g, plan=cur.plan;

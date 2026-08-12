@@ -6,7 +6,7 @@ const fs=require('fs'), path=require('path');
   const b=await chromium.launch({executablePath:EXE});
   const p=await b.newPage({viewport:{width:1000,height:800}});
   p.on('pageerror',e=>console.log('ERR',e.message));
-  await p.goto('file://'+path.resolve('builds/izohrona_v138.html'));
+  await p.goto('file://'+path.resolve('builds/izohrona_v139.html'));
   await p.waitForFunction('typeof cur!=="undefined" && cur && cur.g',null,{timeout:300000,polling:400});
   for(let k=0;k<3;k++){
     if(k){ const prev=await p.evaluate('cur.seed'); await p.click('#gen');

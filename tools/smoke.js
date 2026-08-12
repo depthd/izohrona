@@ -5,7 +5,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
 
-const BUILD = process.argv[2] || 'builds/izohrona_v138.html';
+const BUILD = process.argv[2] || 'builds/izohrona_v139.html';
 const shot = (o) => `состояние: мест ${o.мест}, укрытий ${o.укрытий}, предметов ${o.предметов}, `
   + `габарит тел ${o.габарит}u, клетка ${o.CELL}u`;
 

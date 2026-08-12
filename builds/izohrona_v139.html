@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v138 · ИЗОХРОНА — генератор карт three-lane</title>
+<title>v139 · ИЗОХРОНА — генератор карт three-lane</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -142,7 +142,7 @@
   <header class="top">
     <div class="brand">
       <div class="eyebrow">four-square · three-lane · баланс по построению</div>
-      <h1>ИЗОХРОНА <span style="font:11px ui-monospace,monospace;color:#7d92a4;letter-spacing:.5px;vertical-align:super">v138</span></h1>
+      <h1>ИЗОХРОНА <span style="font:11px ui-monospace,monospace;color:#7d92a4;letter-spacing:.5px;vertical-align:super">v139</span></h1>
       <p class="lede">Генератор соревновательных карт для CS2. Одна кнопка — готовая карта с балансом, укрытиями и экспортом в Hammer.
         <details class="about"><summary>подробнее</summary>
         Каркас Dust2, баланс держится в 3D. Вертикаль в масштабе игрока (рост=72u): рельеф везде, резче на ключевых — мид утоплен, подходы приподняты, сайты — приподнятые плато с плоской точкой закладки. План решается на клетке 96u, а растр, который видят укрытия, дейкстра, замер и экспорт, — 16u: стены получают толщину 32–64u, входы сужаются до 112u, пустые залы делятся перегородками, укрытия стоят в настоящих габаритах. Кнопка .vmf — выгрузка в Hammer сразу VIS-чистой, с рельефом.</details></p>
@@ -418,7 +418,7 @@ const V83 = { site:true };
 /* Версия печатается в заголовке вкладки, в углу панели и В САМ .vmf
    (ключ "comment" у worldspawn). Иначе по присланному файлу нельзя сказать,
    каким билдом он собран, и разбор начинается со спора об этом. */
-const ВЕРСИЯ = "izohrona v138";
+const ВЕРСИЯ = "izohrona v139";
 const V81 = { radar:true, ladder:true, ladderMax:6, ladderDrop:112 };   // v87: столько, сколько ловушек   // v84: порог по факту перепадов
 const V79 = { pal:true, smooth:true, minRun:1, accent:true, steps:true, stepMax:96 };
 /* ====== v127: ТЕКСТУРА ПО РАЗМЕРУ БРАША ======
@@ -2722,6 +2722,8 @@ function syncV3(){ const y=document.getElementById('sYaw'), t=document.getElemen
    narrow (сужение широких проходов) — новое и включено. */
 const DET={on:false, проруб:false, wall:false, door:true, zonewall:true, part:true, cover:true, narrow:true,
            voidfill:true, shot:true, stepfix:true, deadend:true, lmark:true, cutdead:true, tier:true, seal:true, thickwall:true, deadplace:true,
+           /* v139: сверка связности с геометрией — «видно рядом, идти далеко» */
+           сшивка:true,
            /* v123: замуровывание спавна выключено. Это была починка не той
               проблемы: спавны ломались не проходимостью, а тем, что точки
               стояли в стенах и на ступеньках. Механизм оставлен на случай
@@ -4236,6 +4238,227 @@ function detRefine(src){
     let cnt=0; for(let i=0;i<N;i++) if(gf[i]&&!v[i]) cnt++;
     stat.noJump=lost.join(',')||'—';
     stat.otrezano=Math.round(cnt*16*16/1000);            // отрезанный пол, k u²
+  }
+
+  /* ============ v139. ВИДНО РЯДОМ — ИДТИ ДАЛЕКО ============
+     Человек двадцать раз показывал пальцем «тут должен быть проход», и все мои
+     мерки говорили, что всё в порядке: ширина в норме, связность есть, крюк
+     между каллаутами мал. Мерки были не про то. Он тыкал туда, где ДВА КУСКА
+     ПОЛА ЛЕЖАТ В ЧЕТЫРЁХ КЛЕТКАХ ДРУГ ОТ ДРУГА, А ПЕШКОМ МЕЖДУ НИМИ ПОЛКАРТЫ.
+     Глаз видит продолжение, ноги упираются в перегородку. Проверено на его
+     шести метках (карта 86890799): пять из шести попали в пятно этой мерки,
+     четыре точно в ноль, и всего таких пятен на карте оказалось восемь — то
+     есть мерка не красит полкарты, а показывает ровно то, на что он тыкал.
+
+     ПОЧЕМУ ОНО ВОЗНИКАЕТ. Генератор решает, ЧТО с чем соединено, раньше, чем
+     решает, ГДЕ что стоит: makeEdges() возвращает жёсткий список из 18 коридоров
+     между 13 комнатами, и список этот не менялся с первого коммита. Дальше
+     раскладка ставит комнаты, куда велит сид, и придаёт им случайную форму. Две
+     комнаты, которых нет в списке, спокойно оказываются в 16 юнитах друг от
+     друга — и никто никогда не возвращается сверить решение о связности с
+     получившейся геометрией. Отсюда перегородка в одну клетку, по обе стороны
+     пол, а в обход 400..700 юнитов.
+
+     ЧТО ЗДЕСЬ ДЕЛАЕТСЯ. Недостающая сверка. Не косая просека через полкарты
+     (это старая пробивка ниже, она выключена и за неё уже досталось), а ДВЕРЬ:
+     находим самое тонкое ОСЕВОЕ место перегородки и прорубаем проём 112u
+     поперёк неё. Перепад берёт на себя сама перемычка: клетки проёма получают
+     промежуточную отметку, так что ни один шаг не выше 48u. Правка идёт в РАСТР
+     до слоя деталей, поэтому дейкстра, тайминги и баланс видят новую дверь
+     (правило 5). Не помогло — откат. */
+  if(DET.сшивка){
+    const UPZ=59/72, ШАГZ=48/72;
+    const БЛИЗКО=4;          // клеток по прямой: 64u. Дальше — это уже не «видно рядом»
+    const ПРЕДЕЛ=20;         // шагов пешком: 320u. Дальше — обход, который человек и заметил
+    const ШИР=3;             // полуширина проёма: 7 клеток = 112u, как ПРОСВЕТ у косяков
+    const ТОЛЩ=6;            // толще 96u — это уже здание, дверь в нём не наша забота
+    const СВЕРОК=16;         // сколько раз пересобирать список пар
+    const узел=new Uint8Array(N), zу=new Float32Array(N);
+    const пересчёт=()=>{ узел.fill(0);
+      for(let y=0;y<Hf-1;y++)for(let x=0;x<Wf-1;x++){
+        const a=y*Wf+x; if(!gf[a]||!gf[a+1]||!gf[a+Wf]||!gf[a+Wf+1]) continue;
+        узел[a]=1; zу[a]=Math.max(zff[a],zff[a+1],zff[a+Wf],zff[a+Wf+1]); } };
+    /* здания трогать нельзя: там своя геометрия */
+    const занято=new Uint8Array(N);
+    if(src.plan&&src.plan.builds) for(const b of src.plan.builds)
+      for(let y=b.y0*K;y<b.y1*K;y++)for(let x=b.x0*K;x<b.x1*K;x++)
+        if(inb(x,y)) занято[ix(x,y)]=1;
+    const _st=new Int32Array(N), _d=new Int32Array(N), _q=new Int32Array(N);
+    let _эп=0;
+    /* волна, обрезанная по ПРЕДЕЛ шагов: клеймо эпохи вместо чистки массива */
+    const близко=(старт)=>{ _эп++; let h=0,t=0;
+      _st[старт]=_эп; _d[старт]=0; _q[t++]=старт;
+      while(h<t){ const j=_q[h++]; if(_d[j]>=ПРЕДЕЛ) continue;
+        const x=j%Wf, y=(j/Wf)|0, nd=_d[j]+1;
+        for(const [dx,dy] of D8){ const nx=x+dx, ny=y+dy;
+          if(nx<0||ny<0||nx>=Wf-1||ny>=Hf-1) continue;
+          const k=ny*Wf+nx; if(!узел[k]||_st[k]===_эп) continue;
+          if(zу[k]-zу[j]>UPZ) continue;
+          _st[k]=_эп; _d[k]=nd; _q[t++]=k; } } };
+    const смещ=[];
+    for(let dy=-БЛИЗКО;dy<=БЛИЗКО;dy++)for(let dx=-БЛИЗКО;dx<=БЛИЗКО;dx++){
+      const m=Math.max(Math.abs(dx),Math.abs(dy));
+      if(m<2||m>БЛИЗКО) continue;
+      /* Смещения берутся ВСЕ, а не половина. Волна направленная: вниз с уступа
+         игрок спрыгивает даром, наверх не залезет. У обрыва «сверху вниз» —
+         один шаг, «снизу вверх» — полкарты, и если проверить только ту сторону,
+         которая ближе по номеру клетки, половина обрывов не найдётся. */
+      смещ.push([dx,dy]); }
+    /* между точками обязан быть камень, иначе это просто открытое место */
+    const перекрыто=(ax,ay,bx,by)=>{ const n=Math.max(Math.abs(bx-ax),Math.abs(by-ay));
+      for(let k=1;k<n;k++){ const x=ax+Math.round((bx-ax)*k/n), y=ay+Math.round((by-ay)*k/n);
+        if(!узел[y*Wf+x]) return true; }
+      return false; };
+    const парыПлохие=()=>{
+      const из=[];
+      for(let y=1;y<Hf-2;y++)for(let x=1;x<Wf-2;x++){
+        const j=y*Wf+x; if(!узел[j]) continue;
+        /* только кромка: у клетки в глубине зала камня рядом нет по определению */
+        let кромка=false;
+        for(const [dx,dy] of D8){ if(!узел[(y+dy)*Wf+(x+dx)]){ кромка=true; break; } }
+        if(!кромка) continue;
+        let цели=null;
+        for(const [dx,dy] of смещ){ const nx=x+dx, ny=y+dy;
+          if(nx<1||ny<1||nx>=Wf-2||ny>=Hf-2) continue;
+          const k=ny*Wf+nx; if(!узел[k]) continue;
+          if(!перекрыто(x,y,nx,ny)) continue;
+          (цели||(цели=[])).push(k); }
+        if(цели) из.push([j,цели]); }
+      const плохо=[], видано=new Set();
+      for(const [j,цели] of из){ близко(j);
+        for(const k of цели){ if(_st[k]===_эп) continue;
+          const ключ=(j<k)?(j*N+k):(k*N+j);              // пара одна, направлений два
+          if(видано.has(ключ)) continue; видано.add(ключ);
+          плохо.push([j,k]); } }
+      return плохо; };
+    /* Пятно = кучка плохих пар вокруг одного куска перегородки. Разводим по
+       средней точке, слипание 3 клетки. */
+    const впятна=(плохо)=>{
+      const вес=new Map(), пары=new Map();
+      for(const [a,b] of плохо){
+        const c=((((a/Wf)|0)+((b/Wf)|0))>>1)*Wf + (((a%Wf)+(b%Wf))>>1);
+        вес.set(c,(вес.get(c)||0)+1);
+        (пары.get(c)||пары.set(c,[]).get(c)).push([a,b]); }
+      const ост=new Set(вес.keys()), кл=[];
+      while(ост.size){ const s=ост.values().next().value; ост.delete(s);
+        const ст=[s], гр=[s];
+        while(ст.length){ const p=ст.pop(), px=p%Wf, py=(p/Wf)|0;
+          for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){
+            const q=(py+dy)*Wf+(px+dx);
+            if(ост.has(q)){ ост.delete(q); ст.push(q); гр.push(q); } } }
+        const сп=[]; for(const p of гр) for(const пр of (пары.get(p)||[])) сп.push(пр);
+        кл.push({вес:гр.reduce((s2,p)=>s2+вес.get(p),0), гр, пары:сп}); }
+      кл.sort((a,b)=>b.вес-a.вес);
+      return кл; };
+    /* Самое тонкое ОСЕВОЕ пересечение перегородки в окрестности пятна.
+       Осевое — потому что дверь должна стоять поперёк стены, а не наискось:
+       косая просека уже была и человек назвал её костылём. */
+    const проём=(гр)=>{
+      let луч=null;
+      const видели=new Set();
+      for(const c of гр){ const cx=c%Wf, cy=(c/Wf)|0;
+        for(let oy=-3;oy<=3;oy++)for(let ox=-3;ox<=3;ox++){
+          const x=cx+ox, y=cy+oy, j=y*Wf+x;
+          if(x<2||y<2||x>=Wf-3||y>=Hf-3||узел[j]||видели.has(j)) continue;
+          видели.add(j);
+          for(const [dx,dy] of [[1,0],[0,1]]){
+            /* прогон камня, содержащий эту клетку, вдоль оси */
+            let s=0; while(s<ТОЛЩ && !узел[(y-(s+1)*dy)*Wf+(x-(s+1)*dx)]) s++;
+            let e=0; while(e<ТОЛЩ && !узел[(y+(e+1)*dy)*Wf+(x+(e+1)*dx)]) e++;
+            const t=s+e+1; if(t>ТОЛЩ) continue;
+            const p0=(y-(s+1)*dy)*Wf+(x-(s+1)*dx), p1=(y+(e+1)*dy)*Wf+(x+(e+1)*dx);
+            if(!узел[p0]||!узел[p1]) continue;
+            const пер=Math.abs(zу[p1]-zу[p0]);
+            if(пер/(t+1)>ШАГZ) continue;                  // такой ступени не взять
+            const цена=t*100+пер;
+            if(!луч||цена<луч.цена)
+              луч={цена,t,dx,dy,x:x-s*dx,y:y-s*dy,p0,p1}; } } }
+      return луч; };
+    /* ЗАПАСНОЙ ВАРИАНТ: СРЕЗ УГЛА.
+       Осевого прокола хватает не всегда. Остаток — не перегородка, а УГОЛ: две
+       комнаты сходятся по диагонали, на луче зрения камня три клетки, а поперёк
+       осей его 150..200 юнитов, и дверь такой длины была бы тоннелем. Замер на
+       остатке: 144u по Y при перепаде 48u, 208u при 24u, 160u при 32u.
+       Правильный ответ для угла — не тоннель, а срез: убрать сам угловой кусок.
+       Режем ПРЯМОУГОЛЬНИК (габарит пары, максимум 5x5 клеток = 80u), потому что
+       всё остальное в этой карте прямоугольное, а косая просека уже была и
+       человек назвал её костылём. */
+    const срезУгла=(пары)=>{
+      if(!пары||!пары.length) return false;
+      const л=пары.slice().sort((p,q)=>{
+        const d1=Math.max(Math.abs(p[0]%Wf-p[1]%Wf), Math.abs(((p[0]/Wf)|0)-((p[1]/Wf)|0)));
+        const d2=Math.max(Math.abs(q[0]%Wf-q[1]%Wf), Math.abs(((q[0]/Wf)|0)-((q[1]/Wf)|0)));
+        return d1-d2; });
+      for(const [a,b] of л.slice(0,6)){
+        const ax=a%Wf, ay=(a/Wf)|0, bx=b%Wf, by=(b/Wf)|0;
+        const шаг=Math.max(Math.abs(bx-ax), Math.abs(by-ay));
+        const пер=Math.abs(zу[b]-zу[a]);
+        if(пер/(шаг+1)>ШАГZ) continue;
+        const x0=Math.min(ax,bx), x1=Math.max(ax,bx), y0=Math.min(ay,by), y1=Math.max(ay,by);
+        if(x1-x0>4||y1-y0>4) continue;
+        let занят=false, откат=[];
+        for(let y=y0;y<=y1&&!занят;y++)for(let x=x0;x<=x1;x++){
+          if(!inb(x,y)){ занят=true; break; }
+          const j=ix(x,y);
+          if(gf[j]) continue;
+          if(занято[j]||ЗАМОК[j]){ занят=true; break; }
+          /* отметка по расстоянию до дальнего конца: ступеньками, не обрывом */
+          const t=(шаг?Math.max(Math.abs(x-ax),Math.abs(y-ay))/шаг:0);
+          откат.push([j, zff[j], zу[a]+(zу[b]-zу[a])*Math.max(0,Math.min(1,t))]); }
+        if(занят||!откат.length) continue;
+        for(const [j,,z] of откат){ gf[j]=1; zff[j]=z; }
+        пересчёт();
+        близко(a);
+        if(_st[b]===_эп) return true;
+        for(const [j,z] of откат){ gf[j]=0; zff[j]=z; }
+        пересчёт(); }
+      return false; };
+    пересчёт();
+    let сшито=0, попыток=0, врётДо=0, пятенДо=0, врётПосле=0, пятенПосле=0;
+    const почему={негде:0, занято:0, неПомог:0};
+    for(let сверка=0; сверка<СВЕРОК; сверка++){
+      const плохо=парыПлохие();
+      const кл=впятна(плохо);
+      if(!сверка){ врётДо=плохо.length; пятенДо=кл.length; }
+      врётПосле=плохо.length; пятенПосле=кл.length;
+      if(!плохо.length) break;
+      let сдвинулось=false;
+      for(const {гр, пары} of кл){
+        const л=проём(гр);
+        if(!л){ if(срезУгла(пары)){ сшито++; сдвинулось=true; } else почему.негде++; continue; }
+        попыток++;
+        const px=-л.dy, py=л.dx;                          // поперёк проёма
+        const z0=zу[л.p0], z1=zу[л.p1];
+        const откат=[];
+        for(const знак of [0,1]) for(let o=(знак?1:0); o<=ШИР; o++){
+          const oo=знак?-o:o;
+          /* проём расширяем, пока по обе стороны перегородки на этом отступе
+             действительно есть пол: иначе дверь ведёт в камень */
+          const a0=л.p0+oo*(py*Wf+px), a1=л.p1+oo*(py*Wf+px);
+          if(a0<0||a1<0||a0>=N||a1>=N||!gf[a0]||!gf[a1]) break;
+          let можно=true;
+          for(let k2=0;k2<л.t;k2++){
+            const x=л.x+k2*л.dx+oo*px, y=л.y+k2*л.dy+oo*py;
+            if(!inb(x,y)){ можно=false; break; }
+            const j=ix(x,y);
+            if(занято[j]||ЗАМОК[j]){ можно=false; break; } }
+          if(!можно) break;
+          for(let k2=0;k2<л.t;k2++){
+            const j=ix(л.x+k2*л.dx+oo*px, л.y+k2*л.dy+oo*py);
+            if(gf[j]) continue;
+            откат.push([j,zff[j]]);
+            gf[j]=1; zff[j]=z0+(z1-z0)*(k2+1)/(л.t+1); } }
+        if(!откат.length){ почему.занято++; continue; }
+        пересчёт();
+        /* помогло ли: пара из этого пятна должна сойтись в предел */
+        близко(л.p0);
+        if(_st[л.p1]!==_эп){ почему.неПомог++;
+          for(const [j,z] of откат){ gf[j]=0; zff[j]=z; } пересчёт(); continue; }
+        сшито++; сдвинулось=true; }
+      if(!сдвинулось) break; }
+    stat.сшито=сшито; stat.сшивкаTry=попыток; stat.сшивкаПочему=почему;
+    stat.врётДо=врётДо; stat.врётПятенДо=пятенДо;
+    stat.врёт=врётПосле; stat.врётПятен=пятенПосле;
   }
 
   /* ============ v131. ПРОБИТЬ ПРОХОД МЕЖДУ СОСЕДНИМИ МЕСТАМИ ============
@@ -6810,23 +7033,45 @@ function buildVMF(cur){
       /* Старт ищется в радиусе до 24 клеток, а не 6. При меньшем радиусе на
          карте, где спавн T стоит у самой стены и ближайший свободный узел
          печати дальше, разлив по печати не начинался вовсе — и мера показывала
-         86% недоступного пола вместо одиннадцати клеток. */
-      const разлив=(маска)=>{ const d=new Int32Array(W*H).fill(-1);
-        const st=cur.px&&cur.px.T; if(!st) return d;
-        let s0=-1;
-        for(let r=0;r<=24&&s0<0;r++)for(let oy=-r;oy<=r&&s0<0;oy++)for(let ox=-r;ox<=r;ox++){
+         86% недоступного пола вместо одиннадцати клеток.
+         v139. Радиуса мало: берётся не «первый узел, какой попался», а САМЫЙ
+         БОЛЬШОЙ кусок среди тех, что лежат рядом со спавном. Тот же симптом
+         вернулся — 87.8% недоступного пола на карте, где два независимых прибора
+         (tools/oba.py и tools/vidno.py по .vmf) не видели ничего: ближайшим к
+         спавну узлом печати оказался карман из пары клеток, и волна вся ушла в
+         него. Радиус такое не лечит, лечит выбор куска.
+         Размер кармана у САМОГО близкого узла остаётся наружу отдельным числом:
+         если спавн действительно замурован, это видно, а не спрятано. */
+      let стартКарман=0, стартКусков=0;
+      const разлив=(маска)=>{
+        const st=cur.px&&cur.px.T; if(!st) return new Int32Array(W*H).fill(-1);
+        const канд=[];
+        for(let r=0;r<=24;r++)for(let oy=-r;oy<=r;oy++)for(let ox=-r;ox<=r;ox++){
+          if(Math.max(Math.abs(ox),Math.abs(oy))!==r) continue;
           const x=st.x+ox, y=st.y+oy;
           if(x<0||y<0||x>=W-1||y>=H-1) continue;
-          if(маска[y*W+x]){ s0=y*W+x; break; } }
-        if(s0<0) return d;
-        const q=[s0]; d[s0]=0;
-        for(let h=0;h<q.length;h++){ const i=q[h], x=i%W, y=(i/W)|0, zi=zУ[i], nd=d[i]+1;
-          for(const dd of D8п){ const nx=x+dd[0], ny=y+dd[1];
-            if(nx<0||ny<0||nx>=W-1||ny>=H-1) continue;
-            const j=ny*W+nx; if(!маска[j]||d[j]>=0) continue;
-            if(zУ[j]-zi>ПР) continue;
-            d[j]=nd; q.push(j); } }
-        return d; };
+          const j=y*W+x; if(маска[j]) канд.push(j); }
+        if(!канд.length) return new Int32Array(W*H).fill(-1);
+        let всего=0; for(let i=0;i<W*H;i++) if(маска[i]) всего++;
+        const видано=new Uint8Array(W*H);
+        let лучш=null, лучшN=0, первый=0, кусков=0;
+        for(let n=0;n<канд.length&&кусков<8;n++){
+          const s0=канд[n]; if(видано[s0]) continue;
+          кусков++;
+          const d=new Int32Array(W*H).fill(-1);
+          const q=[s0]; d[s0]=0;
+          for(let h=0;h<q.length;h++){ const i=q[h], x=i%W, y=(i/W)|0, zi=zУ[i], nd=d[i]+1;
+            for(const dd of D8п){ const nx=x+dd[0], ny=y+dd[1];
+              if(nx<0||ny<0||nx>=W-1||ny>=H-1) continue;
+              const j=ny*W+nx; if(!маска[j]||d[j]>=0) continue;
+              if(zУ[j]-zi>ПР) continue;
+              d[j]=nd; q.push(j); } }
+          for(let h=0;h<q.length;h++) видано[q[h]]=1;
+          if(!первый) первый=q.length;
+          if(q.length>лучшN){ лучшN=q.length; лучш=d; }
+          if(лучшN*2>=всего) break; }
+        if(маска===узП){ стартКарман=первый; стартКусков=кусков; }
+        return лучш||new Int32Array(W*H).fill(-1); };
       const дистР=разлив(узР), дистП=разлив(узП);
       const вР=дистР, вП=дистП;
       /* Клетка ПОД ящиком недоступна по определению — она занята, и это не
@@ -6984,7 +7229,8 @@ function buildVMF(cur){
                      худшее:зн.length?зн[0]:0,
                      уже96:зн.filter(w=>w<96).length, уже128:зн.filter(w=>w<128).length,
                      список:плохие.slice(0,6)}; }
-      cur.__недост={потеряно, достижимо:дР, кривых, крюкПола:+крМакс.toFixed(2),
+      cur.__недост={потеряно, достижимо:дР, кривых, стартКарман, стартКусков,
+                    крюкПола:+крМакс.toFixed(2),
                     доляКривых:+(100*кривых/Math.max(1,дР)).toFixed(1),
                     доля:+(100*потеряно/Math.max(1,дР)).toFixed(1),
                     виновники:Object.entries(винП).sort((a,b)=>b[1]-a[1]).slice(0,5)}; } }

@@ -8,7 +8,7 @@
      ЦЕЛЫХ ПОВТОРОВ — длина грани / период текстуры должно быть целым;
      ШОВ НА РЕБРЕ   — тексель в ближнем углу грани кратен периоду.
 
-     node tools/uvchk.js builds/izohrona_v138.html [карт] [want] [unit]
+     node tools/uvchk.js builds/izohrona_v139.html [карт] [want] [unit]
 */
 const { chromium } = require('playwright');
 const fs=require('fs'), path=require('path');

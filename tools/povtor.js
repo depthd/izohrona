@@ -29,6 +29,10 @@ const path=require('path');
   p.on('pageerror',e=>console.log('ОШИБКА СТРАНИЦЫ:',String(e.message).slice(0,200)));
   await p.goto('file://'+path.resolve(сборка),{timeout:180000});
   await p.waitForFunction('typeof cur!=="undefined" && cur && cur.g',null,{timeout:180000,polling:400});
+  /* DETOFF=сшивка,part — контрфакт по пасу слоя деталей: та же тройка сид:цель:ковёр
+     с выключенным пасом и без него, одним прибором. */
+  if(process.env['DETOFF']) await p.evaluate(
+    `for(const k of ${JSON.stringify(process.env['DETOFF'].split(','))}) DET[k]=false;`);
   for(let k=0;k<N;k++){
     if(сиды.length){
       const [с,а,кв]=String(сиды[k]).split(':');
@@ -42,6 +46,9 @@ const path=require('path');
     const r=JSON.parse(await p.evaluate(`(function(){ useCur(); buildVMF(cur);
       return JSON.stringify({сид:cur.seed, аим:cur.__aim, ков:cur.coverSeed,
                  degen:cur.__degen.slice(0,8), degenN:cur.__degen.length,
+                 сшито:(cur.det||{}).сшито, сшивкаTry:(cur.det||{}).сшивкаTry,
+                 врётДо:(cur.det||{}).врётДо, врётПятенДо:(cur.det||{}).врётПятенДо,
+                 врёт:(cur.det||{}).врёт, врётПятен:(cur.det||{}).врётПятен, сшПочему:(cur.det||{}).сшивкаПочему,
                  palas:cur.__palas, surf:cur.__surf, проруб:(cur.det||{}).проруб, крюкМакс:(cur.det||{}).крюкМакс, крюкПар:(cur.det||{}).крюкПар, крюкНет:(cur.det||{}).крюкНетПути, мест:(cur.places&&cur.places.list||[]).length, безЯкоря:(cur.places&&cur.places.list||[]).filter(q=>q.ax===undefined).length, крюкХуже2:(cur.det||{}).крюкХуже2, попыток:(cur.__bal||{}).попыток, почему:(cur.det||{}).прорубПочему, прМакс:(cur.det||{}).прорубМакс, прПар:(cur.det||{}).прорубПар, ступеней:(cur.det||{}).steps, замок:(cur.det||{}).замокСтоп||0,
                  блок:cur.__block, стыки:(cur.det||{}).стыки, дыр:(cur.det||{}).дыр, стен:(cur.det||{}).стен, zskip:(cur.det||{}).zskip, крпеч:cur.__крюкПеч, горло:cur.__горло, недост:cur.__недост, пробка:(cur.det||{}).probka, придвинуто:(cur.det||{}).придвинуто, lmCut:(cur.det||{}).lmCut, укрытий:(cur.cover||[]).length, ловушек:cur.__trap, лестниц:cur.__lad, остров:cur.__island, отрезано:cur.__cut, узк:cur.__uzk,
                  палас:(cur.palaces||[]).map(q=>({x0:q.x0,y0:q.y0,x1:q.x1,y1:q.y1,
@@ -54,6 +61,8 @@ const path=require('path');
     {const c=r.стыки||[]; const ст=c.filter(x=>x[1]==='стена'), от=c.filter(x=>x[1]==='открыт');
       const дл=a=>a.length?`${Math.min(...a.map(x=>x[0]))*16}..${Math.max(...a.map(x=>x[0]))*16}u`:'—';
       console.log(`  СТЫКИ ЗОН ${c.length}: стеной ${ст.length} (${дл(ст)}), открыто ${от.length} (${дл(от)})  ·  стен ${r.стен}, дыр ${r.дыр}`);}
+    console.log(`  ВИДНО РЯДОМ — ИДТИ ДАЛЕКО: было ${r.врётДо} пар в ${r.врётПятенДо} пятнах`
+      +` → стало ${r.врёт} в ${r.врётПятен}; сшито ${r.сшито} дверей из ${r.сшивкаTry} попыток `+JSON.stringify(r.сшПочему));
     console.log('  КРЮК ГЕН', r.крюкМакс, 'хуже2', r.крюкХуже2, 'пар', r.крюкПар, 'нетпути', r.крюкНет, '· мест', r.мест, 'без якоря', r.безЯкоря, '· попыток', r.попыток);
     console.log('  проруб:', JSON.stringify(r.почему), 'макс', r.прМакс, 'пар', r.прПар);
     console.log('  ГОРЛО НА МАРШРУТЕ: медиана', r.горло.медиана+'u', '· худшее', r.горло.худшее+'u', '· уже 96u:', r.горло.уже96+'/'+r.горло.пар, '· уже 128u:', r.горло.уже128, '· придвинуто тел', r.придвинуто, JSON.stringify(r.горло.список).slice(0,120));
