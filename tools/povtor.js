@@ -43,6 +43,8 @@ const path=require('path');
     } else if(k){ const пр=await p.evaluate('cur.seed'); await p.click('#gen');
       await p.waitForFunction(`cur && cur.seed!==${пр}`,null,{timeout:150000,polling:400}); }
     await p.evaluate('window.__TAGBOX=1');
+    /* БЕЗ=тела,пилястры,косяки — контрфакт по одному эмиттеру печати */
+    if(process.env['БЕЗ']) await p.evaluate(`window.__БЕЗ=${JSON.stringify(process.env['БЕЗ'])}`);
     const r=JSON.parse(await p.evaluate(`(function(){ useCur(); buildVMF(cur);
       return JSON.stringify({сид:cur.seed, аим:cur.__aim, ков:cur.coverSeed,
                  degen:cur.__degen.slice(0,8), degenN:cur.__degen.length,
