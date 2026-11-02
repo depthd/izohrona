@@ -55,6 +55,23 @@ keep = [world[a:b] for a, b in solids
         if abs(габарит(world[a:b])[0] - cx) <= R and abs(габарит(world[a:b])[1] - cy) <= R]
 шапка = world[:solids[0][0]] if solids else world[:-1]
 нов = шапка + '\n'.join(keep) + '\n}'
-open(выход, 'w', encoding='utf-8').write(src[:w0] + нов + src[w1:])
+# Сущности — только те, что стоят внутри куска (иначе спавны висят в пустоте и
+# читаются как поломка карты; так и вышло на первом вырезе). Солнце — всегда.
+ВСЕГДА = ('light_environment', 'env_sky')
+хвост, j, n_ent, n_keep = src[w1:], 0, 0, 0
+части = []
+for a, b in блоки(хвост, 'entity'):
+    e = хвост[a:b]
+    n_ent += 1
+    m = re.search(r'"origin" "([-\d.e]+) ([-\d.e]+)', e)
+    x, y = (float(m.group(1)), float(m.group(2))) if m else габарит(e)
+    if any(f'"classname" "{c}"' in e for c in ВСЕГДА) or (abs(x - cx) <= R and abs(y - cy) <= R):
+        части.append(хвост[j:b]); n_keep += 1
+    else:
+        части.append(хвост[j:a])
+    j = b
+части.append(хвост[j:])
+итог = src[:w0] + нов + ''.join(части)
+open(выход, 'w', encoding='utf-8').write(итог)
 print(f'центр {cx:.0f},{cy:.0f} ±{R:.0f}: брашей {len(keep)} из {len(solids)}, '
-      f'размер {len(src[:w0] + нов + src[w1:]) // 1024} КБ')
+      f'сущностей {n_keep} из {n_ent}, размер {len(итог) // 1024} КБ')
