@@ -31,24 +31,41 @@
   button.gen:hover{filter:brightness(1.06)} button.gen:active{transform:translateY(1px)}
   button.gen.alt{margin-top:9px; background:transparent; color:var(--fair); border:1px solid var(--line2); font-weight:500; font-size:13.5px; padding:11px;}
   button.gen.alt:hover{border-color:var(--fair); filter:none;}
-  /* v141. прогулка по карте */
-  #progulka{position:fixed; inset:0; z-index:50; background:#000; cursor:crosshair;}
-  #progulka canvas{display:block; width:100%; height:100%;}
+  /* v141–v142. прогулка по карте */
+  #progulka{position:fixed; inset:0; z-index:50; background:#000; cursor:crosshair; user-select:none;}
+  #progulka .pg-3d{display:block; width:100%; height:100%;}
   .pg-pricel{position:absolute; left:50%; top:50%; width:4px; height:4px; margin:-2px 0 0 -2px; background:#7dffb0;
     box-shadow:0 0 0 1px rgba(0,0,0,.6); border-radius:50%; pointer-events:none;}
-  .pg-mesto{position:absolute; left:16px; top:14px; font:600 15px var(--disp); color:#fff; text-shadow:0 1px 3px #000; pointer-events:none;}
-  .pg-poz{position:absolute; left:16px; bottom:12px; font:12px var(--mono); color:rgba(255,255,255,.75); text-shadow:0 1px 2px #000; pointer-events:none;}
+  .pg-radar{position:absolute; left:12px; top:12px; width:220px; height:220px; border-radius:10px; pointer-events:none;
+    background:rgba(8,12,16,.55); box-shadow:0 0 0 1px rgba(255,255,255,.12);}
+  .pg-mesto{position:absolute; left:12px; top:240px; width:220px; text-align:center; font:600 14px var(--disp); color:#fff;
+    text-shadow:0 1px 3px #000; pointer-events:none;}
+  .pg-poz{position:absolute; left:14px; bottom:12px; font:12px var(--mono); color:rgba(255,255,255,.75); text-shadow:0 1px 2px #000; pointer-events:none;}
   .pg-soob{position:absolute; left:50%; top:22%; transform:translateX(-50%); font:500 14px var(--mono); color:#fff;
-    background:rgba(10,15,20,.72); padding:7px 14px; border-radius:8px; opacity:0; transition:opacity .25s; pointer-events:none;}
+    background:rgba(10,15,20,.72); padding:7px 14px; border-radius:8px; opacity:0; transition:opacity .25s; pointer-events:none; white-space:nowrap;}
   .pg-soob.on{opacity:1;}
-  .pg-vyhod{position:absolute; right:14px; top:12px; background:rgba(10,15,20,.75); color:#fff; border:1px solid rgba(255,255,255,.25);
-    border-radius:8px; padding:6px 12px; font:12px var(--mono); cursor:pointer;}
-  .pg-vyhod:hover{border-color:var(--fair);}
-  .pg-start{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); background:rgba(10,15,20,.86);
-    border:1px solid var(--line2); border-radius:14px; padding:22px 26px; color:var(--ink); font-family:var(--disp); text-align:center;}
-  .pg-start b{font-size:18px; letter-spacing:.03em;}
-  .pg-klav{display:grid; grid-template-columns:auto auto; gap:6px 14px; margin-top:14px; text-align:left; font:13px var(--mono); color:var(--muted);}
-  .pg-klav span{color:var(--fair); text-align:right;}
+  .pg-karta{position:absolute; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column;
+    background:rgba(5,8,11,.82); cursor:pointer;}
+  .pg-karta.on{display:flex;}
+  .pg-karta canvas{width:min(84vh,82vw); height:min(84vh,82vw); cursor:crosshair;}
+  .pg-karta-pod{margin-top:8px; font:12px var(--mono); color:var(--muted);}
+  .pg-pauza{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(440px,calc(100vw - 32px));
+    background:rgba(10,15,20,.9); border:1px solid var(--line2); border-radius:14px; padding:20px 22px; color:var(--ink);
+    font-family:var(--disp); cursor:default;}
+  .pg-zag{display:block; font-size:18px; letter-spacing:.03em; text-align:center;}
+  .pg-knopki{display:flex; gap:8px; margin:14px 0 6px;}
+  .pg-knopki button{flex:1; background:transparent; color:var(--fair); border:1px solid var(--line2); border-radius:9px;
+    padding:9px 6px; font:500 13px var(--disp); cursor:pointer;}
+  .pg-knopki button:hover{border-color:var(--fair);}
+  .pg-knopki .pg-dalee{background:linear-gradient(180deg,#3ee0b0,#2bbf94); color:#062018; border:0; font-weight:600;}
+  .pg-pol{display:block; margin-top:12px; font:12px var(--mono); color:var(--muted);}
+  .pg-pol span{color:var(--ink); float:right;}
+  .pg-pol input{display:block; width:100%; margin-top:6px;}
+  .pg-pol select{display:block; width:100%; margin-top:6px; background:#0e141b; color:var(--ink); border:1px solid var(--line2);
+    border-radius:7px; padding:6px 8px; font:12px var(--mono);}
+  .pg-skor{margin-top:10px; min-height:14px; font:11px var(--mono); color:var(--muted); text-align:center;}
+  .pg-klav{display:grid; grid-template-columns:auto 1fr; gap:5px 12px; margin-top:12px; text-align:left; font:12px var(--mono); color:var(--muted);}
+  .pg-klav span{color:var(--fair); text-align:right; white-space:nowrap;}
   /* v141. номер карты */
   .nomer{margin-top:12px; padding:10px 11px; border:1px solid var(--line); border-radius:10px; background:var(--panel2);}
   .nomer .row{display:flex; justify-content:space-between; align-items:center;}

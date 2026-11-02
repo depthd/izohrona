@@ -16,7 +16,7 @@ const path = require('path');
   await p.waitForSelector('#progulka canvas', { timeout: 60000 });
   await p.waitForTimeout(500);
   const т = (к, с, р) => p.evaluate(`ПРОГУЛКА.тест(${JSON.stringify(к)}, ${с}${р === undefined ? '' : ',' + р})`);
-  const снимок = async имя => { if (!куда) return; await p.evaluate(`document.querySelector('.pg-start').style.display='none'`);
+  const снимок = async имя => { if (!куда) return; await p.evaluate(`document.querySelector('.pg-pauza').style.display='none'`);
     await p.screenshot({ path: path.join(куда, имя + '.png') }); };
   const итог = {};
   итог.спавн = await т({}, 1.5);
@@ -36,6 +36,25 @@ const path = require('path');
   await снимок('2_walked');
   for (const [i, имя] of [[2, '3_site_A'], [3, '4_site_B'], [1, '5_spawn_CT']]) {
     await p.evaluate(`ПРОГУЛКА.прыгнутьК(${i})`); итог[имя] = await т({}, 1.5); await снимок(имя); }
+  // v142: пол под щелчком на большой карте — тот же, что у плента
+  for (const [i, имя] of [[2, 'A'], [3, 'B']]) {
+    const т = await p.evaluate(`ПРОГУЛКА.состояние().точки[${i}].p`);
+    const пол = await p.evaluate(`ПРОГУЛКА.полПод(${т[0]}, ${т[1]})`);
+    итог['пол под щелчком ' + имя] = пол && пол.map(Math.round).join(' ');
+  }
+  if (куда) {
+    await p.evaluate(`document.querySelector('.pg-pauza').style.display=''`);   // снимки её прятали
+    await p.screenshot({ path: path.join(куда, '6_pauza.png') });               // пауза видна: мышь не захвачена
+    await p.click('.pg-kartu'); await p.waitForTimeout(300);
+    await p.screenshot({ path: path.join(куда, '7_karta.png') });
+    // щелчок по большой карте — в букву B
+    const xy = await p.evaluate(`(()=>{ const S=ПРОГУЛКА.состояние(), Р=S.радар, cv=document.querySelector('.pg-karta canvas'),
+      В=cv.__вид, r=cv.getBoundingClientRect(), м=Р.метки.find(m=>m.имя==='B'); const [u,v]=Р.наРадар(м.p[0],м.p[1]);
+      return [r.left+В.ox+u*В.к, r.top+В.oy+v*В.к]; })()`);
+    await p.mouse.click(xy[0], xy[1]); await p.waitForTimeout(300);
+    итог['щелчок по B'] = await т({}, 1);
+    await снимок('8_posle_shchelchka');
+  }
   console.log(JSON.stringify(итог, null, 1));
   console.log('ошибок страницы', ошибки.length, ошибки.slice(0, 3));
   await b.close();
