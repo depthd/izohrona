@@ -51,8 +51,11 @@ else:
     ents = [src[a:b] for a, b in блоки(src, 'entity')]
     bt = [e for e in ents if '"classname" "func_bomb_target"' in e]
     cx, cy = габарит(bt[0 if центр == 'A' else 1])
+# Коробка неба стоит ВОКРУГ всей карты, её центр всегда вне куска — без этой
+# оговорки вырез выбрасывал небо целиком (его вопрос: «куда удалился скайбокс»).
 keep = [world[a:b] for a, b in solids
-        if abs(габарит(world[a:b])[0] - cx) <= R and abs(габарит(world[a:b])[1] - cy) <= R]
+        if 'toolsskybox' in world[a:b].lower()
+        or (abs(габарит(world[a:b])[0] - cx) <= R and abs(габарит(world[a:b])[1] - cy) <= R)]
 шапка = world[:solids[0][0]] if solids else world[:-1]
 нов = шапка + '\n'.join(keep) + '\n}'
 # Сущности — только те, что стоят внутри куска (иначе спавны висят в пустоте и

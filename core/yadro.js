@@ -180,6 +180,15 @@ class Карта {
       for (const [x0, y0, z0, x1, y1, z1] of рамаЯщика(c, a))
         B(X + x0, Y + y0, z + z0, X + x1, Y + y1, z + z1, мат.рамаЯщика, null, 'рама');
     }
+    /* Коробка неба вокруг всего — как в продукте v139: шесть стенок
+       tools/toolsskybox на отступе от карты. Без неё в игре нет неба. */
+    const всё = [...this.помещения.map(п => п.прям), ...this.стены.map(с => с.прям)];
+    const X0 = Math.min(...всё.map(r => r.x0)) - 512, Y0 = Math.min(...всё.map(r => r.y0)) - 512;
+    const X1 = Math.max(...всё.map(r => r.x1)) + 512, Y1 = Math.max(...всё.map(r => r.y1)) + 512;
+    const Z0 = -128, Z1 = Math.max(...this.стены.map(с => с.высота + (с.клип || 0))) + 768, Т = 16, SKY = 'tools/toolsskybox';
+    B(X0 - Т, Y0 - Т, Z0, X1 + Т, Y0, Z1, SKY, null, 'небо'); B(X0 - Т, Y1, Z0, X1 + Т, Y1 + Т, Z1, SKY, null, 'небо');
+    B(X0 - Т, Y0, Z0, X0, Y1, Z1, SKY, null, 'небо');         B(X1, Y0, Z0, X1 + Т, Y1, Z1, SKY, null, 'небо');
+    B(X0 - Т, Y0 - Т, Z1, X1 + Т, Y1 + Т, Z1 + Т, SKY, null, 'небо'); B(X0 - Т, Y0 - Т, Z0 - Т, X1 + Т, Y1 + Т, Z0, SKY, null, 'небо');
     return boxes;
   }
 
