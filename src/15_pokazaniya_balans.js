@@ -228,7 +228,9 @@ function recoverBodies(newSeed){
   const cw=cur.__cw, ch=cur.__ch;
   let out=null;
   try{ setSize(cw,ch); CELL=96; SC=1; out=buildDetail(src,cfg); } catch(e){ out=null; }
-  if(out){ out.CELL=out.CELL||16; cur=out; }
+  /* v141. Цель баланса переходит к пересобранной карте: без неё номер карты
+     (сид:цель:ковёр) не открывает её заново. Геометрию это не трогает. */
+  if(out){ out.CELL=out.CELL||16; out.__aim=cur.__aim; cur=out; }
   useCur(); cur.zones=computeZones(cur); draw(); paint(); renderAudit();
 }
 const recoverLater=(newSeed)=>{ clearTimeout(__recT);

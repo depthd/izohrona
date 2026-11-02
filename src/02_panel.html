@@ -7,7 +7,7 @@
   <header class="top">
     <div class="brand">
       <div class="eyebrow">four-square · three-lane · баланс по построению</div>
-      <h1>ИЗОХРОНА <span style="font:11px ui-monospace,monospace;color:#7d92a4;letter-spacing:.5px;vertical-align:super">v140</span></h1>
+      <h1>ИЗОХРОНА <span style="font:11px ui-monospace,monospace;color:#7d92a4;letter-spacing:.5px;vertical-align:super">v141</span></h1>
       <p class="lede">Генератор соревновательных карт для CS2. Одна кнопка — готовая карта с балансом, укрытиями и экспортом в Hammer.
         <details class="about"><summary>подробнее</summary>
         Каркас Dust2, баланс держится в 3D. Вертикаль в масштабе игрока (рост=72u): рельеф везде, резче на ключевых — мид утоплен, подходы приподняты, сайты — приподнятые плато с плоской точкой закладки. План решается на клетке 96u, а растр, который видят укрытия, дейкстра, замер и экспорт, — 16u: стены получают толщину 32–64u, входы сужаются до 112u, пустые залы делятся перегородками, укрытия стоят в настоящих габаритах. Кнопка .vmf — выгрузка в Hammer сразу VIS-чистой, с рельефом.</details></p>
@@ -30,8 +30,17 @@
       <div class="card">
         <button class="gen" id="gen">Сгенерировать карту</button>
         <button class="gen alt" id="reroll">↻ Перекатить только укрытия</button>
-        <button class="gen" id="vmap">⬇ Скачать .vmap (сразу для Hammer)</button>
-        <button class="gen alt" id="vmf">⬇ Скачать .vmf (для Hammer)</button>
+        <button class="gen alt" id="walk" title="Карта от первого лица: ходить, прыгать, приседать — как в игре, до Hammer. Нужен интернет (three.js).">🚶 Пройтись по карте</button>
+        <button class="gen" id="vmap" style="margin-top:9px" title="Целая карта сразу для Hammer, без импорта .vmf. Рядом скачивается радар для игры.">⬇ Скачать .vmap</button>
+        <button class="gen alt" id="vmf" title="Старый способ: .vmf, который Hammer переводит при импорте. Рядом скачивается радар.">⬇ Скачать .vmf (старый способ)</button>
+        <div class="nomer">
+          <div class="row"><label>Номер карты</label><button class="mini" id="nomerCopy" title="Скопировать номер: по нему открывается ровно эта карта">копировать</button></div>
+          <code id="nomerKod" title="Сид : цель баланса : укрытия, за чертой — настройки, которые ты менял">—</code>
+          <details><summary>открыть карту по номеру</summary>
+            <div class="nomerVvod"><input id="nomerVvod" placeholder="вставь номер" spellcheck="false"><button class="mini" id="nomerOpen">открыть</button></div>
+          </details>
+          <div id="nomerMsg"></div>
+        </div>
         <div id="uvrep" style="font-family:var(--mono); font-size:11px; color:#9fb2c2; margin-top:7px; line-height:1.5"></div>
         <details class="grp"><summary>Настройки карты</summary>
         <div class="ctl" title="v110. Профиль ставит все ручки разом под характер одной реальной карты. Раньше каждая ручка стояла в середине диапазона, и карта попадала внутрь полосы между dust2 и tuscan по всем метрикам сразу — то есть не походила ни на что. Совпадают статистики, а не форма.">

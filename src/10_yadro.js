@@ -128,7 +128,7 @@ const V83 = { site:true };
 /* Версия печатается в заголовке вкладки, в углу панели и В САМ .vmf
    (ключ "comment" у worldspawn). Иначе по присланному файлу нельзя сказать,
    каким билдом он собран, и разбор начинается со спора об этом. */
-const ВЕРСИЯ = "izohrona v140";
+const ВЕРСИЯ = "izohrona v141";
 const V81 = { radar:true, ladder:true, ladderMax:6, ladderDrop:112 };   // v87: столько, сколько ловушек   // v84: порог по факту перепадов
 const V79 = { pal:true, smooth:true, minRun:1, accent:true, steps:true, stepMax:96 };
 /* ====== v127: ТЕКСТУРА ПО РАЗМЕРУ БРАША ======

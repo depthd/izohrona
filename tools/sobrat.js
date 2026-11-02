@@ -30,12 +30,12 @@ function выгрузкаVmap() {
 /* ============ v140. ВЫГРУЗКА .vmap — сразу для Hammer, без импорта .vmf ============
    Тот же .vmf, что у кнопки рядом, переводится так, как переводит его Hammer
    (сверено на 1996 брашах его primer.vmap). Исходники — core/*.js, собрано
-   tools/vstroit_vmap.js; здесь не править. */
+   tools/sobrat.js; здесь не править. */
 const ВЫГРУЗКА_VMAP = (function(){
   const М = {};
   const require = n => М[n.split('/').pop().replace(/\\.js$/, '')];
 ${модуль('kv2')}${модуль('vmap')}${модуль('vmf2vmap')}
-  return { vmfToVmap: М.vmf2vmap.vmfToVmap,
+  return { vmfToVmap: М.vmf2vmap.vmfToVmap, vmfToScene: М.vmf2vmap.vmfToScene,
            ОБРАЗЕЦ: ${JSON.stringify(fs.readFileSync(path.join(к, 'data/obrazec.vmap.txt'), 'utf8'))},
            ТОЧКИ: ${JSON.stringify(JSON.parse(fs.readFileSync(path.join(к, 'data/tekstury_tochek.json'), 'utf8')))} };
 })();
@@ -43,8 +43,9 @@ function downloadVMAP(){ if(!cur) return; useCur();
   const r = ВЫГРУЗКА_VMAP.vmfToVmap(buildVMF(cur), ВЫГРУЗКА_VMAP.ОБРАЗЕЦ, ВЫГРУЗКА_VMAP.ТОЧКИ, cur.seed>>>0);
   window.__vmapLast = { мешей: r.scene.polys.length, сущностей: r.scene.ents.length, размер: r.vmap.length, неизвестные: r.scene.unknown };
   const blob = new Blob([r.vmap], {type:'text/plain'}); const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = 'izohrona_' + cur.seed + '.vmap';
-  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
+  a.href = URL.createObjectURL(blob); a.download = 'de_izohrona_' + cur.seed + '.vmap';
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  if (V81.radar) downloadRadar(); }   // v141: радар и к .vmap, имя карты то же, что у радара
 document.getElementById('vmap').onclick = downloadVMAP;
 `;
 }

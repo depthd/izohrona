@@ -84,6 +84,7 @@ function solidPoly(solid, texSizes, unknown) {
 }
 
 /* ---- сущности: ключи как есть, солнце — как переводит импортёр ---- */
+const НЕБО = 'materials/dev/default_sky.vmat';
 const НЕ_БЕРЁТ = { light_omni2: ['brightness_lumens'], light_environment: ['angulardiameter'] };
 function entProps(e) {
   const skip = new Set(['id', 'classname', 'origin', 'angles']);
@@ -124,8 +125,10 @@ function vmfToScene(text, texSizes) {
     // брашевая зона без origin у импортёра стоит в 0 0 0, меш — в своём центре
     ents.push({ cls, props, angles, at: o ? o.split(/\s+/).map(Number) : [0, 0, 0], polys: ps });
   }
-  // небо: импортёр сам добавляет пустой env_sky «default_sky» — так было и у старых карт
-  if (!ents.some(e => e.cls === 'env_sky')) ents.push({ cls: 'env_sky', props: { targetname: 'default_sky' }, angles: [0, 0, 0], at: [0, 0, 0], polys: [] });
+  // Небо. Импортёр сам добавляет env_sky «default_sky», но ПУСТОЙ — и неба нет
+  // (его черновик: «нет скайбокса»). Здесь не повторяем импортёр, а ставим то
+  // небо, что он выбрал сам: materials/dev/default_sky.vmat.
+  if (!ents.some(e => e.cls === 'env_sky')) ents.push({ cls: 'env_sky', props: { targetname: 'default_sky', skyname: НЕБО }, angles: [0, 0, 0], at: [0, 0, 0], polys: [] });
   return { polys, ents, unknown: [...unknown] };
 }
 

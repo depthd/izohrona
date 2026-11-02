@@ -12,7 +12,7 @@ CLAUDE.md, они же продублированы ниже.
 """
 import json, os, re, subprocess, sys, time
 
-СБОРКА = 'builds/izohrona_v139.html'
+СБОРКА = 'builds/izohrona_v141.html'
 КАРТ = 3
 БЫСТРО = False
 арг = [a for a in sys.argv[1:]]

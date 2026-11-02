@@ -12,9 +12,16 @@ const fs = require('fs'), path = require('path');
   p.on('pageerror', e => errs.push(e.message));
   await p.goto('file://' + path.resolve(process.argv[2]));
   await p.waitForFunction('typeof cur!=="undefined" && cur && cur.g', null, { timeout: 300000, polling: 400 });
-  const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 300000 }), p.click('#vmap')]);
+  // v141: вместе с .vmap скачивается радар (.png и .txt) — ждём все три, берём .vmap
+  const скачано = [];
+  p.on('download', d => скачано.push(d));
+  await p.click('#vmap');
+  await p.waitForFunction(() => window.__vmapLast, null, { timeout: 300000 });
+  for (let i = 0; i < 100 && скачано.length < 3; i++) await p.waitForTimeout(200);
+  const dl = скачано.find(d => d.suggestedFilename().endsWith('.vmap'));
   await dl.saveAs(process.argv[3]);
-  console.log('скачано', dl.suggestedFilename(), JSON.stringify(await p.evaluate('window.__vmapLast')));
+  console.log('скачано', скачано.map(d => d.suggestedFilename()).join(', '));
+  console.log(JSON.stringify(await p.evaluate('window.__vmapLast')));
   console.log('ошибок страницы', errs.length, errs.slice(0, 3).join(' | '));
   await b.close();
 })();

@@ -2393,7 +2393,7 @@ function buildVMF(cur){
 }
 function downloadVMF(){ if(!cur){return;} useCur(); const txt=buildVMF(cur);
   const blob=new Blob([txt],{type:'text/plain'}); const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download='izohrona_'+cur.seed+'.vmf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
+  a.href=URL.createObjectURL(blob); a.download='de_izohrona_'+cur.seed+'.vmf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
 
 // по 7 реальным картам при клетке 96u: mirage 36x42, anubis 40x52, ancient 43x44, inferno 48x42, dust2 46x62
 const SIZES=[[36,42],[40,46],[43,48],[46,54],[52,60]], SIZENAME=['мираж','анубис','медиана','инферно','даст2'];

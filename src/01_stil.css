@@ -31,6 +31,39 @@
   button.gen:hover{filter:brightness(1.06)} button.gen:active{transform:translateY(1px)}
   button.gen.alt{margin-top:9px; background:transparent; color:var(--fair); border:1px solid var(--line2); font-weight:500; font-size:13.5px; padding:11px;}
   button.gen.alt:hover{border-color:var(--fair); filter:none;}
+  /* v141. прогулка по карте */
+  #progulka{position:fixed; inset:0; z-index:50; background:#000; cursor:crosshair;}
+  #progulka canvas{display:block; width:100%; height:100%;}
+  .pg-pricel{position:absolute; left:50%; top:50%; width:4px; height:4px; margin:-2px 0 0 -2px; background:#7dffb0;
+    box-shadow:0 0 0 1px rgba(0,0,0,.6); border-radius:50%; pointer-events:none;}
+  .pg-mesto{position:absolute; left:16px; top:14px; font:600 15px var(--disp); color:#fff; text-shadow:0 1px 3px #000; pointer-events:none;}
+  .pg-poz{position:absolute; left:16px; bottom:12px; font:12px var(--mono); color:rgba(255,255,255,.75); text-shadow:0 1px 2px #000; pointer-events:none;}
+  .pg-soob{position:absolute; left:50%; top:22%; transform:translateX(-50%); font:500 14px var(--mono); color:#fff;
+    background:rgba(10,15,20,.72); padding:7px 14px; border-radius:8px; opacity:0; transition:opacity .25s; pointer-events:none;}
+  .pg-soob.on{opacity:1;}
+  .pg-vyhod{position:absolute; right:14px; top:12px; background:rgba(10,15,20,.75); color:#fff; border:1px solid rgba(255,255,255,.25);
+    border-radius:8px; padding:6px 12px; font:12px var(--mono); cursor:pointer;}
+  .pg-vyhod:hover{border-color:var(--fair);}
+  .pg-start{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); background:rgba(10,15,20,.86);
+    border:1px solid var(--line2); border-radius:14px; padding:22px 26px; color:var(--ink); font-family:var(--disp); text-align:center;}
+  .pg-start b{font-size:18px; letter-spacing:.03em;}
+  .pg-klav{display:grid; grid-template-columns:auto auto; gap:6px 14px; margin-top:14px; text-align:left; font:13px var(--mono); color:var(--muted);}
+  .pg-klav span{color:var(--fair); text-align:right;}
+  /* v141. номер карты */
+  .nomer{margin-top:12px; padding:10px 11px; border:1px solid var(--line); border-radius:10px; background:var(--panel2);}
+  .nomer .row{display:flex; justify-content:space-between; align-items:center;}
+  .nomer label{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);}
+  .nomer code{display:block; margin-top:6px; font-family:var(--mono); font-size:12px; color:var(--ink); word-break:break-all; user-select:all;}
+  .nomer summary{margin-top:8px; font-family:var(--mono); font-size:11px; color:var(--muted); cursor:pointer;}
+  .nomer summary:hover{color:var(--fair);}
+  .nomerVvod{display:flex; gap:6px; margin-top:7px;}
+  .nomerVvod input{flex:1; min-width:0; background:#0e141b; color:var(--ink); border:1px solid var(--line2); border-radius:7px;
+    padding:6px 8px; font-family:var(--mono); font-size:12px;}
+  .nomerVvod input:focus{outline:none; border-color:var(--fair);}
+  button.mini{background:transparent; color:var(--fair); border:1px solid var(--line2); border-radius:7px; padding:4px 9px;
+    font-family:var(--mono); font-size:11px; cursor:pointer;}
+  button.mini:hover{border-color:var(--fair);}
+  #nomerMsg{margin-top:5px; font-family:var(--mono); font-size:11px; min-height:0;}
   .ctl{margin:14px 0;}
   .ctl .row{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
   .ctl label{font-size:13px;} .ctl .val{font-family:var(--mono); font-size:13px; color:var(--fair);}
