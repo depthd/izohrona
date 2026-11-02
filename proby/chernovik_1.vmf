@@ -8302,7 +8302,11 @@ entity
 	"id" "830"
 	"classname" "light_environment"
 	"origin" "464 352 768"
-	"angles" "50 220 0"
+	"angles" "55 220 0"
+	"brightness" "2.43"
+	"skyintensity" "0.9"
+	"color" "252 238 214"
+	"skycolor" "190 208 236"
 }
 entity
 {
@@ -8310,6 +8314,8 @@ entity
 	"classname" "env_sky"
 	"origin" "0 0 0"
 	"angles" "0 0 0"
+	"skyname" "materials/dev/default_sky.vmat"
+	"targetname" "default_sky"
 }
 cameras
 {

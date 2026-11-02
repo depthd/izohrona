@@ -48,8 +48,12 @@ const СЕВ = к.стена(0, 448, 928, 512, { высота: 224, мат: 'anu
 const scene = {
   boxes: к.геометрия(мат),
   points: [...к.точки,
-    { cls: 'light_environment', at: [464, 352, 768], angles: [50, 220, 0] },
-    { cls: 'env_sky', at: [0, 0, 0] }],
+    /* Свет по настоящим картам (Mirage: солнце 630, небо 215; Dust2: 575 и 245),
+       переведён так же, как переводит его Hammer: делить на 255. */
+    { cls: 'light_environment', at: [464, 352, 768], angles: [55, 220, 0],
+      props: { brightness: 2.43, skyintensity: 0.9, color: '252 238 214', skycolor: '190 208 236' } },
+    // небо — то, что он сам поставил в образце; пустой env_sky Hammer создаёт сам
+    { cls: 'env_sky', at: [0, 0, 0], props: { skyname: 'materials/dev/default_sky.vmat', targetname: 'default_sky' } }],
   brushEnts: [{ cls: 'func_buyzone', box: { x0: 0, y0: 512, z0: 0, x1: 256, y1: 704, z1: 128 }, props: { TeamNum: 2 } }],
   camera: { pos: [464, -700, 760], at: [464, 352, 0] },
 };
