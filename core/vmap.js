@@ -93,13 +93,18 @@ function halfEdges(poly) {
   return { he, loops, vEdge };
 }
 
+/* Образец — data/obrazec.vmap.txt, вырезан tools/obrazec.js из файла его Hammer:
+   каркас, один меш и по одной сущности каждого вида. */
 function loadTemplate(text) {
   const doc = parse(text);
   const root = doc.roots.find(r => r.cls === 'CMapRootElement');
   const world = root.get('world');
   const mesh = world.get('children').find(c => c.cls === 'CMapMesh');
   if (!mesh) throw new Error('в образце нет ни одного CMapMesh');
-  return { doc, root, world, mesh };
+  const ents = {};
+  for (const c of world.get('children'))
+    if (c.cls === 'CMapEntity') ents[c.get('entity_properties').get('classname')] = c;
+  return { doc, root, world, mesh, ents };
 }
 
 function streamOf(arr, name) {
@@ -170,43 +175,56 @@ function meshEl(tpl, poly, texOf, matOf, idg, node) {
   return { el: m, mats };
 }
 
-function plug() {
-  return new El('DmePlugList').set('id', 'elementid', '')
-    .set('names', 'string_array', []).set('dataTypes', 'int_array', [])
-    .set('plugTypes', 'int_array', []).set('descriptions', 'string_array', []);
+/* Сущность клонируется из образца того же вида — со всеми ключами, которые его
+   Hammer пишет по умолчанию. Вида нет в образце — берётся спавн, и ключи у него
+   только наши. Брашевая сущность (зона закупки, плент) несёт меш дочерним. */
+function entityEl(tpl, cls, origin, props, angles, idg, node, child) {
+  const src = tpl.ents[cls] || tpl.ents.info_player_terrorist;
+  if (!src) throw new Error('в образце нет сущностей');
+  const e = src.clone();
+  const ep = e.get('entity_properties');
+  if (!tpl.ents[cls]) ep.a = ep.a.filter(([k]) => k === 'id' || k === 'classname');
+  ep.put('classname', 'string', cls);
+  for (const k in props || {}) ep.put(k, 'string', String(props[k]));
+  e.put('nodeID', 'int', String(node));
+  e.put('referenceID', 'uint64', idg.ref());
+  e.put('randomSeed', 'int', String(idg.int()));
+  e.put('origin', 'vector3', origin.map(fmt).join(' '));
+  e.put('angles', 'qangle', (angles || [0, 0, 0]).map(fmt).join(' '));
+  e.put('children', 'element_array', child ? [child] : []);
+  return e;
 }
 
-function entityEl(cls, origin, props, angles, idg, node) {
-  const ep = new El('EditGameClassProps').set('id', 'elementid', '').set('classname', 'string', cls);
-  for (const k in props || {}) ep.set(k, 'string', String(props[k]));
-  const pin = new El('DmElement').set('id', 'elementid', '').set('name', 'string', 'transformPin')
-    .set('referenceName', 'string', '').set('targetReferenceID', 'uint64', '0x0')
-    .set('offsetOrigin', 'vector3', '0 0 0').set('offsetAngles', 'qangle', '0 0 0')
-    .set('pinAngles', 'bool', '1').set('twoWay', 'bool', '0');
-  return new El('CMapEntity').set('id', 'elementid', '')
-    .set('nodeID', 'int', String(node)).set('referenceID', 'uint64', idg.ref())
-    .set('children', 'element_array', []).set('variableTargetKeys', 'string_array', [])
-    .set('variableNames', 'string_array', []).set('relayPlugData', 'DmePlugList', plug())
-    .set('connectionsData', 'element_array', []).set('entity_properties', 'EditGameClassProps', ep)
-    .set('hitNormal', 'vector3', '0 0 1').set('isProceduralEntity', 'bool', '0')
-    .set('origin', 'vector3', origin.map(fmt).join(' ')).set('angles', 'qangle', (angles || [0, 0, 0]).map(fmt).join(' '))
-    .set('scales', 'vector3', '1 1 1').set('transformLocked', 'bool', '0')
-    .set('transformPin', 'DmElement', pin).set('force_hidden', 'bool', '0')
-    .set('editorOnly', 'bool', '0').set('customVisGroup', 'string', '').set('randomSeed', 'int', String(idg.int()));
-}
-
-/* scene: {boxes:[{x0..z1, mat, tex:{rule,size,scale}}], points:[{cls, at:[x,y,z], props, angles}], camera} */
-function toVmap(scene, templateText, seed) {
+/* scene: {boxes:[{x0..z1, mat, tex:{rule,scale,tile}}], points:[{cls, at, props, angles}],
+           brushEnts:[{cls, box, mat, props}], camera}
+   texSizes: материал -> точек в картинке (data/tekstury_tochek.json). Скейл
+   пишется сразу в единицах Source 2; правило 'мир' без скейла даёт повтор
+   картинки через tile юнитов (по умолчанию 128). */
+function toVmap(scene, templateText, seed, texSizes) {
   const tpl = loadTemplate(templateText);
   const idg = idGen(seed || 1);
+  const TS = texSizes || {};
   let node = 2;
   const kids = [], allMats = new Set();
-  for (const b of scene.boxes) {
-    const { el, mats } = meshEl(tpl, boxPoly(b), () => b.tex || {}, () => 'materials/' + b.mat + '.vmat', idg, node++);
+  const texFor = b => {
+    const size = TS[b.mat] || 512, t = Object.assign({}, b.tex || {});
+    t.size = size;
+    if (t.rule !== 'грань' && !t.scale) t.scale = (t.tile || 128) / size;
+    return t;
+  };
+  const mesh = b => {
+    const { el, mats } = meshEl(tpl, boxPoly(b), () => texFor(b), () => 'materials/' + b.mat + '.vmat', idg, node++);
     mats.forEach(x => allMats.add(x));
-    kids.push(el);
+    return el;
+  };
+  for (const b of scene.boxes) kids.push(mesh(b));
+  for (const p of scene.points || []) kids.push(entityEl(tpl, p.cls, p.at, p.props, p.angles, idg, node++));
+  for (const be of scene.brushEnts || []) {
+    const b = Object.assign({ mat: 'tools/toolstrigger' }, be.box, { mat: be.mat || 'tools/toolstrigger' });
+    const n = node++, m = mesh(b);
+    const o = m.get('origin').split(' ').map(Number);
+    kids.push(entityEl(tpl, be.cls, o, be.props, null, idg, n, m));
   }
-  for (const p of scene.points || []) kids.push(entityEl(p.cls, p.at, p.props, p.angles, idg, node++));
   const doc = { header: tpl.doc.header, roots: tpl.doc.roots.map(r => r.clone()) };
   const root = doc.roots.find(r => r.cls === 'CMapRootElement');
   root.get('world').put('children', 'element_array', kids);
