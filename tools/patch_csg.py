@@ -6,7 +6,7 @@
 """
 import sys
 
-p = sys.argv[1] if len(sys.argv) > 1 else 'builds/izohrona_v115.html'
+p = sys.argv[1] if len(sys.argv) > 1 else 'builds/arhiv/izohrona_v115.html'
 t = open(p, encoding='utf-8').read()
 
 anchor = '  return `versioninfo'

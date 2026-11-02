@@ -5,7 +5,7 @@
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
 
-const BUILD = process.argv[2] || 'builds/izohrona_v96.html';
+const BUILD = process.argv[2] || 'builds/izohrona_v140.html';
 const N     = +(process.argv[3] || 3);
 const OUT   = process.argv[4] || 'out';
 

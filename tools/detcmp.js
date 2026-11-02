@@ -4,7 +4,7 @@ const b=await chromium.launch(fs.existsSync(EXE)?{executablePath:EXE}:{});
 const p=await b.newPage({viewport:{width:1400,height:1200}});
 const errs=[]; p.on('pageerror',e=>errs.push('PAGEERROR: '+e.message));
 p.on('console',m=>{if(m.type()==='error'&&!/net::/.test(m.text()))errs.push('CONSOLE: '+m.text());});
-await p.goto('file:///home/user/pd/builds/izohrona_v98.html'); await p.waitForSelector('#map');
+await p.goto('file://' + require('path').resolve('builds/arhiv/izohrona_v98.html') + ''); await p.waitForSelector('#map');
 const OUT='/tmp/claude-0/-home-user-pd/f8a0ff22-2209-50d9-97f1-af08380385c6/scratchpad/out2';
 fs.mkdirSync(OUT,{recursive:true});
 const shot=async(tag)=>{ await p.mouse.move(4,4); await p.waitForTimeout(120); await p.locator('#map').screenshot({path:`${OUT}/${tag}.png`}); };

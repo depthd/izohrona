@@ -1,0 +1,156 @@
+</style>
+</head>
+<body>
+<div id="mark">изохрона</div>
+<div id="tab" title="Спрятать панель (H)">‹</div>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="eyebrow">four-square · three-lane · баланс по построению</div>
+      <h1>ИЗОХРОНА <span style="font:11px ui-monospace,monospace;color:#7d92a4;letter-spacing:.5px;vertical-align:super">v140</span></h1>
+      <p class="lede">Генератор соревновательных карт для CS2. Одна кнопка — готовая карта с балансом, укрытиями и экспортом в Hammer.
+        <details class="about"><summary>подробнее</summary>
+        Каркас Dust2, баланс держится в 3D. Вертикаль в масштабе игрока (рост=72u): рельеф везде, резче на ключевых — мид утоплен, подходы приподняты, сайты — приподнятые плато с плоской точкой закладки. План решается на клетке 96u, а растр, который видят укрытия, дейкстра, замер и экспорт, — 16u: стены получают толщину 32–64u, входы сужаются до 112u, пустые залы делятся перегородками, укрытия стоят в настоящих габаритах. Кнопка .vmf — выгрузка в Hammer сразу VIS-чистой, с рельефом.</details></p>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="stage">
+      <canvas id="map"></canvas>
+      <div class="flash" id="flash">ГЕНЕРАЦИЯ…</div>
+      <div class="legend">
+        <span class="sw"><span class="dot" style="background:var(--CT)"></span>ближе CT</span>
+        <span class="sw"><span class="dot" style="background:var(--T)"></span>ближе T</span>
+        <span class="sw"><span class="dot" style="background:var(--fair)"></span>контест / мид</span>
+        <span class="sw"><span class="dot" style="background:var(--body)"></span>тела зон</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="card">
+        <button class="gen" id="gen">Сгенерировать карту</button>
+        <button class="gen alt" id="reroll">↻ Перекатить только укрытия</button>
+        <button class="gen" id="vmap">⬇ Скачать .vmap (сразу для Hammer)</button>
+        <button class="gen alt" id="vmf">⬇ Скачать .vmf (для Hammer)</button>
+        <div id="uvrep" style="font-family:var(--mono); font-size:11px; color:#9fb2c2; margin-top:7px; line-height:1.5"></div>
+        <details class="grp"><summary>Настройки карты</summary>
+        <div class="ctl" title="v110. Профиль ставит все ручки разом под характер одной реальной карты. Раньше каждая ручка стояла в середине диапазона, и карта попадала внутрь полосы между dust2 и tuscan по всем метрикам сразу — то есть не походила ни на что. Совпадают статистики, а не форма.">
+          <div class="row"><label>Стиль карты</label><span class="val" id="vProf">dust2</span></div>
+          <select id="sProf" style="width:100%; margin-top:6px; background:#0e141b; color:var(--ink);
+            border:1px solid var(--line2); border-radius:8px; padding:7px 8px; font-family:var(--mono); font-size:12px;">
+            <option value="dust2">dust2 — узко и длинно</option>
+            <option value="mirage">mirage — самая тесная</option>
+            <option value="inferno">inferno — тесные связки</option>
+            <option value="ancient">ancient — шире, компактно</option>
+            <option value="cache">cache — просторно и плоско</option>
+            <option value="tuscan">tuscan — закоулки и вертикаль</option>
+          </select>
+        </div>
+        <div class="ctl" title="Габарит карты в клетках. Добавлены меньшие форматы (крошка/мини) — плотнее, короче тайминги подхода. Сходимость и баланс проверены на всех размерах.">
+          <div class="row"><label>Размер карты</label><span class="val" id="vSize">средняя</span></div>
+          <input type="range" id="sSize" min="0" max="4" step="1" value="3">
+        </div>
+        <div class="ctl" title="Ширина коридоров (горлышки-входы остаются узкими). Уже → больше чоков и ближний бой; шире → просторнее. Баланс солвер добирает сам — тайминги/перевесы держатся на всём диапазоне (проверено).">
+          <div class="row"><label>Ширина проходов</label><span class="val" id="vWidth">обычно</span></div>
+          <input type="range" id="sWidth" min="-1" max="2" step="1" value="0">
+        </div>
+        <div class="ctl">
+          <div class="row"><label>Темп: CT до плента</label><span class="val" id="vTempo">6,0 с</span></div>
+          <input type="range" id="sTempo" min="5" max="8" step="0.5" value="6">
+        </div>
+        <div class="ctl">
+          <div class="row"><label>Перевес защитника</label><span class="val" id="vMargin">4,0 с</span></div>
+          <input type="range" id="sMargin" min="3" max="5" step="0.5" value="4">
+        </div>
+        <div class="ctl">
+          <div class="row"><label>Разброс геометрии</label><span class="val" id="vJit">средний</span></div>
+          <input type="range" id="sJit" min="0.01" max="0.035" step="0.005" value="0.02">
+        </div>
+        <div class="ctl" title="Насколько плотно тела заполняют открытые поля: перегородки-ломатели прострелов, кластеры ящиков и досыпка в пустые места. На баланс и тайминги не влияет — нав укрытий не видит. Слева гуще, справа реже. v120: ручек с этим именем было ДВЕ, с одинаковым id; работала первая, вторая молча ничего не делала, а плотность из-за путаницы шкал всегда стояла на максимуме.">
+          <div class="row"><label>Укрытия: гуще ← → реже</label><span class="val" id="vCov">средне</span></div>
+          <input type="range" id="sCov" min="3" max="9" step="1" value="6">
+        </div>
+        <div class="ctl">
+          <div class="row"><label>Вертикаль (высоты)</label><span class="val" id="vVert">норма</span></div>
+          <input type="range" id="sVert" min="0.4" max="1.8" step="0.1" value="1">
+        </div>
+        <div class="ctl">
+          <div class="row"><label>Кольца (хаос петель)</label><span class="val" id="vRing">средне</span></div>
+          <input type="range" id="sRing" min="0.2" max="0.85" step="0.05" value="0.5">
+        </div>
+        <div class="ctl" title="Доля коридоров между зонами, накрытых крышей (168u) — настоящие тоннели/крытые проходы со светом внутри. На баланс/тайминги НЕ влияет (крыша нав не трогает), крутится без перегенерации. На карте — коричневая заливка.">
+          <div class="row"><label>Крытость проходов</label><span class="val" id="vTun">средне</span></div>
+          <input type="range" id="sTun" min="0" max="1" step="0.1" value="0.5">
+        </div>
+        <div class="ctl" title="v127. Какого размера хочется видеть ОДИН повтор текстуры — условно «какой ширины один ящик». Влияет ТОЛЬКО на выбор числа повторов: на грани 288u при 96 ляжет три ящика, при 288 — один. Скейл считается отдельно, так что шов в любом случае сядет на ребро. Только .vmf, перегенерация не нужна.">
+          <div class="row"><label>Размер рисунка (один ящик), юнитов</label><span class="val" id="vTile">96</span></div>
+          <input type="range" id="sTile" min="32" max="384" step="16" value="96">
+        </div>
+        <div class="ctl" title="v127. СВОЙСТВО МАТЕРИАЛА: сколько юнитов занимает повтор при обычном скейле. Замерено по двум ящикам, собранным руками в Hammer 2 (cs_italy/picrate1 = 256 текселей, скейл 0.125 -> 32 юнита). У текстуры вдвое большего разрешения это число вдвое больше. Если в игре рисунок выходит вдвое мельче или крупнее ожидаемого — крутить надо ЭТУ ручку, а не верхнюю.">
+          <div class="row"><label>Натуральный размер текстуры, юнитов</label><span class="val" id="vUnit">64</span></div>
+          <input type="range" id="sUnit" min="16" max="512" step="16" value="64">
+        </div>
+        </details>
+        <div class="ctl" title="v97. Вид под углом. Пол поднят на свою настоящую высоту из zfield, борта достроены там, где сосед ниже или пола нет, укрытия стоят коробками своей высоты (hgt в юнитах) и под своим углом (rot) — с тем же ужатием при повороте, что уходит в .vmf. Нужно потому, что перепад высот цветом не читается. Тяни мышью по карте — крутится.">
+          <label class="tg" style="margin-bottom:9px">3D-превью (вид под углом) <input type="checkbox" id="t3D"></label>
+          <div id="p3d" style="display:none">
+            <div class="row"><label>Поворот</label><span class="val" id="vYaw">35°</span></div>
+            <input type="range" id="sYaw" min="0" max="359" step="1" value="35">
+            <div class="row" style="margin-top:9px"><label>Наклон</label><span class="val" id="vTilt">52°</span></div>
+            <input type="range" id="sTilt" min="10" max="89" step="1" value="52">
+            <div class="row" style="margin-top:9px"><label>Высоты крупнее</label><span class="val" id="vZex">×1,6</span></div>
+            <input type="range" id="sZex" min="0.6" max="4" step="0.2" value="1.6">
+          </div>
+        </div>
+        <div class="toggles">
+          <label class="tg hid" title="v98. План остаётся на 96u — там принимаются решения. Растр, который видят укрытия, дейкстра, замер и экспорт, становится 16u, и по нему проходят четыре операции, невыразимые на крупной клетке: стены получают толщину 32-64u, входы сужаются до 112u, большие пустые залы делятся перегородкой с проёмом, укрытия получают реальные габариты 32-64 x 76-132u вместо квадрата 96x96. Всё пишется В РАСТР, а не только в экспорт.">СЛОЙ ДЕТАЛЕЙ 16u (v98) <input type="checkbox" id="tDet"></label>
+          <label class="tg">Тепловая карта времени <input type="checkbox" id="tHeat" checked></label>
+          <label class="tg">Рельеф высот (топо) <input type="checkbox" id="tHeight"></label>
+          <label class="tg">Маршруты подхода <input type="checkbox" id="tRoutes" checked></label>
+          <label class="tg">Укрытия <input type="checkbox" id="tCover" checked></label>
+          <label class="tg">Подписи мест <input type="checkbox" id="tLabels" checked></label>
+          <label class="tg" title="v120. МЕСТА: куски пола, отделённые сужением — то, во что игрок тычет пальцем и называет одним словом. Считаются водоразделом по расстоянию до стены, тем же кодом, каким померены настоящие навы. У каждого есть имя, у большинства — свой предмет (колонна, бочки, штабель, контейнер, навес, помост). Имя уходит в .vmf как env_cs_place, то есть работает в игре настоящим каллаутом.">Места и предметы <input type="checkbox" id="tPlaces" checked></label>
+          <label class="tg hid">Площадка-остров (вертикаль) <input type="checkbox" id="tIsland"></label>
+          <label class="tg hid" title="Вкл: лестницы в переходах экспортируются наклонными пандусами. Выкл (дефолт): широкие ступени по 18u — как на официальных картах. Рампы паласа/острова — всегда клинья (там перепад за клетку больше шага).">Пандусы вместо лестниц <input type="checkbox" id="tRamps"></label>
+          <label class="tg hid" title="ЭКСП. Сквозной 2-уровневый путь через зону: рампа вверх → верхняя дорожка → рампа вниз в соседнюю область. Внизу под ней проход продолжается (андер). Аналог паласа/апартов/девятки. Только геометрия .vmf — нав/баланс верхнюю дорогу не считают (боты не ходят), это тактический маршрут для игрока. Выключишь — обычные тупиковые палубы v28.">Сквозные 2-ур. проходы (эксп.) <input type="checkbox" id="tThru" checked></label>
+          <label class="tg hid" title="ЭКСП. Богатые укрытия: стопки ящиков, баррикады, Г-стенки и КОСЫЕ (повёрнутые) блоки — больше хаоса и опорных точек. Только укрытия, на баланс не влияет. Выключишь — базовые стены+ящики v28.">Богатый декор/укрытия (эксп.) <input type="checkbox" id="tDecor"></label>
+          <label class="tg hid" title="Палас: дроп-площадка у плента. Подъём ТОЛЬКО по рампе, спрыгивание через открытый край на сайт, обратно не залезть (обрыв выше прыжка). Баланс это ЧЕСТНО считает — в дейкстру добавлено правило прыжка (подъём >59u непроходим). На карте — жёлтое плато, белая линия = дроп-край. Меняет геометрию -> перегенерация.">Дроп-площадки (плато) <input type="checkbox" id="tPalace"></label>
+          <label class="tg hid" title="Каждый вход между зонами получает перемычку: от 128u (дверь) или 152u (арка на 2 клетки) до потолка. Щель полной высоты превращается в стену с дверным проёмом — входы читаются. Только VMF+карта, баланс не трогает. На карте — белые чёрточки.">Дверные проёмы <input type="checkbox" id="tDoors" checked></label>
+          <label class="tg hid" title="ЭКСП. Грань стены перестаёт совпадать с границей клетки 96u: перегородка ужимается до 16-48u, а отвоёванная полоса отдаётся полу. Отступ дрожит по сторонам, поэтому край перестаёт быть идеально прямым. Замер по 7 реальным картам: плотность периметра 0.0111, у генератора без этого 0.0069. Только VMF, логику/баланс/нав не трогает. Брашей становится больше.">Тонкие стены (эксп.) <input type="checkbox" id="tFine"></label>
+          <label class="tg hid" title="v127. Скейл текстуры считается ПОД КАЖДУЮ ГРАНЬ так, чтобы вдоль неё уложилось целое число повторов, а шов сел ровно на ребро браша. Ящик 96u получает текстуру ровно по своему размеру, а не обрубок мировой сетки. Работает на телах, укрытиях и предметах мест. Только .vmf, перегенерация не нужна.">Текстура по размеру браша (v127, эксп.) <input type="checkbox" id="tUVfit"></label>
+          <label class="tg hid" title="v127. Подгонять текстуру и у ПОЛА со СТЕНАМИ, а не только у тел. Осторожно: пол и стены нарезаны жадным мешером на плиты произвольного размера, и своя подгонка у каждой плиты разрывает рисунок на каждом стыке. Включай, если материал бесшовный и стыки не видны.">…и у пола со стенами <input type="checkbox" id="tUVall"></label>
+          <label class="tg" title="Показывать структуры на 2D-карте: тоннели (коричневая заливка), здания (пунктирный контур), двери (белые чёрточки).">Структуры на карте <input type="checkbox" id="tStruct" checked></label>
+          <label class="tg" title="v58. Раскрасить 2D-карту по ЗОНАМ (9 областей, как 9 именованных зон dust2). Это то же разбиение, по которому в .vmf раздаются материалы и editor-цвета брашей.">Зоны (разбиение) <input type="checkbox" id="tZones"></label>
+          <label class="tg hid" title="v58. Лендмарки: плита-маркер 8u на каждой развилке (>=3 направления, >=2 зоны) и косяки-пилястры по бокам дверных проёмов. Ходьбу не трогают, дают точки самоориентации.">Лендмарки/косяки <input type="checkbox" id="tLmark" checked></label>
+          <label class="tg hid" title="v58. Заливка светом по зонам: тёплая половина T, холодная CT, нейтральный мид. Без теней, поверх солнца. Цвет читается быстрее текстуры.">Свет по зонам <input type="checkbox" id="tZlight" checked></label>
+          <label class="tg hid" title="v95. Клетка 16u вместо 96u для ОБЫЧНОГО и ОБЪЁМНОГО планировщиков. Вся накопленная логика остаётся, масштабируются только константы, выраженные в клетках. Проём задаётся в юнитах: 112u шириной, 48u длиной. Замер: на 96u реальная карта теряет половину стоящих тел и треть периметра стен, узкое место короче 96u невыразимо в принципе.">КЛЕТКА 16u для обычного планировщика (v95) <input type="checkbox" id="tFine16" checked></label>
+          <label class="tg hid" title="v94. Помещение перестаёт быть пустым прямоугольником: внутрь ставятся перегородки, примыкающие к одной стороне, и колонны. Замер v93: пустых залов 1584k u² против 683k у dust2 и 0 у tuscan. Работает только в режиме ФИГУР.">Внутренняя разбивка помещений (v94) <input type="checkbox" id="tInner" checked></label>
+          <label class="tg hid" title="v94. Листья BSP разного размера: было 288–672u все примерно одинаковые, стало до 1150u с большим размахом. Реальные помещения 400–1300u. Работает только в режиме ОБЪЁМОВ. ВЫКЛЮЧЕНО ПО УМОЛЧАНИЮ: замер показал ухудшение — доля мест шире 448u выросла с 6.7% до 66.7%, пустых залов с 97k до 1143k.">Разноразмерные комнаты (v94, ухудшает) <input type="checkbox" id="tUneven"></label>
+          <label class="tg hid" title="v93. ЭКСП. План хранится ФИГУРАМИ в юнитах, растр 16u выводится из них. Помещения — прямоугольники, проходы — полосы, проём — короткий узкий участок длиной в толщину стены (32-80u). Первая версия ПЛОСКАЯ: вертикали нет, проверяется только структура. Перебивает предыдущий тумблер.">ФИГУРЫ в юнитах, клетка 16u (v93) <input type="checkbox" id="tShapes"></label>
+          <label class="tg hid" title="v92. ЭКСП. Другой планировщик: карта режется рекурсивным BSP на прямоугольные помещения, смежные делят общую стену, а проход — дыра в этой стене. Это второй путь из §6.1 свода, он был написан и всё время выключен (MODE='corridor'). Меняет геометрию целиком.">Планировщик: ОБЪЁМЫ вместо коридоров (эксп.) <input type="checkbox" id="tPart"></label>
+          <label class="tg hid" title="v92. Проём в одну клетку (96u) у обоих концов КАЖДОГО прохода, включая узкие — раньше 80% рёбер шли ровной трубой 192u без единого сужения. Длина порога фиксирована в клетках, а не долей пути: именно из-за доли провалился флаг gate в v57.">Проёмы на концах проходов <input type="checkbox" id="tDoor92"></label>
+          <label class="tg hid" title="v92. Излом посередине длинного прохода: трасса рубится поперечным сдвигом. Даёт скачок обзора без новых стен. Замер: граница зоны на реальных картах — это скачок обзора (в 1.95 раза выше фона на всех 7 картах), а не узость (0.75 и на двух картах не работает).">Излом длинных проходов <input type="checkbox" id="tTurn92"></label>
+          <label class="tg hid" title="v92. 14 зон вместо 9: ZONEOF больше не схлопывает SR/AM/AM2 и SL/BM/BM2 и ML/M в одну зону. У реальных карт зон 13–26. Материалы и цвета не меняются, меняется дробность разбиения, число развилок и лендмарков.">14 зон вместо 9 <input type="checkbox" id="tZ14" checked></label>
+        </div>
+        <div class="ctl" title="v58. Набор материалов. ТОЛЬКО ПЛОСКИЕ материалы: структурным (забор, профлист, кладка) нужен точный масштаб, а генератор кладёт браши произвольных размеров. greybox — dev-серые по РОЛИ, масштаб не важен. flat — плоский арт, зоны различает свет. paint — крашеный бетон по зонам (нужен подтверждённый CONC).">
+          <div class="row"><label>Палитра</label><span class="val" id="vPal">paint</span></div>
+          <input type="range" id="sPal" min="0" max="2" step="1" value="2">
+        </div>
+      </div>
+
+      <div class="card readout">
+        <h2>Баланс</h2>
+        <div id="sites"></div>
+        <div class="meta" id="meta"></div>
+        <div class="meta" id="audit"></div>
+      </div>
+
+      <div class="card">
+        <h2>Структура</h2>
+        <p class="note"><b>Три лейна</b> от T · <b>мид</b>-хаб с ротациями · пленты у CT. <b>A открытый</b>, <b>B тесный</b>. Тела в зонах дают <b>пончики</b> (обход тела с двух сторон = два рта одной длины), острова-укрытия и неровный край — всё тайминг-нейтрально, длинных обходов нет.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>

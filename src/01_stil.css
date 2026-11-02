@@ -1,0 +1,125 @@
+  :root{
+    --bg:#0b0f14; --panel:#121a23; --panel2:#18222d; --line:#233140; --line2:#2f3f50;
+    --body:#202d3a; --ink:#e6edf3; --muted:#7d92a4;
+    --T:#e8a24a; --CT:#4f9fe0; --fair:#37d6a8; --site:#f3f8fc;
+    --mono:'IBM Plex Mono',ui-monospace,monospace; --disp:'Chakra Petch',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; background:radial-gradient(1100px 560px at 72% -12%, #16212c 0%, transparent 62%), var(--bg);
+    color:var(--ink); font-family:var(--disp); -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1560px; margin:0 auto; padding:26px 20px 60px;}
+  header.top{display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap;
+    border-bottom:1px solid var(--line); padding-bottom:18px; margin-bottom:22px;}
+  .brand .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.26em; text-transform:uppercase; color:var(--fair);}
+  .brand h1{font-weight:700; letter-spacing:.05em; font-size:36px; margin:5px 0 0; line-height:1;}
+  .brand p{margin:9px 0 0; color:var(--muted); font-size:14px; max-width:64ch; line-height:1.55;}
+  .layout{display:grid; grid-template-columns:minmax(0,1fr) 336px; gap:22px; align-items:start;}
+  @media (max-width:880px){ .layout{grid-template-columns:1fr} }
+  .stage{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px; position:relative;}
+  /* v100: размер холста задаётся из JS — и по ширине колонки, и по высоте окна.
+     width:100% тут был вреден: буфер при мелкой клетке вдвое шире колонки,
+     а высота ставилась в пикселях буфера — карту сплющивало по горизонтали. */
+  canvas{display:block; margin:0 auto; max-width:100%; border-radius:8px; background:#080b0f;}
+  .legend{display:flex; gap:15px; flex-wrap:wrap; margin-top:12px; font-family:var(--mono); font-size:11px; color:var(--muted);}
+  .legend .sw{display:inline-flex; align-items:center; gap:7px;}
+  .legend .dot{width:11px; height:11px; border-radius:3px; display:inline-block;}
+  .panel{display:flex; flex-direction:column; gap:16px;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px;}
+  .card h2{font-family:var(--mono); font-weight:500; font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin:0 0 12px;}
+  button.gen{width:100%; font-family:var(--disp); font-weight:600; letter-spacing:.04em; font-size:15px;
+    color:#07131c; background:linear-gradient(180deg,#57e0b6,#31c398); border:0; border-radius:10px; padding:13px; cursor:pointer; transition:filter .15s, transform .06s;}
+  button.gen:hover{filter:brightness(1.06)} button.gen:active{transform:translateY(1px)}
+  button.gen.alt{margin-top:9px; background:transparent; color:var(--fair); border:1px solid var(--line2); font-weight:500; font-size:13.5px; padding:11px;}
+  button.gen.alt:hover{border-color:var(--fair); filter:none;}
+  .ctl{margin:14px 0;}
+  .ctl .row{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
+  .ctl label{font-size:13px;} .ctl .val{font-family:var(--mono); font-size:13px; color:var(--fair);}
+  input[type=range]{width:100%; -webkit-appearance:none; height:4px; border-radius:3px; background:var(--line2); outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:15px; height:15px; border-radius:50%; background:var(--fair); cursor:pointer; border:2px solid #0b0f14;}
+  input[type=range]::-moz-range-thumb{width:15px; height:15px; border-radius:50%; background:var(--fair); cursor:pointer; border:2px solid #0b0f14;}
+  .toggles{display:flex; flex-direction:column; gap:9px; margin-top:4px;}
+  /* v99: тумблеры-решения убраны из панели. Флаг и код на месте, значение прибито. */
+  .tg.hid{display:none !important;}
+  details.grp{border:1px solid var(--line); border-radius:10px; padding:8px 11px; margin-top:12px;}
+  details.grp>summary{cursor:pointer; font-family:var(--mono); font-size:11px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--muted); list-style:none; user-select:none;}
+  details.grp>summary::-webkit-details-marker{display:none;}
+  details.grp>summary::before{content:'▸ '; }
+  details.grp[open]>summary::before{content:'▾ '; }
+  details.grp>summary:hover{color:var(--fair);}
+  .tg{display:flex; align-items:center; justify-content:space-between; font-size:13px; cursor:pointer;}
+  .tg input{appearance:none; width:34px; height:19px; border-radius:11px; background:var(--line2); position:relative; cursor:pointer; transition:background .15s; outline:none;}
+  .tg input:checked{background:var(--fair);}
+  .tg input::after{content:""; position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%; background:#eef4f8; transition:transform .15s;}
+  .tg input:checked::after{transform:translateX(15px);}
+  .readout .site-row{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line);}
+  .badge{width:26px; height:26px; border-radius:7px; display:grid; place-items:center; font-weight:700; font-size:13px; flex:none; background:var(--panel2); border:1px solid var(--line2); color:var(--site); line-height:1;}
+  .badge small{font-size:8px; color:var(--muted); font-weight:500;}
+  .times{font-family:var(--mono); font-size:12px; line-height:1.5; flex:1;}
+  .times .ct{color:var(--CT)} .times .t{color:var(--T)}
+  .marg{font-family:var(--mono); font-size:11.5px; padding:3px 7px; border-radius:6px; white-space:nowrap; background:rgba(55,214,168,.12); color:var(--fair); border:1px solid rgba(55,214,168,.28);}
+  .meta{font-family:var(--mono); font-size:11.5px; color:var(--muted); line-height:1.8; margin-top:11px;}
+  .meta b{color:var(--ink); font-weight:500;}
+  .note{font-size:12.5px; color:var(--muted); line-height:1.62;} .note b{color:var(--ink); font-weight:500;}
+  .flash{position:absolute; inset:14px; border-radius:8px; background:#080b0fcc; display:grid; place-items:center; font-family:var(--mono); font-size:12px; color:var(--fair); letter-spacing:.14em; opacity:0; pointer-events:none; transition:opacity .18s;}
+  .flash.on{opacity:1;}
+  .pretip{position:fixed; z-index:60; background:#0e1620; border:1px solid var(--line2); border-radius:11px; padding:11px; width:322px; box-shadow:0 14px 40px #000c; pointer-events:none; opacity:0; transform:translateY(4px); transition:opacity .12s, transform .12s; font-family:var(--disp);}
+  .pretip.on{opacity:1; transform:translateY(0);}
+  .pretip h4{margin:0 0 9px; font-size:11px; font-family:var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--fair);}
+  .pretip .imgs{display:flex; gap:9px;}
+  .pretip .col{flex:1; text-align:center;}
+  .pretip canvas{width:100%; height:auto; border-radius:7px; background:#0b0f14; display:block; border:1px solid var(--line);}
+  .pretip .cap{font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:5px;}
+  .pretip .desc{font-size:12px; color:var(--ink); line-height:1.5; margin-top:9px;}
+  /* v100: длинная простыня убрана под «подробнее» — она съедала высоту, которой не хватало карте */
+  .lede{font-size:14px;}
+  details.about{margin-top:7px; font-size:12.5px; color:var(--muted); line-height:1.55;}
+  details.about>summary{cursor:pointer; font-family:var(--mono); font-size:11px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); list-style:none;}
+  details.about>summary::-webkit-details-marker{display:none;}
+  details.about>summary::before{content:'▸ ';}
+  details.about[open]>summary::before{content:'▾ ';}
+  header.top{padding-bottom:12px; margin-bottom:14px;}
+
+  /* ============ v101. КАРТА ВО ВЕСЬ ЭКРАН ============
+     Шапка и колоночная вёрстка убраны: игроку нужен вид на карту, а не плашки.
+     Сцена растянута на всё окно, панель лежит поверх справа и скроллится сама.
+     Панель прячется кнопкой у правого края или клавишей H — тогда карта
+     занимает окно целиком. */
+  html,body{height:100%; overflow:hidden;}
+  .wrap{max-width:none !important; margin:0 !important; padding:0 !important; height:100%;}
+  header.top{display:none !important;}
+  .layout{display:block !important; height:100%;}
+
+  .stage{position:fixed !important; left:0; top:0; bottom:0; right:var(--panelw);
+    display:flex; align-items:center; justify-content:center;
+    background:#080b0f !important; border:0 !important; border-radius:0 !important;
+    padding:14px !important; transition:right .18s ease;}
+  :root{--panelw:368px;}
+  body.nopanel{--panelw:0px;}
+  canvas{border-radius:6px;}
+
+  .legend{position:absolute; left:16px; bottom:12px; margin:0 !important;
+    background:#0b0f14cc; border:1px solid var(--line); border-radius:9px;
+    padding:7px 11px; backdrop-filter:blur(6px); z-index:3;}
+
+  .panel{position:fixed !important; top:0; right:0; bottom:0; width:354px;
+    overflow-y:auto; overflow-x:hidden; padding:14px 14px 40px;
+    background:linear-gradient(180deg,#0b0f14f2,#0b0f14fa); border-left:1px solid var(--line);
+    gap:13px !important; z-index:5; transition:transform .18s ease;
+    scrollbar-width:thin;}
+  body.nopanel .panel{transform:translateX(100%);}
+  .panel::-webkit-scrollbar{width:8px;}
+  .panel::-webkit-scrollbar-thumb{background:#1d2733; border-radius:6px;}
+
+  /* корешок: прячет и достаёт панель */
+  #tab{position:fixed; z-index:6; top:50%; transform:translateY(-50%);
+    right:var(--panelw); width:22px; height:74px; display:grid; place-items:center;
+    background:#131c26; border:1px solid var(--line2); border-right:0;
+    border-radius:9px 0 0 9px; color:var(--muted); cursor:pointer; font-size:13px;
+    transition:right .18s ease, color .12s;}
+  #tab:hover{color:var(--fair);}
+  /* марка — мелко, в углу, не мешает */
+  #mark{position:fixed; left:16px; top:12px; z-index:4; pointer-events:none;
+    font-family:var(--mono); font-size:11px; letter-spacing:.2em; text-transform:uppercase;
+    color:#46586b;}
