@@ -24,7 +24,7 @@ const path=require('path');
   const сборка=process.argv[2];
   const сиды=[]; let N=+(process.argv[3]||5);
   if(process.argv[3]==='--сид'){ N=process.argv.length-4; for(let i=4;i<process.argv.length;i++) сиды.push(process.argv[i]); }
-  const b=await chromium.launch({executablePath:EXE});
+  const b=await chromium.launch(require("fs").existsSync(EXE)?{executablePath:EXE}:{});
   const p=await b.newPage();
   p.on('pageerror',e=>console.log('ОШИБКА СТРАНИЦЫ:',String(e.message).slice(0,200)));
   await p.goto('file://'+path.resolve(сборка),{timeout:180000});

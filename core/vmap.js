@@ -52,6 +52,7 @@ function boxPoly(b) {
    'мир' (М) — общая сетка мира, скейл постоянный, шов где придётся;
    'грань' (Ф) — ровно одна картинка на грань, шов на рёбрах (ящик). */
 function faceTex(pts, n, tex) {
+  if (tex.U) return { U: tex.U, V: tex.V, scale: tex.scale, T: tex.size || 512 };   // уже посчитано (перевод из .vmf)
   const [U, V] = texAxes(n);
   const T = tex.size || 512;
   if (tex.rule === 'грань') {
@@ -217,8 +218,23 @@ function toVmap(scene, templateText, seed, texSizes) {
     mats.forEach(x => allMats.add(x));
     return el;
   };
-  for (const b of scene.boxes) kids.push(mesh(b));
+  for (const b of scene.boxes || []) kids.push(mesh(b));
   for (const p of scene.points || []) kids.push(entityEl(tpl, p.cls, p.at, p.props, p.angles, idg, node++));
+  /* Готовые многогранники (перевод из .vmf): у каждой грани свой материал и развёртка. */
+  const polyMesh = pm => {
+    const { el, mats } = meshEl(tpl, pm.poly, fi => pm.poly.faces[fi].tex, fi => 'materials/' + pm.poly.faces[fi].mat + '.vmat', idg, node++);
+    mats.forEach(x => allMats.add(x));
+    return el;
+  };
+  for (const pm of scene.polys || []) kids.push(polyMesh(pm));
+  for (const e of scene.ents || []) {
+    const n = node++;
+    const ch = (e.polys || []).map(polyMesh);
+    const at = e.at || (ch.length ? ch[0].get('origin').split(' ').map(Number) : [0, 0, 0]);
+    const el = entityEl(tpl, e.cls, at, e.props, e.angles, idg, n, null);
+    el.put('children', 'element_array', ch);
+    kids.push(el);
+  }
   for (const be of scene.brushEnts || []) {
     const b = Object.assign({ mat: 'tools/toolstrigger' }, be.box, { mat: be.mat || 'tools/toolstrigger' });
     const n = node++, m = mesh(b);

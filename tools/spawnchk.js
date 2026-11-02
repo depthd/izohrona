@@ -3,7 +3,7 @@
 const { chromium } = require('playwright');
 const fs=require('fs'), path=require('path');
 (async()=>{ const EXE='/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
-  const b=await chromium.launch({executablePath:EXE});
+  const b=await chromium.launch(require("fs").existsSync(EXE)?{executablePath:EXE}:{});
   const p=await b.newPage({viewport:{width:1000,height:800}});
   p.on('pageerror',e=>console.log('ERR',e.message));
   await p.goto('file://'+path.resolve('builds/izohrona_v139.html'));

@@ -12,7 +12,7 @@ const fs=require('fs'), path=require('path');
 (async()=>{ const EXE='/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
   const сборка=process.argv[2], куда=process.argv[3]||'/tmp/rastr', тройка=process.argv[4];
   fs.mkdirSync(куда,{recursive:true});
-  const b=await chromium.launch({executablePath:EXE});
+  const b=await chromium.launch(require("fs").existsSync(EXE)?{executablePath:EXE}:{});
   const p=await b.newPage();
   p.on('pageerror',e=>console.error('ОШИБКА СТРАНИЦЫ:',String(e.message).slice(0,200)));
   await p.goto('file://'+path.resolve(сборка),{timeout:180000});

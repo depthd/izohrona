@@ -2,7 +2,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 (async () => {
   const EXE='/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
-  const b=await chromium.launch({executablePath:EXE});
+  const b=await chromium.launch(require("fs").existsSync(EXE)?{executablePath:EXE}:{});
   const p=await b.newPage({viewport:{width:1400,height:1200}});
   const errs=[]; p.on('pageerror',e=>errs.push(e.message));
   await p.goto('file://'+path.resolve(process.argv[2]));

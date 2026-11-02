@@ -7,7 +7,7 @@ const { chromium } = require('playwright');
 const path=require('path');
 (async()=>{ const EXE='/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
   const сборка=process.argv[2], куда=process.argv[3]||'/tmp/3d.png', тройка=process.argv[4];
-  const b=await chromium.launch({executablePath:EXE});
+  const b=await chromium.launch(require("fs").existsSync(EXE)?{executablePath:EXE}:{});
   const p=await b.newPage({viewport:{width:1600,height:1200},deviceScaleFactor:1});
   p.on('pageerror',e=>console.log('ОШИБКА СТРАНИЦЫ:',String(e.message).slice(0,180)));
   await p.goto('file://'+path.resolve(сборка),{timeout:180000});
