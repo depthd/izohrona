@@ -238,4 +238,4 @@ function toVmap(scene, templateText, seed, texSizes) {
   return write(doc, idg.uuid);
 }
 
-module.exports = { toVmap, boxPoly, halfEdges, newell, texAxes };
+module.exports = { toVmap, boxPoly, halfEdges, newell, texAxes, faceTex };
