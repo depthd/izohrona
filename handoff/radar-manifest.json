@@ -1,0 +1,595 @@
+{
+  "repository": "MurkyYT/cs2-map-icons",
+  "revision": "6dcfb3a770afc08a16c4e843c51b873cac7fc4d5",
+  "coverage": "All radar and overview files in this source revision; not all Workshop maps or every historical version.",
+  "files": [
+    {
+      "path": "data/radar_info/ar_baggage.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/ar_baggage.txt",
+      "sha256": "72c88c5037edd778e254f3e8b15743e0c6eb912fd9cac1a774862c094d3f0ed3",
+      "bytes": 496
+    },
+    {
+      "path": "data/radar_info/ar_shoots.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/ar_shoots.txt",
+      "sha256": "679d48f96d4b23c17c9ee55256c3ed574ee5c04eaf1e835ac4330fa5a3e4c66d",
+      "bytes": 216
+    },
+    {
+      "path": "data/radar_info/ar_shoots_night.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/ar_shoots_night.txt",
+      "sha256": "65e55b0ec3cf60a9e63b7cb09cf51ee1c5028f7ab2af707cacfbfe2cfa9804bf",
+      "bytes": 228
+    },
+    {
+      "path": "data/radar_info/cs_italy.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/cs_italy.txt",
+      "sha256": "4306c58dcb405f4f3678d34d1ff288349a9316a8f466915306bdce231ebc4381",
+      "bytes": 634
+    },
+    {
+      "path": "data/radar_info/cs_office.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/cs_office.txt",
+      "sha256": "2f40310bad3ba597d1a25d73d43df009af3826f19c3f0871f7c57755c6d50478",
+      "bytes": 605
+    },
+    {
+      "path": "data/radar_info/cs_shelter.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/cs_shelter.txt",
+      "sha256": "4b63f540d5600dc5d8843432460d63759ac3db568e398cda918fcf28b2617d4e",
+      "bytes": 256
+    },
+    {
+      "path": "data/radar_info/de_ancient.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_ancient.txt",
+      "sha256": "f6b420a983e2702c3c0d903a901483b6bc61fcf5eef2b6fb62da485ba93eb3c1",
+      "bytes": 447
+    },
+    {
+      "path": "data/radar_info/de_ancient_night.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_ancient_night.txt",
+      "sha256": "f6b420a983e2702c3c0d903a901483b6bc61fcf5eef2b6fb62da485ba93eb3c1",
+      "bytes": 447
+    },
+    {
+      "path": "data/radar_info/de_anubis.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_anubis.txt",
+      "sha256": "f83755ed8a85365923ac565d3fbd2ab1391e75d8b89cfd759da9214bf80e9fff",
+      "bytes": 254
+    },
+    {
+      "path": "data/radar_info/de_boulder.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_boulder.txt",
+      "sha256": "62aeb30d98bb6919029f073bf4b5e2d30abcff282ab0c316dcf08df03676d872",
+      "bytes": 346
+    },
+    {
+      "path": "data/radar_info/de_cache.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_cache.txt",
+      "sha256": "4344e0364bc9ec31f9f3fc04fe24aacb465e5252f8c173e661cebec586b54c0d",
+      "bytes": 527
+    },
+    {
+      "path": "data/radar_info/de_debris.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_debris.txt",
+      "sha256": "9765203ebe33aa68548f74fd0f1ac242508413f042b2d57d9971c01d9b623bc4",
+      "bytes": 256
+    },
+    {
+      "path": "data/radar_info/de_dust.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_dust.txt",
+      "sha256": "25235deeed2ad44c7cdaec43c97517e89debfcf0105f2fc2b18c60db8c761316",
+      "bytes": 438
+    },
+    {
+      "path": "data/radar_info/de_dust2.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_dust2.txt",
+      "sha256": "97947e99bc7930fc06dc15af3dcf942dbca5ca1c6f36119a089615fd4b383620",
+      "bytes": 541
+    },
+    {
+      "path": "data/radar_info/de_eldorado.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_eldorado.txt",
+      "sha256": "c4b1cfddf4abffc28b51c8faf2824b1f21b6aeb869a74bc8a91a61a9100f9e62",
+      "bytes": 258
+    },
+    {
+      "path": "data/radar_info/de_fachwerk.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_fachwerk.txt",
+      "sha256": "528221ed76c06adbc23b491876ec8ecafda087062e87a95b80db53022c7e06b1",
+      "bytes": 258
+    },
+    {
+      "path": "data/radar_info/de_inferno.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_inferno.txt",
+      "sha256": "ff93b0ff1f6705ccfb4daf3b038dd88ccdf3ca776823667c19782650e94d2c54",
+      "bytes": 414
+    },
+    {
+      "path": "data/radar_info/de_mirage.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_mirage.txt",
+      "sha256": "f201fd608d6ea0bd091920620a4f74e97197d26caf36f133875b58d5ba1d77fe",
+      "bytes": 640
+    },
+    {
+      "path": "data/radar_info/de_nuke.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_nuke.txt",
+      "sha256": "877a8df76cee8e5abc4756df162790ed25c5f5dd994ed9d895a7bc3a9c3ac585",
+      "bytes": 746
+    },
+    {
+      "path": "data/radar_info/de_overpass.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_overpass.txt",
+      "sha256": "23b44305d79a15dc9feea71528a7015d6f3612044a8367f29b20c65aec2e7897",
+      "bytes": 444
+    },
+    {
+      "path": "data/radar_info/de_poseidon.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_poseidon.txt",
+      "sha256": "93686c30dff8b05834ec1c4a4d69155993d68b0f8047c3004959122604e2d8e9",
+      "bytes": 258
+    },
+    {
+      "path": "data/radar_info/de_train.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_train.txt",
+      "sha256": "13600850d41b034d973102602e5694e6c09057390d4d37490e605f54b71b4d55",
+      "bytes": 547
+    },
+    {
+      "path": "data/radar_info/de_vertigo.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/de_vertigo.txt",
+      "sha256": "61cd5156d443c10c898283dfb98cdfaf5befb2a24afa18e27f76b89b4d908541",
+      "bytes": 767
+    },
+    {
+      "path": "data/radar_info/rush_001.txt",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/data/radar_info/rush_001.txt",
+      "sha256": "bc476fc6829340daf40c15c078b519d06336bf60bd6b916aba14a11aad398b13",
+      "bytes": 2464
+    },
+    {
+      "path": "images/radars/ar_baggage_lower_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/ar_baggage_lower_radar_psd.png",
+      "sha256": "d473bc6866a4e7c25b69c03b3c467bfb981bc27f4bbba2e9cf24c222f137f225",
+      "bytes": 46299
+    },
+    {
+      "path": "images/radars/ar_baggage_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/ar_baggage_radar_psd.png",
+      "sha256": "2d830cc4c570ab3fcffd8d36a78e04f856aa885ffbdb99459d7740e5fc7b18e3",
+      "bytes": 99670
+    },
+    {
+      "path": "images/radars/ar_shoots_night_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/ar_shoots_night_radar_psd.png",
+      "sha256": "a95bdbd9e4140b78866f6ccdb304c131411e41fbd905046323a71d6dc431cbba",
+      "bytes": 174232
+    },
+    {
+      "path": "images/radars/ar_shoots_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/ar_shoots_radar_psd.png",
+      "sha256": "bf40db341a0777e7c0fc929fe3ac02ec7bc0fe2528a58b65fbd4bc271b84adce",
+      "bytes": 239996
+    },
+    {
+      "path": "images/radars/cs_italy_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/cs_italy_radar_psd.png",
+      "sha256": "292c0bbe85d64b78f2eb25fd6d5f1b3dddb60973c39d70fa88967b58079d40fb",
+      "bytes": 80981
+    },
+    {
+      "path": "images/radars/cs_office_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/cs_office_radar_psd.png",
+      "sha256": "917e1026cbe56727da45d9e2e6e829689fe1307143fc07a0f121bc66d6d38c6f",
+      "bytes": 160768
+    },
+    {
+      "path": "images/radars/cs_shelter_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/cs_shelter_radar_tga.png",
+      "sha256": "2ca8ff94b2a3c1237a9cea286fd7155a78defcd0e88f61f8b96a3e369a306725",
+      "bytes": 539472
+    },
+    {
+      "path": "images/radars/de_ancient_night_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_ancient_night_radar_psd.png",
+      "sha256": "27c6fa04feb40b70cc28e1b46e8bd30583a6f1d58495d14ca38c5f0d843c6c72",
+      "bytes": 54031
+    },
+    {
+      "path": "images/radars/de_ancient_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_ancient_radar_psd.png",
+      "sha256": "88fe108f7cc54d89b9c6179155cc39f419aa02f79df1a3f36031049577fd1952",
+      "bytes": 63894
+    },
+    {
+      "path": "images/radars/de_ancient_v1_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_ancient_v1_radar_psd.png",
+      "sha256": "88fe108f7cc54d89b9c6179155cc39f419aa02f79df1a3f36031049577fd1952",
+      "bytes": 63894
+    },
+    {
+      "path": "images/radars/de_anubis_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_anubis_radar_psd.png",
+      "sha256": "7c9badbb4ecb655d3d789724ca9d615bb06abf721d776176018ee3263a8a7b94",
+      "bytes": 177532
+    },
+    {
+      "path": "images/radars/de_boulder_higher1_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_boulder_higher1_radar_tga.png",
+      "sha256": "ecde5e35eeab10f4bb0580cbec1fada66d9806d05a67e304b75124526084a2df",
+      "bytes": 703632
+    },
+    {
+      "path": "images/radars/de_boulder_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_boulder_radar_tga.png",
+      "sha256": "783ff97ce400a0786eac75d559da57bc99cd59dcd1108333b35414be9313ff02",
+      "bytes": 696927
+    },
+    {
+      "path": "images/radars/de_cache_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_cache_radar_psd.png",
+      "sha256": "afa47fd3111f007cedfbb580f740780427531e8ce6b9dcc55a13d9104e2ed6a6",
+      "bytes": 74557
+    },
+    {
+      "path": "images/radars/de_cache_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_cache_radar_tga.png",
+      "sha256": "2681c3f9e08a3892e1d323d91989e736245b468afb36021a8179b456ce7f4a6b",
+      "bytes": 408546
+    },
+    {
+      "path": "images/radars/de_debris_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_debris_radar_tga.png",
+      "sha256": "10fa8612e562bb4027cbac61ad1b5d5d09165079918df37a8e3b3e3dca10eaaa",
+      "bytes": 903675
+    },
+    {
+      "path": "images/radars/de_dogtown_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_dogtown_radar.png",
+      "sha256": "808b16026891541639c6d7362249da3796bbac0d2d3e741b2066c0a6e05dd375",
+      "bytes": 184305
+    },
+    {
+      "path": "images/radars/de_dust2_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_dust2_radar_psd.png",
+      "sha256": "3be20317d1383da6f390a5bb245cabb65857ef08b1e2c5b82b5938a8cb3167bb",
+      "bytes": 153557
+    },
+    {
+      "path": "images/radars/de_dust_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_dust_radar.png",
+      "sha256": "67c17d0030910b4df7c0b64efad036255cbd8bfc67137bfb3fa1980c1fa9de15",
+      "bytes": 374982
+    },
+    {
+      "path": "images/radars/de_edin_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_edin_radar.png",
+      "sha256": "9017d9258f6748c30177191182364dbfd096931b45160f2b73da1956ddc5fe30",
+      "bytes": 118414
+    },
+    {
+      "path": "images/radars/de_eldorado_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_eldorado_radar_tga.png",
+      "sha256": "da14d07d792e5cb46ef1bbe66055107f5bee6df84c6b81f97cd22e0dc6d26ff5",
+      "bytes": 406612
+    },
+    {
+      "path": "images/radars/de_eldorado_radar_tga_dabd6972.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_eldorado_radar_tga_dabd6972.png",
+      "sha256": "cef534f729eb4d4a1802dfb4fb4f0197a1d314dfba646e5ca1eaa35c2f02696b",
+      "bytes": 140790
+    },
+    {
+      "path": "images/radars/de_eldorado_v20_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_eldorado_v20_radar_tga.png",
+      "sha256": "bc09adc3e94dd73ff207218567051ca61ed4684c82d7e4923e11b82deb38d5f0",
+      "bytes": 71670
+    },
+    {
+      "path": "images/radars/de_fachwerk_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_fachwerk_radar_tga.png",
+      "sha256": "70ece1801be82fa2f7e315f10e320490a8156d3f190150d465fa253b8a91981a",
+      "bytes": 903725
+    },
+    {
+      "path": "images/radars/de_fachwerk_radar_tga_e7f1da5c.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_fachwerk_radar_tga_e7f1da5c.png",
+      "sha256": "b3919400b967c2c871ab1870b0623d66b544af476ca35c889ccdfac5cdaf3f92",
+      "bytes": 1023659
+    },
+    {
+      "path": "images/radars/de_golden_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_golden_radar.png",
+      "sha256": "4e3ace1d287b80f64e47b567c51e00557e4eaeecd81d0c3d9c17a490ec65453a",
+      "bytes": 149106
+    },
+    {
+      "path": "images/radars/de_grail_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_grail_radar.png",
+      "sha256": "750c269c0b0eb667e620f137fd6980c0442636e2b3d520d7ffeee0c0192bc1c2",
+      "bytes": 874368
+    },
+    {
+      "path": "images/radars/de_inferno_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_inferno_radar_psd.png",
+      "sha256": "e4929829f8475d2edcb44ee3537ffad094dc8008b4d6f5aa81e66e77ddb077ba",
+      "bytes": 109883
+    },
+    {
+      "path": "images/radars/de_jura_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_jura_radar.png",
+      "sha256": "e2e8bbc4407d9876a30fb6b6e800346ce8e0bc1a02ad0aec916c41401ee7cf4f",
+      "bytes": 874330
+    },
+    {
+      "path": "images/radars/de_lake_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_lake_radar.png",
+      "sha256": "3c2e96be81654ae6b0f9dd2f3fdb022022d1f992ed19c377c0745841a830b99d",
+      "bytes": 667109
+    },
+    {
+      "path": "images/radars/de_memento_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_memento_radar.png",
+      "sha256": "07c89e0e2f4a7e57f26f3166123424e799b596d1fbac6694dd27b8471e62ce02",
+      "bytes": 223918
+    },
+    {
+      "path": "images/radars/de_mills_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_mills_radar.png",
+      "sha256": "80ed7b493918b329dc319524cae19d269adc6cdcdc7e8ac7445ba5386fd4be04",
+      "bytes": 91946
+    },
+    {
+      "path": "images/radars/de_mirage_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_mirage_radar_psd.png",
+      "sha256": "5de1cc16362e538dc5f4561a24661cb1fb1c15c77ec289e32b44c0fc07bfb85b",
+      "bytes": 111393
+    },
+    {
+      "path": "images/radars/de_nuke_lower_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_nuke_lower_radar_psd.png",
+      "sha256": "040c958f141d0365ca9125388bc20228b0df0ac6abd1fe78d743ecfa1be4bb64",
+      "bytes": 80046
+    },
+    {
+      "path": "images/radars/de_nuke_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_nuke_radar_psd.png",
+      "sha256": "6230346d3ce969006062fbd02220b083245f621ef366ce26a42dc27a80120bd0",
+      "bytes": 80130
+    },
+    {
+      "path": "images/radars/de_overpass_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_overpass_radar_psd.png",
+      "sha256": "ab3bfff1c3cc8da47eda921511b3eb34028e24b718b85709ac080f123fd4c108",
+      "bytes": 231444
+    },
+    {
+      "path": "images/radars/de_palacio_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_palacio_radar.png",
+      "sha256": "34c0d8d13a55c937fed6b84c7253061ac51e5c153d417bbea39971dfe5489814",
+      "bytes": 256253
+    },
+    {
+      "path": "images/radars/de_palais_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_palais_radar.png",
+      "sha256": "8f0ececa8cbf1ee72059cd861a65acf6c25bb4b32dad3b011fbd258f876161b0",
+      "bytes": 205771
+    },
+    {
+      "path": "images/radars/de_poseidon_radar_spectate_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_poseidon_radar_spectate_tga.png",
+      "sha256": "793486027fb53dc60c430235918d4ca26dc02477acc9f16beb2350a3f52b2a50",
+      "bytes": 80611
+    },
+    {
+      "path": "images/radars/de_poseidon_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_poseidon_radar_tga.png",
+      "sha256": "bad5ef5a65002325e35fa9a640c7f7266952adc1e5bd579c4281dab8e122aa0e",
+      "bytes": 293397
+    },
+    {
+      "path": "images/radars/de_poseidon_radar_tga_f3ba7cb5.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_poseidon_radar_tga_f3ba7cb5.png",
+      "sha256": "cfce91bd3b4d5e1c19b7d4a8852fc7a6c97fb5aff7f2d2b98307f32bda561d61",
+      "bytes": 284501
+    },
+    {
+      "path": "images/radars/de_rooftop_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_rooftop_radar.png",
+      "sha256": "12442fef5f855bfddd77631c2d0a0d4c1dfadc27f9daff479806abaafa6fae68",
+      "bytes": 358697
+    },
+    {
+      "path": "images/radars/de_sugarcane_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_sugarcane_radar_psd.png",
+      "sha256": "4b1822a7b67ae130a985f39c5a782df9db65e1655e6e0fd4a882e68348bd914c",
+      "bytes": 472122
+    },
+    {
+      "path": "images/radars/de_thera_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_thera_radar.png",
+      "sha256": "932fd2416d924a83f0e0afdfa8dd2e4a003735fcb5b50711eb04be4c4aa69423",
+      "bytes": 336544
+    },
+    {
+      "path": "images/radars/de_train_lower_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_train_lower_radar_psd.png",
+      "sha256": "c1852ca4d1f0ba7ccb426a853f57f203ab5431b32e59323b6bd5cd216d7b40ed",
+      "bytes": 103798
+    },
+    {
+      "path": "images/radars/de_train_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_train_radar_psd.png",
+      "sha256": "26007eea00d58e722058b11b96b16e08d4b28bf5494a4df141463a7dbcb0648a",
+      "bytes": 114812
+    },
+    {
+      "path": "images/radars/de_transit_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_transit_radar.png",
+      "sha256": "188d857847b9d93f2df0487814e62e0bea60eac8c36f553fda746f5fcc934e7f",
+      "bytes": 539898
+    },
+    {
+      "path": "images/radars/de_vertigo_lower_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_vertigo_lower_radar_psd.png",
+      "sha256": "89ab966da946061906ab0d8876b9b45761291e8080149246611e12de526cd673",
+      "bytes": 98793
+    },
+    {
+      "path": "images/radars/de_vertigo_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_vertigo_radar_psd.png",
+      "sha256": "3cfa3f044ed5883098e78ab63939a3c9e39fc2c0c2100e59acf4e2c3fa09df43",
+      "bytes": 77009
+    },
+    {
+      "path": "images/radars/de_whistle_radar.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/de_whistle_radar.png",
+      "sha256": "66b9e949d00d2b7c1f5bee92b4ae03dcf8d2e7a77f2286b12a9852f87555999c",
+      "bytes": 103756
+    },
+    {
+      "path": "images/radars/default_png.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/default_png.png",
+      "sha256": "b6ee51d428225de0bf10dbd10f0df1b4d1a6138aa77c6e9f217d47fe544c669f",
+      "bytes": 430935
+    },
+    {
+      "path": "images/radars/rush_001_convoy_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_convoy_radar_tga.png",
+      "sha256": "248c3f99bd627d646371bd4f96642b80bae45a97eeaba1972f19554f8bfa49e4",
+      "bytes": 35932
+    },
+    {
+      "path": "images/radars/rush_001_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_radar_tga.png",
+      "sha256": "b9174f513aa077571acdd93426f2d94fe4289b767be59bdb03cdad1cfe02de3d",
+      "bytes": 450156
+    },
+    {
+      "path": "images/radars/rush_001_room101_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room101_radar_tga.png",
+      "sha256": "2f46ed5cb36fb25949fadd7630552509fac68f39a57d03d38058678558a7e935",
+      "bytes": 100240
+    },
+    {
+      "path": "images/radars/rush_001_room102_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room102_radar_tga.png",
+      "sha256": "23af6ce94278d794bed5b844aaac58f7045974dda5ad44ead840faebe8464c59",
+      "bytes": 68437
+    },
+    {
+      "path": "images/radars/rush_001_room103_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room103_radar_tga.png",
+      "sha256": "7c0009288bc03dd31264ac3189f010ca804411ab137a63340914fd5ba81e0a72",
+      "bytes": 79861
+    },
+    {
+      "path": "images/radars/rush_001_room104_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room104_radar_tga.png",
+      "sha256": "a8bfa89d8b9212c3005b0e587aa0bcc2e605291e77e2925076f2d5b02bee5926",
+      "bytes": 58803
+    },
+    {
+      "path": "images/radars/rush_001_room201_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room201_radar_tga.png",
+      "sha256": "fd093d274a2af535bee6250e489a536174c70e0c7a9a09d46a95ae48b2cfa6b0",
+      "bytes": 94659
+    },
+    {
+      "path": "images/radars/rush_001_room202_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room202_radar_tga.png",
+      "sha256": "583ac7752f514abb938fd68013197c7f6c58d2ed7919e010c27c7cf748b01f11",
+      "bytes": 94911
+    },
+    {
+      "path": "images/radars/rush_001_room203_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room203_radar_tga.png",
+      "sha256": "c51a7da759005ac1a1ba962ef25dfda1f5b40ef9b88f0148304924dbfecf7659",
+      "bytes": 51763
+    },
+    {
+      "path": "images/radars/rush_001_room204_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room204_radar_tga.png",
+      "sha256": "a82176f3fa6b1413f00db343f5fe428b23111eb564a76ab0a6f662e452fac7e9",
+      "bytes": 72982
+    },
+    {
+      "path": "images/radars/rush_001_room205_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room205_radar_tga.png",
+      "sha256": "d5077becd93e58b4e92e9b6bc974ab78c88d211023568891f771c3b6002eb8ab",
+      "bytes": 66170
+    },
+    {
+      "path": "images/radars/rush_001_room206_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room206_radar_tga.png",
+      "sha256": "b62d46c4d2d26597b7532a17ac13fa201035df32dae6c1129bc7a30e76480b52",
+      "bytes": 47691
+    },
+    {
+      "path": "images/radars/rush_001_room207_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room207_radar_tga.png",
+      "sha256": "a4b893b4becc2b8e1ed52135cb7d0161c5baa6a1a02799a4cd37e29a19b2b619",
+      "bytes": 118556
+    },
+    {
+      "path": "images/radars/rush_001_room208_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room208_radar_tga.png",
+      "sha256": "d95593a29796c7f1b046841d759bf714148cd4e6a8fea6203f032171822b48b3",
+      "bytes": 67318
+    },
+    {
+      "path": "images/radars/rush_001_room209_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room209_radar_tga.png",
+      "sha256": "88c748e9b8b2427d1e2e7c397ef74593bdaa217172c26d35e4d604f7b6e4e0a7",
+      "bytes": 116204
+    },
+    {
+      "path": "images/radars/rush_001_room210_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room210_radar_tga.png",
+      "sha256": "45cb48f42b52a652e6e52f148b31ac5fd216a69e018318bba6dc7e54225eef57",
+      "bytes": 59712
+    },
+    {
+      "path": "images/radars/rush_001_room211_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room211_radar_tga.png",
+      "sha256": "d4ef7f8db93957cdb88a580fe832f6ef81e0159fd97f230b80627cd72b310107",
+      "bytes": 72223
+    },
+    {
+      "path": "images/radars/rush_001_room212_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room212_radar_tga.png",
+      "sha256": "413f834a9efaf7d3f6c1e882d510c1737bb65fd71c3d39e8d743faf411313bc4",
+      "bytes": 58881
+    },
+    {
+      "path": "images/radars/rush_001_room301_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room301_radar_tga.png",
+      "sha256": "1171e06a6e43a7d9463f83a369e9b6ba8fd7ec8f7358d85119dce4e6041e25ad",
+      "bytes": 86083
+    },
+    {
+      "path": "images/radars/rush_001_room401_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_room401_radar_tga.png",
+      "sha256": "5933c88a40c3881d79b29d11b9a9958f43f26df0bc04e40840ee6561c37f9727",
+      "bytes": 126103
+    },
+    {
+      "path": "images/radars/rush_001_roomparty_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/rush_001_roomparty_radar_tga.png",
+      "sha256": "bf690e73d98c0328cb1eb57511a999ba47d12ba99dd1b3041cfb3ac722ccbcea",
+      "bytes": 226039
+    },
+    {
+      "path": "images/radars/workshop_preview_radar_psd.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/workshop_preview_radar_psd.png",
+      "sha256": "98ba8cec7ab16652acc0c6f27e9dd46e40ddff57643f87436ef04bee374e7fcb",
+      "bytes": 25043
+    },
+    {
+      "path": "images/radars/workshop_preview_radar_tga.png",
+      "url": "https://raw.githubusercontent.com/MurkyYT/cs2-map-icons/6dcfb3a770afc08a16c4e843c51b873cac7fc4d5/images/radars/workshop_preview_radar_tga.png",
+      "sha256": "3d6113032195156cee7eb6fe5f1dd3e2a231f8ab7a9d0927dc44684ec37550c8",
+      "bytes": 26047
+    }
+  ]
+}
