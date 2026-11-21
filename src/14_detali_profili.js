@@ -13,7 +13,7 @@
    +10% площади, и двигало ширину прохода вверх. У dust2 медиана толщины перегородки
    80u — стена в одну клетку 96u это почти точное попадание, утоньшать её было нечего.
    narrow (сужение широких проходов) — новое и включено. */
-const DET={on:false, проруб:false, wall:false, door:true, zonewall:true, part:true, cover:true, narrow:true,
+const DET={tactics:true,on:false, проруб:false, wall:false, door:true, zonewall:true, part:true, cover:true, narrow:true,
            voidfill:true, shot:true, stepfix:true, deadend:true, lmark:true, cutdead:true, tier:true, seal:true, thickwall:true, deadplace:true,
            /* v139: сверка связности с геометрией — «видно рядом, идти далеко» */
            сшивка:true,
@@ -1769,6 +1769,20 @@ function detRefine(src){
     stat.сшито=сшито; stat.сшивкаTry=попыток; stat.сшивкаПочему=почему;
     stat.врётДо=врётДо; stat.врётПятенДо=пятенДо;
     stat.врёт=врётПосле; stat.врётПятен=пятенПосле;
+  }
+
+  /* Формируем фронты ПОСЛЕ сшивки: иначе она немедленно прорезает новые
+     тактические стены. Проверка крюков и якорей ниже видит итоговую геометрию. */
+  if(DET.tactics){
+    const anchors={};for(const k of ['T','CT','A','B'])anchors[k]=[px[k].x,px[k].y];
+    const occupied=new Uint8Array(N),protectedItems=new Uint8Array(N);
+    const mark=(m,c)=>{for(let y=c.y;y<c.y+c.h;y++)for(let x=c.x;x<c.x+c.w;x++)if(inb(x,y))m[ix(x,y)]=1;};
+    for(const c of cov)if(c.hgt==='full'||c.hgt>40)mark(occupied,c);
+    for(const c of LMKS){mark(occupied,c);mark(protectedItems,c);}
+    stat.tactics=TACTICS.shape(gf,Wf,Hf,anchors,zff,16,occupied,protectedItems);
+    const oldCount=cov.length;
+    cov=cov.filter(c=>{for(let y=c.y;y<c.y+c.h;y++)for(let x=c.x;x<c.x+c.w;x++)if(inb(x,y)&&!gf[ix(x,y)])return false;return true;});
+    stat.tactics.removedCover=oldCount-cov.length;
   }
 
   /* ============ v131. ПРОБИТЬ ПРОХОД МЕЖДУ СОСЕДНИМИ МЕСТАМИ ============
