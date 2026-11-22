@@ -1,0 +1,27 @@
+{
+  "code": "1977715693:3.3155921060562017:2622543813",
+  "profile": "dust2",
+  "tempo": 6,
+  "browser": "151.0.7922.34",
+  "renderer": "Chromium Canvas 2D, 1480×1260, 0.185 px/u",
+  "calibration16": "measure() 16u",
+  "roads": 20,
+  "contacts96": 4,
+  "contacts16": 4,
+  "noContact16": 16,
+  "multiple16": [],
+  "shiftsXY": [
+    5.377,
+    46.48,
+    86.491,
+    136.164
+  ],
+  "only96": 0,
+  "only16": 0,
+  "milliseconds": {
+    "startToOpen": 25797,
+    "openMap": 1930,
+    "measureAndRender": 265,
+    "elapsed": 27993
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "source": "de_dust2_fps_fdfed_1_.zip",
+  "model": "NAV v16 EarliestOccupyTimes, T=0, CT=1; 120 = недоступно",
+  "areas": 1118,
+  "edges": 2301,
+  "unmeasured": 4,
+  "contacts": 35,
+  "timeRange": [
+    7.937340866175072,
+    14.057636724770562
+  ],
+  "placeNames": [
+    "BombsiteB",
+    "Catwalk",
+    "TopofMid",
+    "ExtendedA",
+    "TRamp",
+    "BombsiteA",
+    "TunnelStairs",
+    "TSpawn",
+    "OutsideTunnel",
+    "UnderA",
+    "Short",
+    "UpperTunnel",
+    "CTSpawn",
+    "LongA",
+    "LongDoors",
+    "OutsideLong",
+    "LowerTunnel",
+    "Hole",
+    "ShortStairs",
+    "Side",
+    "MidDoors",
+    "BDoors",
+    "Ramp",
+    "ARamp",
+    "Pit",
+    "Middle"
+  ],
+  "spawnCheck": {
+    "T": {
+      "area": 6992,
+      "t": 0.24078428745269775,
+      "ct": 18.877979278564453
+    },
+    "CT": {
+      "area": 4019,
+      "t": 16.940656661987305,
+      "ct": 0.6653302907943726
+    }
+  },
+  "marks": [
+    {
+      "name": "T",
+      "xyz": [
+        -649.5429,
+        -831.6487999999999,
+        123.64721
+      ]
+    },
+    {
+      "name": "CT",
+      "xyz": [
+        325.4461,
+        2261.689,
+        -118.9
+      ]
+    },
+    {
+      "name": "BombsiteA",
+      "xyz": [
+        1120,
+        2472,
+        148.5
+      ]
+    },
+    {
+      "name": "BombsiteB",
+      "xyz": [
+        -1536,
+        2656,
+        92
+      ]
+    }
+  ]
+}
