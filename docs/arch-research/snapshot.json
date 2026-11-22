@@ -1,0 +1,166 @@
+{
+  "buildSha256": "8febd97708f3b5c0666fd540dff61d98f4a68666dfda80ad59b042853673f3f7",
+  "rows": [
+    {
+      "number": "327306348:4.007582529757321:855372152",
+      "reference": "8006b444f99880c0a2caf1bbe99588effe4c32cd0753e8f8dbc2372e2145dd52",
+      "seed": 327306348,
+      "size": [
+        276,
+        324,
+        16
+      ],
+      "activeNodes": 13,
+      "namedNodes": 14,
+      "edges": 19,
+      "detourRaster": 2.27,
+      "pairsRaster": 59,
+      "vmf": "8006b444f99880c0a2caf1bbe99588effe4c32cd0753e8f8dbc2372e2145dd52",
+      "vmap": "470692e935ff11d4523c6d143f2e0e03ad03b50fecff7fde8f8c54c524717dda",
+      "snapshot": {
+        "vmf": "8006b444f99880c0a2caf1bbe99588effe4c32cd0753e8f8dbc2372e2145dd52",
+        "vmap": "470692e935ff11d4523c6d143f2e0e03ad03b50fecff7fde8f8c54c524717dda",
+        "activeSeed": 1712084959,
+        "floorCells": 40549,
+        "heightErrors": 0,
+        "detourPrint": 2.04,
+        "pairsPrint": 57,
+        "badPairsPrint": 1,
+        "pairDifference": {
+          "раз": 0.27,
+          "пара": "BombsiteB->B Pillar",
+          "растр": 1.54,
+          "печать": 1.82,
+          "i": 4,
+          "j": 5
+        },
+        "narrowRoutes": 20
+      },
+      "equal": true
+    },
+    {
+      "number": "1977468515:3.277789574832176:2996074336",
+      "reference": "7214118f187de2c55673ddca5046f3346ef9127437d267e9a1c7cd5cf719e915",
+      "seed": 1977468515,
+      "size": [
+        276,
+        324,
+        16
+      ],
+      "activeNodes": 13,
+      "namedNodes": 14,
+      "edges": 19,
+      "detourRaster": 2.13,
+      "pairsRaster": 119,
+      "vmf": "7214118f187de2c55673ddca5046f3346ef9127437d267e9a1c7cd5cf719e915",
+      "vmap": "4f1d8deb5e2acc1df8cdbf2860324ac228b27469856086430c253176e27f0c85",
+      "snapshot": {
+        "vmf": "7214118f187de2c55673ddca5046f3346ef9127437d267e9a1c7cd5cf719e915",
+        "vmap": "4f1d8deb5e2acc1df8cdbf2860324ac228b27469856086430c253176e27f0c85",
+        "activeSeed": 1712084959,
+        "floorCells": 29896,
+        "heightErrors": 0,
+        "detourPrint": 2.13,
+        "pairsPrint": 119,
+        "badPairsPrint": 1,
+        "pairDifference": {
+          "раз": 0.2,
+          "пара": "A Barrels->A Container",
+          "растр": 0.93,
+          "печать": 1.13,
+          "i": 6,
+          "j": 12
+        },
+        "narrowRoutes": 33
+      },
+      "equal": true
+    },
+    {
+      "number": "3904671571:3.9450395249503933:3516158308",
+      "reference": "30b20e98f75f80f1a72f37359a173a2422d9602f5fff8de1ee91c28a5b2d20ea",
+      "seed": 3904671571,
+      "size": [
+        276,
+        324,
+        16
+      ],
+      "activeNodes": 13,
+      "namedNodes": 14,
+      "edges": 19,
+      "detourRaster": 1.91,
+      "pairsRaster": 79,
+      "vmf": "30b20e98f75f80f1a72f37359a173a2422d9602f5fff8de1ee91c28a5b2d20ea",
+      "vmap": "582a0d8022c394ab95e94f40741b59f9bc69c825f4682476d68a39da76f3c7c5",
+      "snapshot": {
+        "vmf": "30b20e98f75f80f1a72f37359a173a2422d9602f5fff8de1ee91c28a5b2d20ea",
+        "vmap": "582a0d8022c394ab95e94f40741b59f9bc69c825f4682476d68a39da76f3c7c5",
+        "activeSeed": 1712084959,
+        "floorCells": 35130,
+        "heightErrors": 0,
+        "detourPrint": 1.91,
+        "pairsPrint": 79,
+        "badPairsPrint": 0,
+        "pairDifference": {
+          "раз": 0.25,
+          "пара": "B Barrels->Middle",
+          "растр": 1.06,
+          "печать": 1.3,
+          "i": 6,
+          "j": 12
+        },
+        "narrowRoutes": 9
+      },
+      "equal": true
+    },
+    {
+      "number": "1712084959:2:2164811388",
+      "reference": null,
+      "seed": 1712084959,
+      "size": [
+        276,
+        324,
+        16
+      ],
+      "activeNodes": 13,
+      "namedNodes": 14,
+      "edges": 19,
+      "detourRaster": 2.88,
+      "pairsRaster": 99,
+      "vmf": "7e55e66628600928296a8ce066d04e30e1178b2babf4c16091356155c9bee474",
+      "vmap": "97a214c08071e81e87708c2a677c75427aab18c6c7423f921bf163d8efb45a95",
+      "snapshot": {
+        "vmf": "7e55e66628600928296a8ce066d04e30e1178b2babf4c16091356155c9bee474",
+        "vmap": "97a214c08071e81e87708c2a677c75427aab18c6c7423f921bf163d8efb45a95",
+        "activeSeed": 327306348,
+        "floorCells": 36009,
+        "heightErrors": 0,
+        "detourPrint": 5.22,
+        "pairsPrint": 98,
+        "badPairsPrint": 11,
+        "pairDifference": {
+          "раз": 4.23,
+          "пара": "B Stack->B Long",
+          "растр": 0.99,
+          "печать": 5.22,
+          "i": 11,
+          "j": 15,
+          "закрытоНаПути": 2,
+          "виновники": [
+            [
+              "стр 6777:33)",
+              2
+            ]
+          ]
+        },
+        "narrowRoutes": 36
+      },
+      "equal": true
+    }
+  ],
+  "negativeControl": {
+    "number": "1712084959:2:2164811388",
+    "vmfWithOtherFit": "6e1831ba3cf6192111827176129aae7c429f4a50bb17378ccbf81852f0484b75",
+    "sensitiveToFit": true
+  },
+  "errors": []
+}
