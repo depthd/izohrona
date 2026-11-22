@@ -1,0 +1,5 @@
+wall_seconds=208.64
+exit=1
+gen_json_fresh=True
+cards=3
+fresh_vmf=3
